@@ -1,0 +1,49 @@
+# TODO
+
+> **Current phase**: Phase 0A - project boundary, business baseline, and data discovery.
+>
+> This file is the mutable project task queue. Long-lived requirements and decisions belong in
+> [developer documentation](docs/dev/README.md); stage definitions and readiness evidence belong in
+> [Project Inception and Readiness](docs/dev/project-inception-and-readiness.md).
+
+## Completed Foundations
+
+- [x] Establish documentation audiences, indexes, and routing rules.
+- [x] Draft project positioning, system boundary, and success direction.
+- [x] Draft logical Bronze/Silver/Gold responsibilities in ADR 0002.
+- [x] Draft hybrid role-to-node topology and technology-selection boundary in ADR 0003.
+- [x] Record the enterprise project-inception research and CMOP readiness method.
+
+## Now: Complete Phase 0A Inputs
+
+- [ ] Select the primary BO and the relationship between BO-1, BO-2, and BO-3.
+- [ ] Define the target personas, critical business flow, and at least one representative BQ.
+- [ ] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
+  expected history, quality risks, and sensitivity.
+- [ ] Draft the minimum regulatory and industry data contracts for the selected BO.
+- [ ] Extend the workload baseline beyond capacity to cover velocity, freshness, access patterns,
+  concurrency, retention, RPO/RTO, network limits, and operational constraints.
+- [ ] Draft the synthetic-data generation contract: distributions, invariants, dirty-data cases, and
+  reproducibility requirements.
+- [ ] Draft the validation and reconciliation specification with measurable acceptance gates.
+
+## Next: Enter Phase 0B
+
+- [ ] Confirm that the BO baseline, source inventory, and workload envelope satisfy the entry gate in
+  `docs/dev/project-inception-and-readiness.md`.
+- [ ] Create the cross-cutting technology-selection evaluation requirement with scope, decision axes,
+  evaluation criteria, representative workloads, and evidence requirements.
+- [ ] Decide which product choices are independently reversible and therefore require separate ADRs.
+- [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
+  documentation.
+- [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
+- [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
+
+## Later: Formal Implementation
+
+- [ ] Build the reproducible one-million-row generator prototype.
+- [ ] Implement the minimum Bronze to Silver to Gold vertical slice.
+- [ ] Validate one late confirmation and one correction or cancellation end to end.
+- [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
+  runtime, memory, and storage results.
+

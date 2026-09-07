@@ -1,0 +1,41 @@
+# Requirements
+
+本目录保存 CMOP **当前有效**的项目需求及其事实依据。它们是常青文档：业务目标、外部
+规范或验收约束发生变化时原地更新，历史由 git 保存。
+
+## 边界
+
+这里回答“系统要解决什么问题、产出必须满足什么条件”，不回答某次代码变更怎样实现。
+
+适合放在这里的内容包括：
+
+- 项目 vision、系统边界、明确的 in-scope / out-of-scope。
+- BO、BQ、成功指标与验收标准。
+- FINTRAC、FIX、ISO 20022、CIRO 等公开规范推导出的数据契约。
+- 合成数据必须满足的分布、业务不变量、脏数据类型与可复现要求。
+- 对账、回溯、幂等性、迟到数据和数据质量的验收约束。
+- 会随上游资料变化而更新、并直接支撑上述需求的研究证据。
+
+技术选型及其取舍进入 [ADR](../adr/README.md)；一次实现方案进入
+[design](../design/README.md)。详细的个人求职与就业市场调研不属于系统需求；
+`project-overview.md` 只保留解释项目定位所需的简短结论。
+
+## 规划中的规范文档
+
+以下文件在有实际内容时逐篇创建，不提前放空壳：
+
+| 文件 | 预期内容 |
+|---|---|
+| [project-overview.md](project-overview.md) | 项目定位、系统边界、目标用户、范围与成功定义；当前为 Draft |
+| [business-objectives.md](business-objectives.md) | BO/BQ、业务口径、优先级与验收标准；当前为 Draft |
+| `regulatory-data-contracts.md` | 公开监管与行业标准推导出的 schema、代码表和校验规则 |
+| `data-generation-specification.md` | 合成事实数据的统计特征、业务不变量与脏数据契约 |
+| `validation-and-reconciliation-specification.md` | 对账口径、可重跑验证、故障注入与验收门禁 |
+
+BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文件”。只有内容拥有独立的
+维护周期或已经大到影响阅读时才拆分。
+
+## 当前索引
+
+- [项目概览](project-overview.md)：项目定位、范围边界、目标数据规模与成功定义。
+- [业务目标](business-objectives.md)：候选主 BO、支持性 BO、BQ 与验收方向。
