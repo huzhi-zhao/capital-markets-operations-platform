@@ -1,12 +1,13 @@
 # Platform Architecture
 
-> **Status**: Draft · **Date**: 2026-09-02
+> **Status**: Draft · **Date**: 2026-09-07
 >
 > 本文描述当前架构草案，不表示组件已经部署或接口已经冻结。
 >
 > **Decisions**: [ADR 0001](adr/0001-project-boundaries-and-system-context.md),
 > [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md),
-> [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)
+> [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md),
+> [ADR 0004](adr/0004-language-and-runtime-boundaries.md)
 
 ## 1. 架构目标
 
@@ -76,7 +77,7 @@ Silver 的首要消费者是 Spark，不是 BI 用户。Gold 固定常用业务�
 | 节点 | 当前硬件事实 | 草案职责 |
 |---|---|---|
 | NAS | 4 核 8 线程、16 GB、8 TB 可扩，7×24 | S3-compatible storage、Bronze、Silver；不承载计算或查询引擎 |
-| MacBook Pro | 规格待补，按需上线 | PySpark 生成、Silver/Gold 批处理、宽扫描 EDA/特征工程、本地 NVMe shuffle |
+| MacBook Pro | 规格待补，按需上线 | Spark 生成与 Silver/Gold 批处理、宽扫描 EDA/特征工程、本地 NVMe shuffle；driver 语言待定 |
 | OCI Montreal | 4 核、24 GB、200 GB，7×24 | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
 
 NAS 对象存储当前偏好 SeaweedFS，但最终选择仍是 Proposed。兼容性与恢复能力比 GitHub

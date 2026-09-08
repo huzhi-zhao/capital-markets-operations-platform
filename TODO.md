@@ -12,15 +12,20 @@
 - [x] Draft project positioning, system boundary, and success direction.
 - [x] Draft logical Bronze/Silver/Gold responsibilities in ADR 0002.
 - [x] Draft hybrid role-to-node topology and technology-selection boundary in ADR 0003.
+- [x] Draft language admission, responsibility, and LTS runtime boundaries in ADR 0004.
 - [x] Record the enterprise project-inception research and CMOP readiness method.
 
 ## Now: Complete Phase 0A Inputs
 
-- [ ] Select the primary BO and the relationship between BO-1, BO-2, and BO-3.
+- [ ] Provisionally rank BO-1, BO-2, and BO-3 as primary, supporting, or rejected candidates.
 - [ ] Define the target personas, critical business flow, and at least one representative BQ.
 - [ ] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
   expected history, quality risks, and sensitivity.
 - [ ] Draft the minimum regulatory and industry data contracts for the selected BO.
+- [ ] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
+  and an end-to-end acceptance story.
+- [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
+  freeze the initial success measures and in-scope/out-of-scope boundary.
 - [ ] Extend the workload baseline beyond capacity to cover velocity, freshness, access patterns,
   concurrency, retention, RPO/RTO, network limits, and operational constraints.
 - [ ] Draft the synthetic-data generation contract: distributions, invariants, dirty-data cases, and
@@ -37,6 +42,8 @@
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
+- [ ] Finalize the component-to-language map and choose the supported LTS JDK from compatibility
+  evidence; then define the minimum Java, Python, SQL, and Spark templates needed by Phase 1.
 - [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
 
 ## Later: Formal Implementation
@@ -46,4 +53,3 @@
 - [ ] Validate one late confirmation and one correction or cancellation end to end.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
   runtime, memory, and storage results.
-

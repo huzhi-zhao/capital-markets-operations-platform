@@ -1,6 +1,6 @@
 # Project Inception and Readiness
 
-> **Status**: Draft · **Date**: 2026-09-02
+> **Status**: Draft · **Date**: 2026-09-07
 >
 > 本文定义 CMOP 从项目边界到正式实现的内部阶段方法、阶段门禁和当前就绪度。它不是
 > 面向外部使用者的操作指南，也不替代具体 requirement、ADR 或 roadmap。
@@ -108,6 +108,7 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 数据规模模型 | Draft，只有容量假设 | [容量基线](data-volume-baseline.md) 尚缺 velocity、freshness、访问模式、并发和 RPO/RTO |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md) |
+| 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
 | 完整技术选型评估 | 尚不具备执行入口 | 可先设计评估范围；执行依赖 BO baseline、source inventory 和 workload envelope |
 | 选型 probe | 未开始 | 进入 Phase 0B 后按风险触发 |
 | 正式实现 | 禁止进入 | 以 [roadmap](roadmap.md) 的 Phase 0 退出条件为准 |
@@ -124,4 +125,3 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 
 项目级近期任务维护在仓库根目录的 [TODO](../../TODO.md)。该文件可以频繁变化；本文只在
 阶段模型、门禁、事实源或就绪判断发生变化时更新。
-

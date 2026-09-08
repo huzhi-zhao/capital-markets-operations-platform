@@ -46,13 +46,14 @@ CMOP 在相当长一段时间内会以 BO、选型和架构讨论为主。ADR �
 
 ## 首批决策
 
-这三篇均为 `Proposed`，是当前讨论载体，不代表已经定案：
+这四篇均为 `Proposed`，是当前讨论载体，不代表已经定案：
 
 | ADR | 决策问题 | 状态 | 日期 |
 |---|---|---|---|
 | [0001](0001-project-boundaries-and-system-context.md) | CMOP 证明什么、处理什么业务事实、明确排除什么 | Proposed | 2026-09-02 |
 | [0002](0002-transaction-centric-lakehouse-layering.md) | 为什么以交易流水为核心，以及 Bronze/Silver/Gold 各自承担什么契约 | Proposed | 2026-09-02 |
 | [0003](0003-hybrid-deployment-topology-and-component-placement.md) | NAS、临时 Mac 算力与 OCI 节点如何分工，组件按什么原则落位 | Proposed | 2026-09-02 |
+| [0004](0004-language-and-runtime-boundaries.md) | 实现语言和运行时按什么原则准入、分配职责并在何时冻结 | Proposed | 2026-09-07 |
 
 具体对象存储实现如果能够独立替换，就不强塞进 0003；当其兼容性、迁移成本或治理约束
 使它成为独立且难撤销的决定时，再建立新的 ADR。
