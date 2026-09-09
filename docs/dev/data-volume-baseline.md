@@ -14,10 +14,14 @@ shuffle spill、批次恢复和容量治理变成实际约束。
 | orders / trades | 合成 | 400–700 GB，约 20–50 亿行 |
 | positions snapshots | 由流水推导 | 100–200 GB |
 | customer / account master | 合成 | 小于 1 GB |
-| security master / corporate actions | 真实公开数据 | 数 GB |
-| daily market data | 真实公开数据 | 1–3 GB |
+| security master / corporate actions | 真实公开数据（SEC 结构化接口、GLEIF） | 数百 MB |
+| daily market data | **合成**，见来源清单 §5.4 | 1–3 GB |
 | SEC EDGAR XBRL | 真实公开数据 | 20–50 GB（**Later，可整体舍弃**，见下） |
 | FX / interest-rate curves | 真实公开数据 | 小于 1 GB |
+
+标的数量不再是自由参数。公司行为采用一对一别名绑定后，标的宇宙等于十年窗口内的真实申报人
+集合，约一万个。按目标成交量摊平后每个标的每个交易日几十到两百笔，该密度直接约束标的维度
+上的分区与文件大小设计，见[原始数据源清单](requirements/raw-data-source-inventory.md) §5.6。
 
 这些数字尚未闭合到 800 GB–1.5 TB 的完整层级放大模型。Bronze/Silver 重复、Iceberg
 metadata、snapshot、删除文件和 Gold 都需要在原始数据估算之外单独计算。
@@ -25,6 +29,10 @@ metadata、snapshot、删除文件和 Gold 都需要在原始数据估算之外�
 SEC EDGAR XBRL 不服务于暂定主 BO 的交易生命周期对账，其半结构化解析价值已由 FIX 与
 ISO 20022 报文覆盖。它排在最后阶段，时间不足时整体舍弃，且不得进入任何前置阶段的
 依赖链。
+
+**这一条只针对批量解析财报 XBRL 这类工作负载。** 通过 SEC 的 `frames` 与 `submissions`
+接口针对性抽取公司行为，体量在数十 MB 量级，角色是维度与参考数据而非 Bronze 事实，
+不受本条约束，见[原始数据源清单](requirements/raw-data-source-inventory.md) §5.3。
 
 ## 1.1 日增量规模
 

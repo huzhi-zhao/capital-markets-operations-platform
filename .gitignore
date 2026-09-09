@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+toucan-notes/
+
 # Distribution / packaging
 .Python
 build/

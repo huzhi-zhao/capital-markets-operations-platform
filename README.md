@@ -7,5 +7,6 @@ See the [documentation index](docs/README.md) for project guides, developer
 documentation, and writing conventions.
 
 - [Project TODO](TODO.md) tracks the current mutable work queue.
-- [Big-data project inception research](big-data-project-inception-research.md) is a standalone,
-  copy-ready article summarizing the external research behind the project's readiness method.
+- [AGENTS.md](AGENTS.md) states the collaboration rules for AI agents and human contributors,
+  including the boundary between project documentation and the author's private notes.
+  [CLAUDE.md](CLAUDE.md) is a one-line pointer to it.

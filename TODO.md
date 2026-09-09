@@ -27,12 +27,27 @@
 - [x] Adopt the ranking as the working BO hypothesis (loop step 1).
 - [ ] Gather evidence for the hypothesis: minimum FIX order/execution/allocation subset, ISO 20022
   settlement and cash message families, and the semantics needed for corporate-action restatement.
-- [ ] Probe whether ten years of corporate actions can actually be obtained. This is a go/no-go for the
-  supporting BO, not a formatting detail.
+- [x] Probe whether ten years of corporate actions can actually be obtained. Answer: yes, from the SEC
+  structured endpoints, which are free, cover ten years, and are explicitly redistributable.
+- [x] Decide the corporate-action sourcing method: extract real splits, dividends, name changes and
+  delistings from SEC, and anchor the generator's event distributions to them.
+- [x] Settle the daily market-data question: prices become synthetic, because synthetic instruments make
+  real prices meaningless. FX and rate curves stay real.
+- [x] Decide the SEC extraction scope. Answer: all forty quarters, no pilot subset, because a subset
+  cannot expose the cross-period definition drift that matters most here.
+- [x] Write the validation rule that separates forward splits, reverse splits, and unrelated conversion
+  ratios in the SEC split-ratio concept. Adopted the standard reference-data practice: context filter
+  first, single normalized adjustment factor, corroboration against shares outstanding, plausibility
+  bands as alarms only, and a three-way pass/reject/quarantine outcome.
+- [x] Decide how extracted real events map onto synthetic instruments. Answer: one-to-one alias binding,
+  which preserves the real event calendar's clustering and cross-event correlation for free, and fixes
+  the instrument universe at roughly ten thousand.
+- [x] Pick the FIX version before filling in any field table. Answer: FIX 4.4, single version, no
+  mixing. It is the earliest version carrying the confirmation and allocation semantics BO-1's
+  chain needs, and FIX 5.0's session-layer split buys nothing for a batch generator.
 - [ ] Revise or confirm the hypothesis against that evidence, then freeze the BO baseline.
 - [ ] Decide the drill-down boundary for Silver: bounded demo capability or excluded from external scope.
-- [ ] Settle the acquisition channel and licence terms for security master and corporate actions.
-- [ ] Draft the minimum regulatory and industry data contracts for the selected BO.
+- [ ] Fill the regulatory data-contract skeleton, starting with the FIX order lifecycle batch.
 - [ ] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story.
 - [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
