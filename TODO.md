@@ -74,7 +74,9 @@
   three of the invariants stay blank until the FIX field evidence lands.
 - [ ] Fill the trade-lifecycle distributions and the FIX-dependent invariants in the generation spec
   once the field tables are verified.
-- [ ] Draft the validation and reconciliation specification with measurable acceptance gates.
+- [x] Draft the validation and reconciliation specification: four reconciliation pairs, per-pair date
+  basis, the difference taxonomy, rerun assertions and gate semantics. Thresholds and tolerances stay
+  open until Phase 1 measures them.
 
 ## Next: Enter Phase 0B
 

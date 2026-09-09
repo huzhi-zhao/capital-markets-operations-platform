@@ -106,11 +106,11 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 |---|---|---|
 | 文档边界与索引规则 | 已建立 | [开发文档索引](README.md) |
 | 项目定位与系统范围 | Draft，主要边界已形成 | [项目概览](requirements/project-overview.md)、[ADR 0001](adr/0001-project-boundaries-and-system-context.md) |
-| 主 BO 与代表性 BQ | Draft，已有暂定排序，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1 |
-| 原始数据 source inventory | Draft | [原始数据源清单](requirements/raw-data-source-inventory.md)；证券主数据与公司行为的获取渠道未闭合 |
-| 监管与行业数据契约 | 未建立 | 规划中的 `requirements/regulatory-data-contracts.md` |
-| 合成数据契约 | 未建立 | 规划中的 `requirements/data-generation-specification.md` |
-| 验证与对账规范 | 未建立 | 规划中的 `requirements/validation-and-reconciliation-specification.md` |
+| 主 BO 与代表性 BQ | Draft，假设已通过检验，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1、§3.2 代表性 BQ、§5.1 检验结果；冻结只卡在 FIX 与 ISO 20022 字段证据 |
+| 原始数据 source inventory | Draft，渠道已闭合并实测 | [原始数据源清单](requirements/raw-data-source-inventory.md) §5.3–§5.7；四十个季度全量抽取已完成，产物钉在 `data/reference/sec/` |
+| 监管与行业数据契约 | 骨架已建立，字段未核对 | [监管与行业数据契约](requirements/regulatory-data-contracts.md)；FIX 版本已定为 4.4，字段表待逐行读规范填写 |
+| 合成数据契约 | Draft，公司行为部分已由实测支撑 | [合成数据生成规范](requirements/data-generation-specification.md)；交易生命周期分布被 FIX 证据阻塞 |
+| 验证与对账规范 | Draft，口径与门禁语义已定 | [验证与对账规范](requirements/validation-and-reconciliation-specification.md)；阈值与容差待 Phase 1 实测 |
 | 数据规模模型 | Draft，包络已补齐 | [工作负载基线](workload-baseline.md) §5 已覆盖到达速率、新鲜度、访问模式、并发、保留与 RPO/RTO；数字仍是规划假设，待 Phase 1 实测 |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
