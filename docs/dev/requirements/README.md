@@ -16,13 +16,14 @@
 - 对账、回溯、幂等性、迟到数据和数据质量的验收约束。
 - 会随上游资料变化而更新、并直接支撑上述需求的研究证据。
 
-技术选型及其取舍进入 [ADR](../adr/README.md)；一次实现方案进入
-[design](../design/README.md)。详细的个人求职与就业市场调研不属于系统需求；
+**具体的技术选择**及其取舍进入 [ADR](../adr/README.md)；一次实现方案进入
+[design](../design/README.md)。**评估要求本身**留在这里，因为它规定的是证据门槛而不是
+选择结果，见[技术选型评估要求](technology-selection-evaluation.md)。详细的个人求职与就业市场调研不属于系统需求；
 `project-overview.md` 只保留解释项目定位所需的简短结论。
 
-## 规划中的规范文档
+## 规范文档与当前状态
 
-以下文件在有实际内容时逐篇创建，不提前放空壳：
+原则是有实际内容时逐篇创建，不提前放空壳。规划中的六篇现已全部创建：
 
 | 文件 | 预期内容 |
 |---|---|
@@ -32,6 +33,7 @@
 | [regulatory-data-contracts.md](regulatory-data-contracts.md) | 公开监管与行业标准推导出的 schema、代码表和校验规则；当前为骨架 Draft |
 | [data-generation-specification.md](data-generation-specification.md) | 合成事实数据的统计特征、业务不变量与脏数据契约；当前为 Draft，公司行为部分已由实测支撑 |
 | [validation-and-reconciliation-specification.md](validation-and-reconciliation-specification.md) | 对账口径、可重跑验证、故障注入与验收门禁；当前为 Draft，阈值待实测 |
+| [technology-selection-evaluation.md](technology-selection-evaluation.md) | 选型评估的范围、决策轴、代表性工作负载与证据要求；当前为 Draft，执行入口未开 |
 
 BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文件”。只有内容拥有独立的
 维护周期或已经大到影响阅读时才拆分。
@@ -44,3 +46,4 @@ BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文
 - [监管与行业数据契约](regulatory-data-contracts.md)：FIX、ISO 20022、FINTRAC 的最小子集与出处。
 - [合成数据生成规范](data-generation-specification.md)：可复现性契约、标的维度、公司行为实测分布与脏数据契约。
 - [验证与对账规范](validation-and-reconciliation-specification.md)：四对比对关系、时点基准、差异分类与门禁语义。
+- [技术选型评估要求](technology-selection-evaluation.md)：评估范围、决策轴、代表性工作负载与证据要求。

@@ -82,9 +82,11 @@
 
 - [ ] Confirm that the BO baseline, source inventory, and workload envelope satisfy the entry gate in
   `docs/dev/project-inception-and-readiness.md`.
-- [ ] Create the cross-cutting technology-selection evaluation requirement with scope, decision axes,
-  evaluation criteria, representative workloads, and evidence requirements.
-- [ ] Decide which product choices are independently reversible and therefore require separate ADRs.
+- [x] Create the cross-cutting technology-selection evaluation requirement with scope, decision axes,
+  evaluation criteria, representative workloads, and evidence requirements. Evaluation depth is tied to
+  reversal cost, and the workloads come from the workload envelope rather than generic benchmarks.
+- [ ] Confirm the first-pass reversal-cost ranking in the evaluation requirement, which decides which
+  choices get their own ADR.
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.

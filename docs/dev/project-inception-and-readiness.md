@@ -115,7 +115,7 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
-| 完整技术选型评估 | 尚不具备执行入口 | 可先设计评估范围；执行依赖 BO baseline、source inventory 和 workload envelope |
+| 完整技术选型评估 | 评估要求已写，执行入口未开 | [技术选型评估要求](requirements/technology-selection-evaluation.md)；source inventory 与 workload envelope 已就绪，执行仍等 BO baseline 冻结 |
 | 选型 probe | 未开始 | 进入 Phase 0B 后按风险触发 |
 | 正式实现 | 禁止进入 | 以 [roadmap](roadmap.md) 的 Phase 0 退出条件为准 |
 
