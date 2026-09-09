@@ -21,7 +21,9 @@
 ## Now: Complete Phase 0A Inputs
 
 - [x] Provisionally rank BO-1, BO-2, and BO-3 as primary, supporting, or rejected candidates.
-- [ ] Define the target personas, critical business flow, and at least one representative BQ.
+- [x] Define the target personas, critical business flow, and at least one representative BQ.
+  Operations analyst is primary, the T+1 morning exception workflow is the one flow that must run
+  end to end, and BQ-2 is representative because it constrains grain, keys and lineage.
 - [x] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
   expected history, quality risks, and sensitivity.
 - [x] Adopt the ranking as the working BO hypothesis (loop step 1).
@@ -45,8 +47,17 @@
 - [x] Pick the FIX version before filling in any field table. Answer: FIX 4.4, single version, no
   mixing. It is the earliest version carrying the confirmation and allocation semantics BO-1's
   chain needs, and FIX 5.0's session-layer split buys nothing for a batch generator.
+- [x] Run the forty-quarter SEC extraction and replace the planning estimates with measurements.
+  Instrument universe is 12505, extracted volume is 6 MB, split-ratio adjudication rate is ten percent,
+  and twenty-nine percent of reverse-split filers were later delisted.
+- [ ] Run the second SEC pass for name changes, which needs one submissions call per CIK.
+- [x] Decide where extraction output lives in the repo and in what format. Answer: scripts under
+  tools/sec-extract, pinned raw responses plus a manifest under data/reference/sec, committed rather
+  than regenerated because SEC data drifts as filers amend.
 - [ ] Revise or confirm the hypothesis against that evidence, then freeze the BO baseline.
-- [ ] Decide the drill-down boundary for Silver: bounded demo capability or excluded from external scope.
+- [x] Decide the drill-down boundary for Silver. Answer: excluded from external scope. The difference
+  explanation chain is materialized into Gold during the batch, the interactive path never crosses the
+  tunnel, and per-event Silver drill-down stays a LAN-only engineering capability.
 - [ ] Fill the regulatory data-contract skeleton, starting with the FIX order lifecycle batch.
 - [ ] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story.

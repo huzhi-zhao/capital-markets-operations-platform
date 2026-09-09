@@ -14,14 +14,15 @@ shuffle spill、批次恢复和容量治理变成实际约束。
 | orders / trades | 合成 | 400–700 GB，约 20–50 亿行 |
 | positions snapshots | 由流水推导 | 100–200 GB |
 | customer / account master | 合成 | 小于 1 GB |
-| security master / corporate actions | 真实公开数据（SEC 结构化接口、GLEIF） | 数百 MB |
+| security master / corporate actions | 真实公开数据（SEC 结构化接口、GLEIF） | 数百 MB，其中 SEC 抽取实测 6 MB |
 | daily market data | **合成**，见来源清单 §5.4 | 1–3 GB |
 | SEC EDGAR XBRL | 真实公开数据 | 20–50 GB（**Later，可整体舍弃**，见下） |
 | FX / interest-rate curves | 真实公开数据 | 小于 1 GB |
 
 标的数量不再是自由参数。公司行为采用一对一别名绑定后，标的宇宙等于十年窗口内的真实申报人
-集合，约一万个。按目标成交量摊平后每个标的每个交易日几十到两百笔，该密度直接约束标的维度
-上的分区与文件大小设计，见[原始数据源清单](requirements/raw-data-source-inventory.md) §5.6。
+集合。四十个季度全量抽取实测为 **12505 个**，其中 7294 个在十年窗口内至少发生过一次公司
+行为。按目标成交量摊平后每个标的每个交易日几十到两百笔，该密度直接约束标的维度上的分区
+与文件大小设计，见[原始数据源清单](requirements/raw-data-source-inventory.md) §5.6 与 §5.7。
 
 这些数字尚未闭合到 800 GB–1.5 TB 的完整层级放大模型。Bronze/Silver 重复、Iceberg
 metadata、snapshot、删除文件和 Gold 都需要在原始数据估算之外单独计算。
@@ -74,6 +75,10 @@ ISO 20022 报文覆盖。它排在最后阶段，时间不足时整体舍弃，�
 - Gold 初始预算：**40 GB**。
 - Gold 预期远小于 Silver。超过 40 GB 时，首先检查是否混入明细粒度、snapshot 保留失控
   或表设计重复，而不是直接提高预算。
+- **已挂号的例外一项：异常解释表。** 它是明细粒度的，由
+  [平台架构](platform-architecture.md) §5.1 的下钻边界决定所要求。其行数由异常条数而非
+  事实条数决定，量级远小于事实表，但必须单独监控行数、字节数与增长率，不得并入 Gold
+  总量后失去可见性。
 - 现有磁盘清理曾估算可回收约 60–70 GB，但该数字来自规划期环境盘点，CMOP 使用前必须
   重新测量，不能视为已承诺容量。
 
