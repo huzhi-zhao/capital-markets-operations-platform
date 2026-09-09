@@ -111,7 +111,7 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 监管与行业数据契约 | 未建立 | 规划中的 `requirements/regulatory-data-contracts.md` |
 | 合成数据契约 | 未建立 | 规划中的 `requirements/data-generation-specification.md` |
 | 验证与对账规范 | 未建立 | 规划中的 `requirements/validation-and-reconciliation-specification.md` |
-| 数据规模模型 | Draft，只有容量假设 | [容量基线](data-volume-baseline.md) 尚缺 velocity、freshness、访问模式、并发和 RPO/RTO |
+| 数据规模模型 | Draft，包络已补齐 | [工作负载基线](workload-baseline.md) §5 已覆盖到达速率、新鲜度、访问模式、并发、保留与 RPO/RTO；数字仍是规划假设，待 Phase 1 实测 |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |

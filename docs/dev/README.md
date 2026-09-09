@@ -13,7 +13,7 @@ English kebab-case。面向外部读者与操作者的当前使用方法放在
 | [roadmap.md](roadmap.md)：能力阶段与交付顺序 | [adr/](adr/README.md)：长期指导后续开发的决策 |
 | [project-inception-and-readiness.md](project-inception-and-readiness.md)：从项目边界到正式实现的阶段方法、门禁与当前就绪度 | — |
 | [platform-architecture.md](platform-architecture.md)：当前系统边界、数据流与部署拓扑 | [design/](design/README.md)：一次非平凡变更计划怎样实施 |
-| [data-volume-baseline.md](data-volume-baseline.md)：容量假设、实测与增长模型 | [launch/](launch/README.md)：一次高风险变更实际上线的结果 |
+| [workload-baseline.md](workload-baseline.md)：容量、到达速率、新鲜度、访问模式、并发、保留与恢复目标 | [launch/](launch/README.md)：一次高风险变更实际上线的结果 |
 | [requirements/](requirements/README.md)：当前需求、BO/BQ、数据契约与验收约束 | [postmortem/](postmortem/README.md)：已造成实际影响的事故复盘 |
 
 四篇顶层常青文档当前均为草稿。它们不套 `architecture/` 或 `planning/` 目录，

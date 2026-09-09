@@ -4,7 +4,7 @@
 >
 > **Related architecture**: [Platform architecture](../platform-architecture.md)
 >
-> **Capacity basis**: [Data volume baseline](../data-volume-baseline.md)
+> **Capacity basis**: [Workload baseline](../workload-baseline.md)
 >
 > **Logical data layers**: [ADR 0002](0002-transaction-centric-lakehouse-layering.md)
 

@@ -69,7 +69,7 @@ CMOP 是 2026–2028 求职周期内唯一规划中的大型 side project。农�
 - 对账差异能够定位到具体事件，而不是只报告总数不一致。
 - 设计选择、被否决方案、实测证据与运行限制都有可审查记录。
 
-容量假设见 [data-volume-baseline.md](../data-volume-baseline.md)，当前架构见
+容量假设见 [workload-baseline.md](../workload-baseline.md)，当前架构见
 [platform-architecture.md](../platform-architecture.md)。
 
 ## 6. 当前阶段

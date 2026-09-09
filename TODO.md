@@ -54,17 +54,21 @@
 - [x] Decide where extraction output lives in the repo and in what format. Answer: scripts under
   tools/sec-extract, pinned raw responses plus a manifest under data/reference/sec, committed rather
   than regenerated because SEC data drifts as filers amend.
-- [ ] Revise or confirm the hypothesis against that evidence, then freeze the BO baseline.
+- [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
+  is confirmed and needs no revision.
 - [x] Decide the drill-down boundary for Silver. Answer: excluded from external scope. The difference
   explanation chain is materialized into Gold during the batch, the interactive path never crosses the
   tunnel, and per-event Silver drill-down stays a LAN-only engineering capability.
 - [ ] Fill the regulatory data-contract skeleton, starting with the FIX order lifecycle batch.
-- [ ] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
-  and an end-to-end acceptance story.
+- [x] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
+  and an end-to-end acceptance story. Three of five criteria pass, two lack evidence rather than failing,
+  and the ranking needs no change. See business-objectives.md section 5.1.
 - [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
   freeze the initial success measures and in-scope/out-of-scope boundary.
-- [ ] Extend the workload baseline beyond capacity to cover velocity, freshness, access patterns,
-  concurrency, retention, RPO/RTO, network limits, and operational constraints.
+- [x] Extend the workload baseline beyond capacity to cover velocity, freshness, access patterns,
+  concurrency, retention, RPO/RTO, network limits, and operational constraints. Written as the
+  workload envelope in workload-baseline.md section 5, and renamed that file from
+  data-volume-baseline.md to match its content.
 - [ ] Draft the synthetic-data generation contract: distributions, invariants, dirty-data cases, and
   reproducibility requirements.
 - [ ] Draft the validation and reconciliation specification with measurable acceptance gates.

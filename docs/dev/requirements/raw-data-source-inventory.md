@@ -5,7 +5,7 @@
 > **Decision state**: 本清单按 §2.1 的暂定主 BO（BO-1 交易生命周期对账与差异归因）推导。
 > 主 BO 排序变更时本文必须重新推导，不得沿用。
 >
-> **Related**: [业务目标](business-objectives.md)、[容量基线](../data-volume-baseline.md)、
+> **Related**: [业务目标](business-objectives.md)、[工作负载基线](../workload-baseline.md)、
 > [平台架构](../platform-architecture.md)
 
 ## 1. 分类原则
@@ -182,7 +182,7 @@ XBRL 不服务于交易生命周期对账，其半结构化解析价值已由 FI
 
 **这不是把已否决的 XBRL 决定翻回来。** 被降级并允许整体舍弃的是"批量解析二十到五十 GB
 财报 XBRL 作为一类工作负载"。此处用的是针对性接口调用，体量小三个数量级，角色是维度
-与参考数据，不是 Bronze 事实。两者不冲突，[容量基线](../data-volume-baseline.md) §1 已
+与参考数据，不是 Bronze 事实。两者不冲突，[工作负载基线](../workload-baseline.md) §1 已
 分别列出。
 
 **必须承认的局限，它们本身是项目素材。**
