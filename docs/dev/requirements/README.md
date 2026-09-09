@@ -28,6 +28,7 @@
 |---|---|
 | [project-overview.md](project-overview.md) | 项目定位、系统边界、目标用户、范围与成功定义；当前为 Draft |
 | [business-objectives.md](business-objectives.md) | BO/BQ、业务口径、优先级与验收标准；当前为 Draft |
+| [raw-data-source-inventory.md](raw-data-source-inventory.md) | 原始数据源分类、获取方式、格式、到达方式、质量风险与敏感度；当前为 Draft |
 | `regulatory-data-contracts.md` | 公开监管与行业标准推导出的 schema、代码表和校验规则 |
 | `data-generation-specification.md` | 合成事实数据的统计特征、业务不变量与脏数据契约 |
 | `validation-and-reconciliation-specification.md` | 对账口径、可重跑验证、故障注入与验收门禁 |
@@ -39,3 +40,4 @@ BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文
 
 - [项目概览](project-overview.md)：项目定位、范围边界、目标数据规模与成功定义。
 - [业务目标](business-objectives.md)：候选主 BO、支持性 BO、BQ 与验收方向。
+- [原始数据源清单](raw-data-source-inventory.md)：合成、真实与推导三类数据源及其获取方式。

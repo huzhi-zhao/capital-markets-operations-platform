@@ -1,6 +1,6 @@
 # Data Volume Baseline
 
-> **Status**: Draft · **Date**: 2026-09-02
+> **Status**: Draft · **Date**: 2026-09-09
 >
 > 当前数字是规划假设，不是实测基线。Phase 1 后必须用生成器和真实文件测量结果替换。
 
@@ -16,11 +16,32 @@ shuffle spill、批次恢复和容量治理变成实际约束。
 | customer / account master | 合成 | 小于 1 GB |
 | security master / corporate actions | 真实公开数据 | 数 GB |
 | daily market data | 真实公开数据 | 1–3 GB |
-| SEC EDGAR XBRL | 真实公开数据 | 20–50 GB |
+| SEC EDGAR XBRL | 真实公开数据 | 20–50 GB（**Later，可整体舍弃**，见下） |
 | FX / interest-rate curves | 真实公开数据 | 小于 1 GB |
 
 这些数字尚未闭合到 800 GB–1.5 TB 的完整层级放大模型。Bronze/Silver 重复、Iceberg
 metadata、snapshot、删除文件和 Gold 都需要在原始数据估算之外单独计算。
+
+SEC EDGAR XBRL 不服务于暂定主 BO 的交易生命周期对账，其半结构化解析价值已由 FIX 与
+ISO 20022 报文覆盖。它排在最后阶段，时间不足时整体舍弃，且不得进入任何前置阶段的
+依赖链。
+
+## 1.1 日增量规模
+
+按十年历史、每年 250 个交易日摊平：
+
+| 数据集 | 全量假设 | 摊到单个交易日 |
+|---|---|---|
+| 交易生命周期事件 | 400–700 GB | 约 160–280 MB |
+| 持仓快照 | 100–200 GB | 约 40–80 MB |
+| 合计 | | **约 200–360 MB** |
+
+日增量约为目标总量的万分之四。这个结论支撑
+[平台架构](platform-architecture.md) §4.1：常驻日增量可以在 NAS 上执行，MBP 只承担
+首次回填、全量重算和 compaction。
+
+该摊平假设默认批次间分布大致均匀。真实的日内与季节性波动会产生峰值批次，峰值倍数需要
+在 Phase 1 用生成器实测，不能沿用平均值做容量承诺。
 
 ## 2. 为什么不更小或更大
 
@@ -59,6 +80,7 @@ metadata、snapshot、删除文件和 Gold 都需要在原始数据估算之外�
 | Snapshot 与删除文件增长率 | 制定保留和过期策略 |
 | Spark shuffle read/write、spill 与峰值本地盘 | 验证 MBP NVMe 容量 |
 | Silver → Gold 输出比例 | 验证跨隧道 Gold 写入和 40 GB 预算 |
+| 单个日增量批次的行数、字节数与峰值倍数 | 验证 NAS 常驻增量的可行性与内存分配 |
 | 各关键批次运行时间与峰值内存 | 验证按需计算和 OCI 常驻预算 |
 
 每个数字必须记录测量日期、生成器版本或数据提交、Spark/Iceberg/Parquet 配置，以及运行

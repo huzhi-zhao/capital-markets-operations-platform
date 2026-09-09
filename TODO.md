@@ -14,13 +14,24 @@
 - [x] Draft hybrid role-to-node topology and technology-selection boundary in ADR 0003.
 - [x] Draft language admission, responsibility, and LTS runtime boundaries in ADR 0004.
 - [x] Record the enterprise project-inception research and CMOP readiness method.
+- [x] Split node responsibilities: MBP for backfill and full recompute, NAS for resident daily increments,
+  a single orchestrator on OCI.
+- [x] Correct the settlement cycle to T+1 across the documentation.
 
 ## Now: Complete Phase 0A Inputs
 
-- [ ] Provisionally rank BO-1, BO-2, and BO-3 as primary, supporting, or rejected candidates.
+- [x] Provisionally rank BO-1, BO-2, and BO-3 as primary, supporting, or rejected candidates.
 - [ ] Define the target personas, critical business flow, and at least one representative BQ.
-- [ ] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
+- [x] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
   expected history, quality risks, and sensitivity.
+- [x] Adopt the ranking as the working BO hypothesis (loop step 1).
+- [ ] Gather evidence for the hypothesis: minimum FIX order/execution/allocation subset, ISO 20022
+  settlement and cash message families, and the semantics needed for corporate-action restatement.
+- [ ] Probe whether ten years of corporate actions can actually be obtained. This is a go/no-go for the
+  supporting BO, not a formatting detail.
+- [ ] Revise or confirm the hypothesis against that evidence, then freeze the BO baseline.
+- [ ] Decide the drill-down boundary for Silver: bounded demo capability or excluded from external scope.
+- [ ] Settle the acquisition channel and licence terms for security master and corporate actions.
 - [ ] Draft the minimum regulatory and industry data contracts for the selected BO.
 - [ ] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story.

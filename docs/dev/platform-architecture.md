@@ -1,6 +1,6 @@
 # Platform Architecture
 
-> **Status**: Draft · **Date**: 2026-09-07
+> **Status**: Draft · **Date**: 2026-09-09
 >
 > 本文描述当前架构草案，不表示组件已经部署或接口已经冻结。
 >
@@ -76,12 +76,38 @@ Silver 的首要消费者是 Spark，不是 BI 用户。Gold 固定常用业务�
 
 | 节点 | 当前硬件事实 | 草案职责 |
 |---|---|---|
-| NAS | 4 核 8 线程、16 GB、8 TB 可扩，7×24 | S3-compatible storage、Bronze、Silver；不承载计算或查询引擎 |
-| MacBook Pro | 规格待补，按需上线 | Spark 生成与 Silver/Gold 批处理、宽扫描 EDA/特征工程、本地 NVMe shuffle；driver 语言待定 |
+| NAS | 4 核 8 线程、16 GB、8 TB 可扩，7×24 | S3-compatible storage、Bronze、Silver；**常驻日增量执行端**；不承载查询引擎 |
+| MacBook Pro | 规格待补，按需上线 | **首次全量回填、全量重算、宽扫描 EDA/特征工程、周期性 compaction**；本地 NVMe shuffle；driver 语言待定 |
 | OCI Montreal | 4 核、24 GB、200 GB，7×24 | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
 
 NAS 对象存储当前偏好 SeaweedFS，但最终选择仍是 Proposed。兼容性与恢复能力比 GitHub
 热度更重要，接受前需要用 Spark、Iceberg 和 Trino 进行实测。
+
+### 4.1 为什么 NAS 可以承担日增量
+
+早期草案写的是"NAS 不承载计算"。该表述在 TB 级批处理语境下成立，在日增量语境下过严，
+现按数据量分级修正。
+
+日增量规模的推导见 [容量基线](data-volume-baseline.md) §1.1：按十年、每年 250 交易日
+摊平，日增量约 200–360 MB，是目标总量的万分之四量级。这个量级不需要按需算力节点。
+
+内存分配的粗略边界：SeaweedFS 约 2–4 GB，其余约 10 GB 留给增量作业进程。该分配是
+规划假设，进入 Phase 1 前必须用实际 RSS 与峰值测量替换。
+
+MBP 只在三种情况下上线：首次全量回填、需要全量重算的纠错、周期性 compaction。日常
+增量不依赖 MBP 在线。
+
+### 4.2 编排只有一套，且只在 OCI
+
+NAS 上安装的是**执行端**，不是第二个调度器。理由：
+
+1. 网络边界（§6）已经把 Airflow task 限定为远程提交加轮询，跨节点提交本来就是设计前提，
+   NAS 只需要一个可接收作业的入口。
+2. 两套调度器会把运行血缘割成两段，OpenLineage/Marquez 无法拼出完整链路，而逐笔追溯
+   依赖完整血缘。
+3. OCI 24 GB 内存预算（§8）无法再容纳第二套 Airflow。
+
+是否复用 UOIP 既有 Airflow 实例是另一个问题，仍在 §10 开放项中。
 
 ## 5. 三种查询与计算路径
 
@@ -111,7 +137,16 @@ Airflow task 不得在 OCI 进程内枚举 Bronze/Silver 对象。需要宽扫�
 - Spark 使用 cluster mode，driver 不落在 OCI。
 - Shuffle 与 spill 显式指向 MBP 本地 NVMe，不指向 NAS 挂载目录。
 - 单条跨隧道查询触及的对象数必须有界；Iceberg 裁剪是必要条件，不是无限扫描许可。
-- Pipeline 以批次整体可重跑为基础，不假设 MBP 7×24 在线。
+- Pipeline 以批次整体可重跑为基础，不假设 MBP 7×24 在线。**整体可重跑是能力，不是
+  日常运行方式**：日常只重算受影响批次，全量重算是纠错时的兜底手段。可重跑与增量处理
+  是正交属性，不因为支持重跑就放弃增量。
+- 增量写入必须是按主键的 `MERGE INTO`，不得使用纯 append。T+1 确认迟到、更正和公司
+  行为都会改写已提交的历史分区。
+- 增量与回填必须共用同一份处理代码，只有 batch 数量不同。两套实现会让回填结果与增量
+  结果出现无法解释的差异，而对账正是本项目的主 BO。
+- 迟到不依赖真实时间流逝模拟。每个事件同时携带业务发生时间与进入批次标识，迟到定义为
+  后者晚于前者所属批次，使重跑后迟到现象仍可精确复现。
+- 日增量持续产生小文件，compaction 必须是独立排期的周期性作业，不能依赖顺带完成。
 - Gold 由 Spark 构建，Trino 主要只读服务。
 - Kafka/Flink 只承载窄窗口演示或回放，不承载多年历史生成。
 - CMOP 使用独立 REST Catalog，不与 UOIP 共用 Hive Metastore。
@@ -134,10 +169,10 @@ OCI 24 GB 需要同时容纳多个常驻组件，现有约 21 GB 的粗略预算
 
 ## 10. 开放项
 
-- 主 BO 与 Gold 输出边界。
+- Gold 输出边界（主 BO 的暂定排序见 [业务目标](requirements/business-objectives.md)）。
 - MBP 规格和实测批处理能力。
 - 对象存储最终实现及其 S3/Iceberg 兼容性。
-- Airflow 是否复用既有实例。
-- Snapshot、compaction、小文件与 Catalog 维护策略。
+- Airflow 是否复用 UOIP 既有实例（实例数量与落位已定，见 §4.2）。
+- Snapshot、compaction、小文件与 Catalog 维护策略，含 compaction 的执行节点与周期。
 - Gold 写入 OCI 的提交、回滚和重试协议。
 - Silver 下钻的查询门禁如何在 Trino 层强制执行。

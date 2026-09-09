@@ -65,6 +65,9 @@ Microsoft 是工作负载设计实践，DCAM 是数据管理能力框架。本�
 | 0B-3 开工就绪 | 实现团队是否知道要造什么、怎样验收 | Accepted ADR、架构规格、验证计划、实施 roadmap | 不存在会推翻最小纵向切片的未决问题 |
 | 1 正式实现 | 最小端到端链路是否真正回答主 BO | 可维护代码、测试、可复现数据与运行证据 | 以 [roadmap](roadmap.md) 的 Phase 1 退出条件为准 |
 
+下面这张图给出从 BO 到各类工程文档的落点关系，与[开发文档索引](README.md)的路由顺序一致：
+[BO 到技术文档流程](../images/bo-to-technical-documentation-flow.drawio)（draw.io 源文件）。
+
 ## 4. BO baseline 的最小含义
 
 技术评估不要求 BO 永久冻结，也不要求每个原始字段提前确定。进入组件比较前，至少需要：
@@ -77,6 +80,9 @@ Microsoft 是工作负载设计实践，DCAM 是数据管理能力框架。本�
 
 在这些条件成立前，SeaweedFS、Garage、RustFS、Kafka、Redpanda、Flink、Spark 等内容
 可以作为候选资料研究，但不能形成可接受的产品选择。
+
+BO baseline 不是一次写成的。假设、取证、修正的循环，以及"全量回填必须在冻结之后"
+这条次序约束，见 [BO 收敛循环](../images/bo-convergence-loop.drawio)（draw.io 源文件）。
 
 ## 5. 受限选型 probe 的边界
 
@@ -100,14 +106,14 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 |---|---|---|
 | 文档边界与索引规则 | 已建立 | [开发文档索引](README.md) |
 | 项目定位与系统范围 | Draft，主要边界已形成 | [项目概览](requirements/project-overview.md)、[ADR 0001](adr/0001-project-boundaries-and-system-context.md) |
-| 主 BO 与代表性 BQ | Draft，尚未形成 baseline | [业务目标](requirements/business-objectives.md) |
-| 原始数据 source inventory | 未建立 | 需在主 BO 收敛过程中识别主要 source class、格式、到达方式和使用权 |
+| 主 BO 与代表性 BQ | Draft，已有暂定排序，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1 |
+| 原始数据 source inventory | Draft | [原始数据源清单](requirements/raw-data-source-inventory.md)；证券主数据与公司行为的获取渠道未闭合 |
 | 监管与行业数据契约 | 未建立 | 规划中的 `requirements/regulatory-data-contracts.md` |
 | 合成数据契约 | 未建立 | 规划中的 `requirements/data-generation-specification.md` |
 | 验证与对账规范 | 未建立 | 规划中的 `requirements/validation-and-reconciliation-specification.md` |
 | 数据规模模型 | Draft，只有容量假设 | [容量基线](data-volume-baseline.md) 尚缺 velocity、freshness、访问模式、并发和 RPO/RTO |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
-| 物理拓扑与组件落位 | Proposed | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md) |
+| 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
 | 完整技术选型评估 | 尚不具备执行入口 | 可先设计评估范围；执行依赖 BO baseline、source inventory 和 workload envelope |
 | 选型 probe | 未开始 | 进入 Phase 0B 后按风险触发 |

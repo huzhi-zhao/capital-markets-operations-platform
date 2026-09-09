@@ -1,0 +1,101 @@
+<mxfile host="app.diagrams.net" modified="2026-09-09T00:00:00.000Z" agent="CMOP" version="24.7.17">
+  <diagram id="bo-loop" name="BO 收敛循环">
+    <mxGraphModel dx="1100" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="BO 收敛循环：假设 · 取证 · 修正，冻结之后才做全量回填" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#111827;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="700" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1" value="1 提出 BO 假设&#10;先说清楚谁的什么问题，&#10;允许并列多个候选" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="90" width="250" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s2" value="2 取证：规则与来源&#10;监管文档、行业报文标准、业务不变量；&#10;既有数据源只做轻量画像，不做全量" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="790" y="230" width="290" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s3" value="3 修正 BO&#10;砍掉取证不支持的候选，&#10;重排主 BO 与支持 BO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="790" y="420" width="290" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s4" value="4 定 BQ 与答案形态&#10;疑问句 + 答案的字段、粒度、&#10;口径与可追溯层级" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="560" width="290" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s5" value="5 小样本端到端探针&#10;按契约生成一小批数据，&#10;实际跑通一次问答链路" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="420" width="290" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gate" value="6 门禁判定&#10;公开规则覆盖度 · 来源可行性&#10;目标规模 · 硬件上限&#10;端到端验收故事" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#111827;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="180" width="270" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="freeze" value="冻结 BO 基线&#10;主 BO 与支持 BO 定名 · 记录被否决的候选&#10;固定成功度量与范围边界" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="690" width="330" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="after" value="冻结之后才开始&#10;全量 Bronze 回填 · 正式建模与管道 · 用实测替换规划假设" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3F4F6;strokeColor=#6B7280;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="480" y="690" width="360" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="s1" target="s2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0284C7;strokeWidth=2;endArrow=block;" edge="1" parent="1" source="s2" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2563EB;strokeWidth=2;endArrow=block;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="s3" target="s4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l4" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#D97706;strokeWidth=2;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="s4" target="s5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l5" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#D97706;strokeWidth=2;endArrow=block;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="s5" target="gate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l6" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#DC2626;strokeWidth=2;dashed=1;endArrow=block;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gate" target="s1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="225" y="130" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l6l" value="不通过：回到假设层重来" style="edgeLabel;html=1;fontSize=11;fontColor=#DC2626;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="l6">
+          <mxGeometry x="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="l7" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#DC2626;strokeWidth=2;dashed=1;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gate" target="s3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="400" y="275" /><mxPoint x="400" y="460" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l7l" value="局部不足：只补取证与修正" style="edgeLabel;html=1;fontSize=11;fontColor=#DC2626;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="l7">
+          <mxGeometry x="0" relative="1" as="geometry"><mxPoint as="offset" y="-14" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="l8" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#16A34A;strokeWidth=3;endArrow=block;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gate" target="freeze">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="40" y="275" /><mxPoint x="40" y="730" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l8l" value="全部通过" style="edgeLabel;html=1;fontSize=11;fontStyle=1;fontColor=#16A34A;labelBackgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="l8">
+          <mxGeometry x="0" relative="1" as="geometry"><mxPoint as="offset" /></mxGeometry>
+        </mxCell>
+
+        <mxCell id="l9" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#16A34A;strokeWidth=3;endArrow=block;" edge="1" parent="1" source="freeze" target="after">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note1" value="CMOP 特殊之处：数据是合成的。第 2 步找的是规则而不是现成数据源，&#10;第 5 步的样本由生成器按契约产出，用来反过来检验 BQ 能否被回答。" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9CA3AF;dashed=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="440" y="230" width="290" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note2" value="反模式：在 BO 冻结前做全量回填。&#10;那等于用最贵的动作去验证最不确定的假设。" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;dashed=1;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="880" y="690" width="270" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
