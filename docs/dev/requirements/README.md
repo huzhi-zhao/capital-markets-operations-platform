@@ -30,7 +30,7 @@
 | [business-objectives.md](business-objectives.md) | BO/BQ、业务口径、优先级与验收标准；当前为 Draft |
 | [raw-data-source-inventory.md](raw-data-source-inventory.md) | 原始数据源分类、获取方式、格式、到达方式、质量风险与敏感度；当前为 Draft |
 | [regulatory-data-contracts.md](regulatory-data-contracts.md) | 公开监管与行业标准推导出的 schema、代码表和校验规则；当前为骨架 Draft |
-| `data-generation-specification.md` | 合成事实数据的统计特征、业务不变量与脏数据契约 |
+| [data-generation-specification.md](data-generation-specification.md) | 合成事实数据的统计特征、业务不变量与脏数据契约；当前为 Draft，公司行为部分已由实测支撑 |
 | `validation-and-reconciliation-specification.md` | 对账口径、可重跑验证、故障注入与验收门禁 |
 
 BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文件”。只有内容拥有独立的
@@ -42,3 +42,4 @@ BO/BQ 使用稳定 ID 在文档内部管理，不机械地“一条 BQ 一篇文
 - [业务目标](business-objectives.md)：候选主 BO、支持性 BO、BQ 与验收方向。
 - [原始数据源清单](raw-data-source-inventory.md)：合成、真实与推导三类数据源及其获取方式，含取证记录。
 - [监管与行业数据契约](regulatory-data-contracts.md)：FIX、ISO 20022、FINTRAC 的最小子集与出处。
+- [合成数据生成规范](data-generation-specification.md)：可复现性契约、标的维度、公司行为实测分布与脏数据契约。

@@ -69,8 +69,11 @@
   concurrency, retention, RPO/RTO, network limits, and operational constraints. Written as the
   workload envelope in workload-baseline.md section 5, and renamed that file from
   data-volume-baseline.md to match its content.
-- [ ] Draft the synthetic-data generation contract: distributions, invariants, dirty-data cases, and
-  reproducibility requirements.
+- [x] Draft the synthetic-data generation contract: reproducibility, instrument dimension, measured
+  corporate-action distributions, and the dirty-data contract. The trade-lifecycle distributions and
+  three of the invariants stay blank until the FIX field evidence lands.
+- [ ] Fill the trade-lifecycle distributions and the FIX-dependent invariants in the generation spec
+  once the field tables are verified.
 - [ ] Draft the validation and reconciliation specification with measurable acceptance gates.
 
 ## Next: Enter Phase 0B
