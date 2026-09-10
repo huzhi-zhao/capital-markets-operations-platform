@@ -87,14 +87,24 @@ from any message specification, so no amount of further message reading changes 
 handles keyed rewrites of historical partitions.
 
 - [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
-  settlement and cash message families, applying the matrix and frozen-lifecycle method that batch one
-  established.
-- [ ] Confirm or replace the five proposed L-1 distribution parameters in generation spec section 6.2.
-  Two carry real consequences: the quantity split must not round to a zero fill or the derived quantity
-  fields stop reconciling, and fill prices must come from the same series used for valuation or
-  reconciliation R1 carries a permanent difference that has nothing to do with the pipeline.
-- [ ] Decide whether the generator needs accurate name-change dates. If so, they must be recovered from
-  the filings themselves, which is separate work.
+  settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
+  Blocked on the specification volumes themselves, which are not on this machine; batch one's citations
+  are by volume and page and cannot be reproduced from secondary sources.
+- [x] Settle the five L-1 distribution parameters. Adopted, with the scalars marked openly as arbitrary:
+  what is justified is the constraints and the shape of each distribution, not the specific numbers,
+  which are placeholders to be revisited once Phase 1 measures row width. Order size and fill count
+  jointly drive rows per instrument-day, so changing either is cheap in itself but forces the capacity
+  estimate to be redone.
+- [x] Decide whether the generator needs accurate name-change dates. It does not, for the same reason
+  prices are synthetic: a real date on a synthetic instrument is no truer than a generated one. What
+  the extraction contributes is counts and ordering, which set the length distribution of the dimension
+  version chains, and that is the part under test.
+- [x] Decide how name changes are placed in time. Anchored to corporate actions rather than uniform,
+  because clustering produces short version intervals and same-day changes, exactly where the
+  no-overlap-no-gap invariant breaks, and because it puts restatement and dimension change in the same
+  batch, which is the hardest case to reconcile.
+- [ ] Choose the anchor window width and the share of name changes that anchor rather than falling back
+  to uniform sampling. These set the difficulty of the test, not its correctness.
 - [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
   is confirmed and needs no revision.
 - [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
