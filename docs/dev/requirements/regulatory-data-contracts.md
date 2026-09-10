@@ -243,22 +243,32 @@ L-1 要求至少两笔部分成交，再以一笔末次成交结束（即至少�
 维度,而 A-1 需要一组可分配的账户,并且账户本身也需要版本化——账户会开立、关闭、改名、并户,
 与标的维度同类。**这是 A-1 带出来的新工作,不在原计划内**,已记入该文档未决项。
 
-### 3A.2 报文类型：候选，待核对
+### 3A.2 报文类型与定位
 
-以下 `MsgType` 取值来自记忆，**必须逐一核对，错一个整张矩阵的列就是错的**。
+**卷次已确认：Volume 5 “FIX Application Messages: Post-Trade”。** 该卷开篇将后台报文定义为
+"typically communicated after the placement and successful execution of an order and prior to
+settlement"，并分为七类，其中 ALLOCATION 与 CONFIRMATION 是第一、第二类。
 
-| MsgType 候选 | 名称 | 在 A-1 中的角色 | 核对状态 |
+以下页码取自 Volume 5 目录（`V5` 即该卷 PDF 页码），**报文名称已由目录证实，`MsgType`
+标签值仍待从各报文定义页核对**：
+
+| 报文 | 页码 | 在 A-1 中的角色 | MsgType |
 |---|---|---|---|
-| J | Allocation Instruction | 发起分配 | 待核对 |
-| P | Allocation Instruction Ack | 受理或拒绝 | 待核对 |
-| AS | Allocation Report | 分配结果回报 | 待核对，是否 4.4 引入需确认 |
-| AT | Allocation Report Ack | 回报确认 | 待核对 |
-| AK | Confirmation | 逐账户确认 | 待核对 |
-| AU | Confirmation Ack | 确认的应答 | 待核对 |
+| Allocation Instruction | V5 p. 12 | 发起分配 | 待核对 |
+| Allocation Instruction Ack | V5 p. 21 | 受理或拒绝 | 待核对 |
+| Allocation Report（aka Allocation Claim） | V5 p. 23 | 分配结果回报 | 待核对 |
+| Allocation Report Ack（aka Allocation Claim Ack） | V5 p. 31 | 回报确认 | 待核对 |
+| Confirmation | V5 p. 47 | 逐账户确认 | 待核对 |
+| Confirmation Ack（aka Affirmation） | V5 p. 52 | 确认的应答 | 待核对 |
+| Confirmation Request | V5 p. 53 | 索取确认 | 待核对 |
 
-**同时要回答一个版本问题**：§3.1 记录了"4.4 是最早携带确认与分配语义的版本"，但当时只核对
-了订单生命周期，该断言仍标注为待核对。第二批正是核对它的场合。**若断言不成立，版本决定要
-重新审视，不能悄悄放过。**
+**另有两处现成的流程与拒绝场景可直接对照**：分配的示例流程与拒绝场景在 V5 pp. 33–38，
+确认的示例用法与被拒确认在 V5 pp. 54–55。**填 §3A.5 状态机与 §3A.8 场景时应先读这两处**，
+它们是规范自己给出的流程，比从字段表反推可靠。
+
+**版本断言的进展。** §3.1 记录的"4.4 是最早携带确认与分配语义的版本"，其前半已证实：
+Confirmation 在 4.4 中是独立的报文类别，见 V5 pp. 45–55。**"最早"这半仍未证**，需要与 4.2
+对照才能结清，不得因为前半成立就整条划掉。
 
 ### 3A.3 字段矩阵：列已定，行待填
 
@@ -383,6 +393,9 @@ L-1 要求至少两笔部分成交，再以一笔末次成交结束（即至少�
 
 | 标准 | 版本 | 出处 | 获取日期 |
 |---|---|---|---|
-| FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，Volume 6 字段枚举 | 2026-09-09 |
+| FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)，Vol. 1–7 加勘误单，7.5 MB；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，**Volume 5 分配与确认**，Volume 6 字段枚举 | 2026-09-09 初次，2026-09-10 重新取得 |
+
+**本地副本**：`~/Downloads/fix-4-4-spec/`，文件名形如 `fix-44_VOL-5_w_Errata_20030618.pdf`。
+**不入库**：规范文本属第三方版权材料，仓库只保留引用，不保留 PDF。
 | ISO 20022 | | | |
 | FINTRAC | | | |

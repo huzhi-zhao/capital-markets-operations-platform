@@ -88,10 +88,9 @@ handles keyed rewrites of historical partitions.
 
 - [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
   settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
-  Blocked on the specification volumes themselves, which are not on this machine; batch one's citations
-  are by volume and page and cannot be reproduced from secondary sources. The scaffold is ready: message
-  table, field matrix, conditional and state-machine sections, candidate invariants and the scenario
-  list are all in place with the cells left empty.
+  Unblocked: all seven volumes plus the itemised errata are downloaded locally, outside the repository
+  since the specification text is third-party material. Allocation and confirmation are in Volume 5,
+  post-trade, and the page anchors for every message are recorded.
 - [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
@@ -99,9 +98,10 @@ handles keyed rewrites of historical partitions.
 - [ ] Add an account dimension to the generation spec. It does not exist, A-1 needs one, and accounts
   open, close, rename and merge, so it needs the same version chaining the instrument dimension has.
   This is new work that A-1 surfaced rather than something already planned.
-- [ ] Settle the claim that 4.4 is the earliest version carrying allocation and confirmation semantics.
-  It was recorded when only the order lifecycle had been checked and is still marked unverified. If it
-  fails, the version decision has to be reopened rather than quietly kept.
+- [ ] Settle the remaining half of the version claim. That 4.4 carries confirmation semantics is now
+  confirmed, since confirmation is its own message category in the post-trade volume. That 4.4 is the
+  earliest to do so still needs a comparison against 4.2, and the first half being true is not grounds
+  for striking the whole line.
 - [x] Settle the five L-1 distribution parameters. Adopted, with the scalars marked openly as arbitrary:
   what is justified is the constraints and the shape of each distribution, not the specific numbers,
   which are placeholders to be revisited once Phase 1 measures row width. Order size and fill count
