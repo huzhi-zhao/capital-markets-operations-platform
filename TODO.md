@@ -90,7 +90,8 @@ handles keyed rewrites of historical partitions.
   settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
   Allocation instruction, allocation instruction acknowledgement, confirmation, confirmation
   acknowledgement, confirmation request, allocation report and allocation report acknowledgement are
-  all verified against Volume 5, and A-1 and C-1 are frozen. The ISO 20022 families remain.
+  all verified against Volume 5, and A-1 and C-1 are frozen. The securities settlement family is
+  verified from the normative schemas and S-1 is structurally settled. The cash families remain.
 - [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
@@ -226,3 +227,16 @@ handles keyed rewrites of historical partitions.
 - [ ] Validate one late confirmation and one correction or cancellation end to end.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
   runtime, memory, and storage results.
+
+- [x] Verify the ISO 20022 securities settlement family. Identifiers, versions, element cardinality and
+  enumerations for the instruction, status advice and confirmation come from the registration
+  authority's own schemas, which are normative. S-1 is structurally settled and continues from C-1's
+  affirmed confirmations.
+- [ ] Read the Message Definition Report for the Settlement and Reconciliation message set. The schemas
+  give cardinality and enumerations but not usage rules, so S-1's structure is settled while its field
+  choices are not. Until this is read, S-1 is not frozen.
+- [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
+  here: an instruction that names no security passes the schema, because the security identification
+  branch is mandatory while all three of its children are optional.
+- [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
+  introduces both and the two-level client and account structure has neither.
