@@ -126,12 +126,14 @@ handles keyed rewrites of historical partitions.
 - [x] Locate and inventory the four-core instance. It exists and matches its stated specification, but
   it is not idle: 26 containers of the sibling project and personal services occupy 16 GB of memory and
   143 GB of disk, leaving roughly 7.9 GB and 32 GB for this project.
-- [ ] Resolve the Gold storage blocker. Its budget is 40 GB and only 32 GB remains, before the catalog
-  backend, logs and Iceberg metadata. Compress the grain or retention, extend block storage, or move
-  Gold to the home side and keep only the serving layer on OCI.
-- [ ] Turn the reuse question into a decision. Reusing the running orchestrator, query engine and
-  streaming components is no longer a preference but the only thing that fits. The catalog stays
-  separate regardless, since the running Hive metastore belongs to the sibling project.
+- [x] Resolve the storage and memory question. The owner reports both are reclaimable, over 100 GB of
+  disk and enough memory by removing unused containers and relocating two personal services, provided
+  the architecture does not change. Recorded as a plan rather than a measurement, to be re-measured
+  before deployment.
+- [ ] Decide reuse versus independent deployment. With capacity reclaimable this is a trade-off again
+  rather than a forced outcome. Options, arguments and a leaning are written up; the leaning is to
+  reuse orchestration for lineage continuity while keeping query and compute independent for version
+  autonomy and blast-radius isolation. Promote the outcome into the topology ADR.
 - [ ] Add a host block for the four-core instance to the SSH configuration so it is addressable by name.
 - [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
   install, so the figures come from real running instances. The default combination occupies about
