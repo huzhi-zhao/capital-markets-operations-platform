@@ -83,9 +83,10 @@
 - [x] Draft the synthetic-data generation contract: reproducibility, instrument dimension, measured
   corporate-action distributions, and the dirty-data contract. The trade-lifecycle distributions and
   three of the invariants stay blank until the FIX field evidence lands.
-- [ ] Decide the five L-1 distribution parameters left open in generation spec section 6.2: fills per
-  order, OrderQty, quantity split across fills, price dispersion, and timestamp spacing. These need a
-  decision, not further evidence.
+- [ ] Confirm or replace the five proposed L-1 distribution parameters in generation spec section 6.2.
+  Two of them carry real consequences: the quantity split must not round to a zero fill or the derived
+  quantity fields stop reconciling, and fill prices must come from the same series used for valuation
+  or reconciliation R1 shows a permanent difference that has nothing to do with the pipeline.
 - [ ] Read FIX 4.4 batch two, the allocation and confirmation messages, applying the same matrix and
   frozen-lifecycle method that batch one established.
 - [x] Draft the validation and reconciliation specification: four reconciliation pairs, per-pair date
