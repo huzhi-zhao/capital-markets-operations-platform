@@ -281,6 +281,11 @@ L-1 的 New、Partially Filled 与 Filled 回报上成立，不得推广到 Canc
 
 ## 8. 未决项
 
+- **账户维度尚不存在。** §3 只有标的维度，而
+  [监管与行业数据契约](regulatory-data-contracts.md) §3A.1 冻结的 A-1 需要一组可分配账户，
+  且账户会开立、关闭、改名、并户，与标的维度同样需要 SCD Type 2 版本化。**这是 A-1 带出的
+  新工作，不在原计划内。**
+
 - 更名锚定窗口的宽度，以及锚定比例与退回均匀取样的比例，见 §6A。
 
 - 注入脏数据的类别、比例与预期结果，L-1 部分见[验证与对账规范](validation-and-reconciliation-specification.md) §6。

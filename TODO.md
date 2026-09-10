@@ -92,9 +92,13 @@ handles keyed rewrites of historical partitions.
   are by volume and page and cannot be reproduced from secondary sources. The scaffold is ready: message
   table, field matrix, conditional and state-machine sections, candidate invariants and the scenario
   list are all in place with the cells left empty.
-- [ ] Freeze A-1 as batch two's equivalent of L-1: allocate the order L-1 already filled across several
-  accounts until the allocation is accepted, taking L-1's end state as input rather than inventing a
-  new order, so the evidenced chain stays continuous instead of becoming disconnected fragments.
+- [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
+  contract: order identifier, filled quantity and average price are inherited, never regenerated,
+  because regenerating any of them puts two unrelated order identities in Bronze and breaks the
+  per-event traceability the project claims. Message-level values still wait on the volumes.
+- [ ] Add an account dimension to the generation spec. It does not exist, A-1 needs one, and accounts
+  open, close, rename and merge, so it needs the same version chaining the instrument dimension has.
+  This is new work that A-1 surfaced rather than something already planned.
 - [ ] Settle the claim that 4.4 is the earliest version carrying allocation and confirmation semantics.
   It was recorded when only the order lifecycle had been checked and is still marked unverified. If it
   fails, the version decision has to be reopened rather than quietly kept.
