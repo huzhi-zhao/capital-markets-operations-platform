@@ -76,6 +76,54 @@ ADR。
 因此 0B-1 的第一个动作不是选对象存储,而是给出一份 OCI 常驻组件的实测内存清单,并据此决定
 哪些候选在进入性能评测之前就已经出局。
 
+### 2.4 已核实：独立 REST Catalog 确实免除了对象存储的条件写入要求
+
+**结论成立，但风险是转移而不是消失。** 核实日期 2026-09-09，证据取自规范本身，不采信博客与
+厂商材料，符合 §6 的证据要求。
+
+**证据一，表规范对文件系统的要求只有三条。**
+[Iceberg 表规范](https://github.com/apache/iceberg/blob/main/format/spec.md)写明 Iceberg
+只要求文件系统支持 in-place write、seekable reads、deletes 三种操作，并明确 "Tables do not
+require rename"，唯一例外是 "except for tables that use atomic rename to implement the
+commit operation for new metadata files"。**条件写入与原子重命名都不是规范级要求，而是某一类
+提交实现的要求。**
+
+**证据二，隔离性的基础是元数据指针的原子交换。** 同一份规范称 "atomic swap of one table
+metadata file for another provides the basis for serializable isolation"，写入方通过
+"swapping the table's metadata file pointer from the base version to the new version" 提交，
+冲突时 "the writer must retry the update based on the new current version"。**规范没有规定这个
+交换由谁执行。**
+
+**证据三，REST catalog 把交换执行在服务端。**
+[REST Catalog OpenAPI](https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml)
+的 UpdateTable 请求携带一组 requirements，定义为 "assertions that will be validated before
+attempting to make and commit changes"，例如 `assert-table-uuid` 与 `assert-ref-snapshot-id`；
+断言不成立时服务端返回 409 CommitFailedException，客户端可重试。**这就是 CAS，位置在 catalog
+服务端，不在对象存储。**
+
+三条合起来：本项目采用独立 REST Catalog，因此对象存储只需提供上述三种操作，不需要条件写入。
+
+#### 由此产生的三条后果
+
+**一、原子性搬进了 catalog 的后端存储，那里成了提交路径上的单点。** 它必须进入 §2.3 的 OCI
+常驻清单，也必须重新进入恢复讨论：[工作负载基线](../workload-baseline.md) §5.6 原本判定只有
+参考数据与别名映射不可替代，现在要重新判断 catalog 后端算不算第三项。它**理论上**可以从对象
+存储里的 metadata 文件重建，但重建过程本身没有验证过，**未验证的重建不能当作已有的恢复手段**。
+
+**二、必须在配置层禁止 filesystem 与 Hadoop catalog 路径。** 规范的例外条款正是这条：用原子
+重命名提交的表仍然需要重命名语义。任何一个作业被配成 filesystem catalog，就把重命名或条件
+写入的要求悄悄放了回来，**而且失败方式是并发下静默丢提交，不是报错**。这条要成为配置门禁，
+不能靠记得。
+
+**三、S3 兼容性的真实考点换了。** 不再是条件写入，而是 multipart upload。S3FileIO 使用渐进式
+分片并行上传，默认分片 32 MB、阈值为分片大小的 1.5 倍。Iceberg 的 AWS 文档只讨论原生 S3，
+**不讨论任何第三方兼容实现**，因此候选存储对 multipart 的支持程度必须自己测，拿不到任何背书。
+
+#### 对候选范围的影响
+
+**放宽。** 规范要求的三种操作每个 S3 兼容实现都具备，§2.1 的对象存储候选不因条件写入被淘汰。
+区分度转移到 multipart upload 行为与失败恢复上，正好落在 §4 第 3 条已经要求的轴上。
+
 ## 3. 评估深度与回滚成本挂钩
 
 **投入的评估深度必须与决策的回滚成本成正比。** 对一个改起来只需换配置的选择做 probe，是把
@@ -93,6 +141,7 @@ ADR。
 |---|---|---|
 | 表格式 | 高 | 换格式要重写全部 Bronze 与 Silver 数据 |
 | 对象存储 | 中 | 数据可原样搬，前提是 S3 兼容性成立 |
+| Catalog 后端存储 | 中 | 提交路径的单点，见 §2.4 |
 | Catalog 实现 | 中 | 元数据可重建，但全部表指针要迁移 |
 | 批计算引擎 | 中 | 换引擎要重写处理代码,数据不动 |
 | 交互查询引擎 | 低 | 只读 Gold,换掉不影响任何已写入数据 |
@@ -101,9 +150,9 @@ ADR。
 | 血缘 | 低 | 事件格式是 OpenLineage,消费端可换 |
 
 **相对初判改了两处。** 批计算引擎从"未列"补为中,因为 §2.2 把它变成了真实的开放选择,而换
-引擎意味着重写全部处理代码,这不是低成本。对象存储的 S3 兼容性风险等级下调:本项目使用独立
-REST Catalog,提交原子性由 catalog 承担,对象存储不需要提供条件写入。**这项必须先核实**,
-若成立,对象存储的候选范围会明显放宽。
+引擎意味着重写全部处理代码,这不是低成本。对象存储的 S3 兼容性风险等级下调,该判断已由 §2.4
+核实成立:提交原子性由 REST Catalog 承担,对象存储不需要条件写入,候选范围相应放宽,而头号
+兼容性问题改为 multipart upload。
 
 ## 4. 决策轴
 
@@ -145,7 +194,9 @@ REST Catalog,提交原子性由 catalog 承担,对象存储不需要提供条件
 ## 7. 未决项
 
 - OCI 常驻内存预算的实测结果，见 §2.3。**这是 0B-1 的第一个动作。**
-- 独立 REST Catalog 是否真的免除了对象存储的条件写入要求，见 §3。
+- Catalog 后端存储能否从对象存储中的 metadata 文件重建，以及重建耗时。§2.4 已确认它是提交
+  路径上的单点，但重建路径未验证。
+- 禁止 filesystem 与 Hadoop catalog 的配置门禁做成什么形式，见 §2.4。
 - DuckDB 或 Polars 的 Iceberg 写入成熟度，见 §2.2。
 - 各 probe 的时间盒长度。
 - W1 是否允许用缩小比例的数据代跑，以及缩放后结论的有效范围。

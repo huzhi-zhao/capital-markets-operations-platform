@@ -120,8 +120,18 @@ handles keyed rewrites of historical partitions.
   before any single-component benchmark, because it constrains orchestration, interactive query,
   streaming and lineage at once, and picking each one on its own merits only to find the total does not
   fit means discarding four rounds of evaluation.
-- [ ] Verify whether an independent REST catalog removes the conditional-write requirement on object
-  storage. If it does, the object-store candidate set widens materially.
+- [x] Verify whether an independent REST catalog removes the conditional-write requirement on object
+  storage. It does. The table specification requires only in-place write, seekable reads and deletes,
+  and states outright that tables do not require rename except where rename itself implements the
+  commit. The REST catalog performs the compare-and-swap server-side through its requirement
+  assertions. The candidate set widens, and the leading compatibility question becomes multipart
+  upload, which no vendor statement covers for third-party stores.
+- [ ] Decide the configuration gate that forbids filesystem and Hadoop catalogs. The specification's own
+  exception is exactly this case, and a single job configured that way silently reintroduces the rename
+  requirement, failing by dropping commits under concurrency rather than by erroring.
+- [ ] Establish whether the REST catalog backing store can be rebuilt from the metadata files in object
+  storage, and how long that takes. It now sits on the commit path as a single point, and an unverified
+  rebuild is an assumption rather than a recovery method.
 - [ ] Verify DuckDB and Polars Iceberg write maturity, not read. Read support is long settled; write is
   the precondition for the keyed-merge and restatement workloads. A negative result makes Spark the
   evidence-backed choice rather than the default one.
