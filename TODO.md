@@ -89,8 +89,8 @@ handles keyed rewrites of historical partitions.
 - [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
   settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
   Allocation instruction, allocation instruction acknowledgement, confirmation, confirmation
-  acknowledgement and confirmation request are verified against Volume 5, and A-1 and C-1 are frozen.
-  Allocation report, allocation report acknowledgement and the ISO 20022 families remain.
+  acknowledgement, confirmation request, allocation report and allocation report acknowledgement are
+  all verified against Volume 5, and A-1 and C-1 are frozen. The ISO 20022 families remain.
 - [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
@@ -110,9 +110,13 @@ handles keyed rewrites of historical partitions.
   records the specification wording and the conditional table records the project's reading separately.
   A third scaffold invariant proved to be the same class of error as the previous two, treating an
   equation that holds in a narrow case as universal.
-- [ ] Verify the allocation report and its acknowledgement, the last two unchecked messages in batch two.
-- [ ] Read the specification's own example flows and rejection scenarios for allocation, Volume 5
-  pages 33 to 38. The confirmation equivalents at pages 54 to 56 are done.
+- [x] Verify the allocation report and its acknowledgement, the last two unchecked messages in batch two.
+  They look like the allocation instruction but differ in four ways, including one trap where the
+  acknowledgement requires an identifier the report itself may omit. Neither has a scenario in this
+  project, so they are filed as A-5 at low priority rather than pushed into A-1.
+- [x] Read the specification's own example flows and rejection scenarios for allocation, Volume 5
+  pages 33 to 38. This reversed A-1's step count: every one of the six flows lists the interim
+  received acknowledgement as its own row, so A-1 goes from two steps to three.
 - [ ] Add a confirmation-layer assertion to the validation spec: at least one confirmation per allocated
   account, exactly one within C-1's narrow conditions. The applicability condition has to ship with it,
   or it starts producing false alarms as soon as C-2 lands.
