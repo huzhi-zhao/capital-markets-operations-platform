@@ -137,12 +137,17 @@ Kafka 7.6.0、Superset、Hive Metastore 与 Postgres 15。**复用的对象是�
 3. **可复现性。** 本项目的主张是可重跑、可追溯。运行在一套会被另一个项目随时改动的环境上，
    "同种子同结果"就少了一层保障。
 
-**倾向：编排复用，计算与查询独立。** 编排复用换来完整血缘且风险低，Airflow 只提交与轮询，
-不承载重负载。Trino 与 Spark 独立部署，换来版本自主与爆炸半径隔离，代价是多两个常驻进程，
-而容量已确认可回收，付得起。Catalog 独立不受影响，理由是命名空间隔离，见 §7。
+**已定案：OCI 侧全面复用，Catalog 除外。** 见
+[ADR 0003 的 2026-09-09 修订](adr/0003-hybrid-deployment-topology-and-component-placement.md)。
 
-**本节是待决项，不是决定。** 定案后应进入 [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)，
-因为它改变的是组件落位。
+决定性的理由不是容量，而是**重活已经不在 OCI**：首次回填与全量重算归 MBP，见 §4.1，OCI 侧
+Spark 绝大多数时间空闲，为一个长期空闲的角色养第二套部署不划算。爆炸半径的代价被显式接受，
+接受的是可用性风险，不是正确性风险。
+
+**复用不是零成本，三项已查实**：那台 Spark 完全没有 Iceberg，需要加 runtime；既有 Trino 的
+iceberg catalog 指向 Hive Metastore，CMOP 要在同一个 Trino 里另加独立 catalog，新增通常需
+重启；Spark 镜像跑在 JDK 11，[ADR 0004](adr/0004-language-and-runtime-boundaries.md) 的
+JDK 选择因此被约束。
 
 ## 5. 查询与计算路径
 
@@ -213,7 +218,9 @@ Airflow task 不得在 OCI 进程内枚举 Bronze/Silver 对象。需要宽扫�
 - 日增量持续产生小文件，compaction 必须是独立排期的周期性作业，不能依赖顺带完成。
 - Gold 由 Spark 构建，Trino 主要只读服务。
 - Kafka/Flink 只承载窄窗口演示或回放，不承载多年历史生成。
-- CMOP 使用独立 REST Catalog，不与 UOIP 共用 Hive Metastore。
+- CMOP 使用独立 REST Catalog，不与 UOIP 共用 Hive Metastore。实测确认既有 Trino 已有一个
+  指向 Hive Metastore 的 iceberg catalog；CMOP 在同一个 Trino 内新增独立 catalog，两个项目
+  的表因此互不可见。
 
 ## 8. 容量与资源约束
 
@@ -252,7 +259,6 @@ Airflow task 不得在 OCI 进程内枚举 Bronze/Silver 对象。需要宽扫�
 - Gold 输出边界（主 BO 的暂定排序见 [业务目标](requirements/business-objectives.md)）。
 - MBP 规格和实测批处理能力。
 - 对象存储最终实现及其 S3/Iceberg 兼容性。
-- Airflow 是否复用 UOIP 既有实例。选项、利弊与倾向已写在 §4.3，等定案。
 - Snapshot、compaction、小文件与 Catalog 维护策略，含 compaction 的执行节点与周期。
 - Gold 写入 OCI 的提交、回滚和重试协议。
 - 局域网内 Silver 逐笔下钻的查询门禁形式。对外路径已由 §5.1 排除，此项只剩工程排查场景，

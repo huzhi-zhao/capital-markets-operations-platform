@@ -130,10 +130,18 @@ handles keyed rewrites of historical partitions.
   disk and enough memory by removing unused containers and relocating two personal services, provided
   the architecture does not change. Recorded as a plan rather than a measurement, to be re-measured
   before deployment.
-- [ ] Decide reuse versus independent deployment. With capacity reclaimable this is a trade-off again
-  rather than a forced outcome. Options, arguments and a leaning are written up; the leaning is to
-  reuse orchestration for lineage continuity while keeping query and compute independent for version
-  autonomy and blast-radius isolation. Promote the outcome into the topology ADR.
+- [x] Decide reuse versus independent deployment. Full reuse on the OCI side, catalog excepted,
+  recorded as an amendment to the topology ADR. The deciding argument is that the heavy work already
+  sits on the laptop, so the OCI engine is idle most of the time and a second deployment earns nothing.
+  Blast radius is accepted explicitly, as availability risk only.
+- [ ] Add the Iceberg runtime to the shared Spark, matching 3.5.1 and Scala 2.12. It currently has no
+  Iceberg support at all, and this modifies a container the sibling project uses.
+- [ ] Add a separate Trino catalog for this project rather than altering the existing one, which points
+  at the sibling project's Hive metastore. Two projects then share one engine while their tables stay
+  invisible to each other. Adding a catalog generally needs a restart, which interrupts the sibling
+  project, so it needs a window.
+- [ ] Gather the JDK and compatibility evidence against the versions actually running, not the latest
+  releases. The shared Spark image runs JDK 11, which constrains the runtime boundaries ADR.
 - [ ] Add a host block for the four-core instance to the SSH configuration so it is addressable by name.
 - [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
   install, so the figures come from real running instances. The default combination occupies about
