@@ -63,7 +63,13 @@
 - [x] Decide the drill-down boundary for Silver. Answer: excluded from external scope. The difference
   explanation chain is materialized into Gold during the batch, the interactive path never crosses the
   tunnel, and per-event Silver drill-down stays a LAN-only engineering capability.
-- [ ] Fill the regulatory data-contract skeleton, starting with the FIX order lifecycle batch.
+- [x] Read the FIX 4.4 field tables and state machine, and upgrade the candidate field list into a
+  contract matrix organised by message and scenario, with a frozen minimal lifecycle L-1.
+- [ ] Fill the contract matrix: per-message obligation levels, the conditional-required conditions,
+  the state transition table including illegal transitions, and L-1's per-step values, each with a
+  volume and section citation.
+- [ ] Answer whether CumQty plus LeavesQty equals OrderQty unconditionally or only while the order is
+  live, and fill the applicability column for all three invariants.
 - [x] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story. Three of five criteria pass, two lack evidence rather than failing,
   and the ranking needs no change. See business-objectives.md section 5.1.
