@@ -203,29 +203,47 @@ attempting to make and commit changes"，例如 `assert-table-uuid` 与 `assert-
 部署组件测 RSS 与之冲突，因此先做不触碰边界的纸面筛。纸面筛的结果反过来构成了放宽边界的
 理由，边界已于 2026-09-09 为一次性 probe 有界放宽，**P-1b 现已解除阻塞**。
 
-### 7.1 P-1a 纸面筛，已执行
+### 7.1 P-1a 纸面筛，已完成
 
-只用各项目自己发布的内存要求做加法，目的不是得到准确数字，而是回答"是否已经装不下"。
+只用各项目自己发布的内存口径做加法。目的不是得到准确数字，而是回答两个问题：默认组合是否
+已经装不下，以及哪些候选可以在不部署的前提下就被排除。
 
-| 组件 | 官方口径 | 出处 |
-|---|---|---|
-| Trino | 部署文档给出的起步值是 `-Xmx16G`；Kubernetes 部署中 coordinator 与 worker 各自典型 8 GB | [Deploying Trino](https://trino.io/docs/current/installation/deployment.html)、[Trino on Kubernetes](https://trino.io/docs/current/installation/kubernetes.html) |
-| Airflow | 至少 4 GB，建议 8 GB | [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html) |
-| Kafka、Flink、Superset、Marquez 及其 Postgres、Catalog 后端 | 待查 | — |
+| 组件 | 官方口径 | 计入 | 出处 |
+|---|---|---|---|
+| Trino | 部署文档起步值 `-Xmx16G`；Kubernetes 部署中 coordinator 与 worker 各自典型 8 GB | 8 GB | [Deploying Trino](https://trino.io/docs/current/installation/deployment.html)、[Trino on Kubernetes](https://trino.io/docs/current/installation/kubernetes.html) |
+| Airflow | 至少 4 GB，建议 8 GB | 4 GB | [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html) |
+| Flink | 默认 `jobmanager.memory.process.size` 1600 MB、`taskmanager.memory.process.size` 1728 MB | 3.3 GB | [Set up JobManager Memory](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/memory/mem_setup_jobmanager/)、[Set up TaskManager Memory](https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/memory/mem_setup_tm/) |
+| Kafka | **不给固定值**，见下 | 见下 | [Hardware and OS](https://kafka.apache.org/43/operations/hardware-and-os/) |
+| Superset、Marquez 及各自的 Postgres、Catalog 后端 | 未查到官方最小值 | 未计入 | — |
 
-**结论已经可以下了，不需要补齐其余行。** 仅 Trino 取 Kubernetes 的典型 8 GB、Airflow 取
-最低 4 GB，两项就占掉 24 GB 的一半，而这还没算流式、BI、血缘、两个数据库和操作系统本身。
+**已计入的四项合计约 15.3 GB。** §7.2 的阈值是 24 GB 的 80%，即 19.2 GB。**剩下不到 4 GB**
+要装下 Superset、Marquez、两个 Postgres、catalog 后端和操作系统本身。装不下，而且这个结论
+是在把每一项都取其官方口径下限、并把未查到的几项按零计入之后得出的。
 
-**因此 §8 的约 21 GB 预算不成立。** 它不是偏乐观，而是没有把各组件自己声明的要求加起来过。
-这条现在就要写回平台架构，不必等实测。
+#### Kafka 那一行不是缺数据，是判定
 
-**同时得出一个方向性判断**：候选里最省的组合值得优先评估，而不是把 Trino 加 Airflow 加
-Kafka 加 Flink 当成默认起点再想办法塞进去。§2.1 里的 cron 加脚本、DuckDB、以及把
-OpenLineage 事件直接落表这三个"轻"候选，从此不是陪跑项。
+Kafka 文档不给固定堆大小，它给的是方法：按写入吞吐乘以 30 秒的缓冲量估算，并明确强调依赖
+操作系统的 page cache，主张让空闲内存被自动利用、由操作系统做后台刷盘。
+
+**也就是说 Kafka 的要求不是"分给我多少内存"，而是"给操作系统留大量空闲内存"。** 一台被填到
+80% 的机器恰恰没有空闲内存可留。**这不是紧张，是矛盾**：把 Kafka 塞进这套常驻组合，等于在
+它唯一明确要求的那项资源上把它饿死。这条不需要实测，实测也只会复现它。
+
+#### 由此得出的三条
+
+1. **默认组合已在纸面出局**，不需要部署来确认。§8 原先记的约 21 GB 预算随之作废。
+2. **候选顺序反转。** §2.1 里的 cron 加脚本、DuckDB、以及把 OpenLineage 事件直接落表，
+   不再是轻量替代品，而是唯一还站得住的一侧。重组件需要证明自己能进来，而不是反过来。
+3. **流式组件应重新审视其存在理由。** [平台架构](../platform-architecture.md) §7 已限定
+   Kafka 与 Flink 只承载窄窗口演示或回放。为一个演示用途接受一个与常驻内存预算直接冲突的
+   组件，代价与收益不成比例。是否改为按需启停、或彻底移出常驻集，应作为一个独立决定处理。
 
 ### 7.2 P-1b 实测，已解除阻塞
 
-- **输入**：每个候选组件的最小可用配置，逐个部署，不一次性全上。
+**范围已被 §7.1 大幅收窄。** 默认组合无需实测即已出局，因此 P-1b 不再遍历 §2.1 的全部候选。
+
+- **输入**：仅测两类——文档不给数字的组件（Superset、Marquez、catalog 后端、Kafka），
+  以及轻候选组合的整体占用。逐个部署，不一次性全上。
 - **测量**：空载 RSS，以及在 §5 的 W4 负载下的峰值 RSS；每个数字附版本、配置、日期。
 - **成功阈值**：一套完整组合的常驻峰值合计不超过 24 GB 的 80%，留出操作系统与突发余量。
 - **停止条件**：单个组件空载即超过 6 GB 时停止该候选，不再测其性能。

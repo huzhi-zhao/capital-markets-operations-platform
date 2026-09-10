@@ -116,22 +116,27 @@ handles keyed rewrites of historical partitions.
 - [x] Re-check the reversal-cost ranking. Batch compute moves to medium, because replacing the engine
   means rewriting all processing code. Object storage's S3 risk may be lower than assumed, since an
   independent REST catalog owns commit atomicity.
-- [x] Screen the OCI memory budget on paper, using each project's own published requirements. Trino at
-  the eight gigabytes typical of its Kubernetes deployment plus Airflow at its documented four gigabyte
-  minimum already consume half the box, before streaming, BI, lineage, two databases and the operating
-  system. The roughly twenty-one gigabyte estimate in the architecture document is withdrawn.
+- [x] Screen the OCI memory budget on paper against each project's own published figures. Trino,
+  Airflow and Flink at their documented minima total about 15.3 GB against a 19.2 GB ceiling, leaving
+  under 4 GB for BI, lineage, two databases, the catalog backend and the operating system. The default
+  stack is eliminated without deploying anything, and the twenty-one gigabyte estimate is withdrawn.
+- [x] Resolve the Kafka row. It is a judgement, not missing data. Kafka publishes no fixed heap size and
+  instead requires ample free memory for the operating system page cache, which a host filled to eighty
+  percent does not have. Placing it in the resident set contradicts its one explicit resource
+  requirement, and measurement would only reproduce that.
+- [ ] Decide whether Kafka and Flink move to on-demand start or leave the resident set entirely. They
+  carry only a narrow-window demonstration, which does not justify a component in direct conflict with
+  the memory budget.
 - [x] Decide whether the 2026 no-pipeline-components boundary is relaxed for disposable probes. It is,
   within four conditions recorded in the roadmap. The generator, the pipeline itself and the ordering
   of full backfill after the baseline freeze are untouched.
-- [ ] Take a read-only inventory of the OCI host before deploying anything: cores, total and free
-  memory, resident processes by size, and what already listens. The remaining budget cannot be computed
-  without knowing what the host already spends, and the sibling project may already reside there.
-  Blocked: the SSH key for both Oracle hosts is not loaded in the agent, so batch login is refused.
-- [ ] Confirm which Oracle host is the CMOP instance, and whether deploying disposable probe components
-  onto it is acceptable given whatever else already runs there.
-- [ ] Run probe P-1b once that boundary is settled: per-candidate idle and peak resident memory under
-  the interactive query workload, deployed one component at a time, stopping any candidate that exceeds
-  six gigabytes idle.
+- [ ] Take a read-only inventory of the OCI host once access works: cores, total and free memory, and
+  anything resident. The host is reported empty, so this is a baseline rather than a contention check.
+  Blocked: the SSH key shared by both Oracle hosts is not loaded in the agent, so batch login is
+  refused. Also confirm which of the two hosts is the CMOP instance.
+- [ ] Run probe P-1b, now narrowed by the completed paper screen. Measure only what documentation does
+  not answer, meaning Superset, Marquez, the catalog backend and Kafka, plus the light combination as a
+  whole. The default stack needs no measurement, having already failed on paper.
 - [ ] Re-rank the candidates so the lighter combinations are evaluated alongside the heavy ones rather
   than after them. The default stack is no longer the assumed starting point.
 - [x] Verify whether an independent REST catalog removes the conditional-write requirement on object
