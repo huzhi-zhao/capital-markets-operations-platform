@@ -185,8 +185,17 @@ Airflow task 不得在 OCI 进程内枚举 Bronze/Silver 对象。需要宽扫�
 目标总数据量、各层预算与测量计划见 [workload-baseline.md](workload-baseline.md)。
 当前 Gold 预算为 40 GB；超过预算首先视为粒度或保留策略信号，而不是直接扩盘理由。
 
-OCI 24 GB 需要同时容纳多个常驻组件，现有约 21 GB 的粗略预算缺少实际 RSS 与峰值测量，
-不能作为最终容量承诺。Airflow 是否复用、Kafka/Flink 是否同时常驻都需在实施前验证。
+**原先记的约 21 GB 粗略预算已被推翻。**
+[技术选型评估要求](requirements/technology-selection-evaluation.md) §7.1 用各项目自己发布的
+内存要求做了一次纸面筛：仅 Trino 按其 Kubernetes 部署的典型 8 GB、Airflow 按其文档的最低
+4 GB，两项就占掉 24 GB 的一半，而流式、BI、血缘、两个数据库与操作系统尚未计入。
+
+那份预算的问题不是偏乐观，**是从未把各组件声明的要求加起来过**。因此当前状态是：24 GB 能否
+容纳这套默认组合，答案倾向于否，实测待 §7.2 的 P-1b。
+
+直接后果是候选顺序要改。**不能再把 Trino 加 Airflow 加 Kafka 加 Flink 当作默认起点**，
+再想办法塞进 24 GB。较轻的候选，例如 cron 加脚本、DuckDB、以及把 OpenLineage 事件直接落表，
+必须与重组件同场评估。
 
 ## 9. 可观测性与治理
 

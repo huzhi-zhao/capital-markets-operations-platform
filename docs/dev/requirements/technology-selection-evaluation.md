@@ -191,9 +191,50 @@ attempting to make and commit changes"，例如 `assert-table-uuid` 与 `assert-
   [平台架构](../platform-architecture.md) §4。
 - 允许得出"两个候选没有可测量差异"的结论。此时按运维负担选，并把这个理由写进 ADR。
 
-## 7. 未决项
+## 7. Probe P-1：OCI 常驻内存预算
 
-- OCI 常驻内存预算的实测结果，见 §2.3。**这是 0B-1 的第一个动作。**
+按[立项与就绪度](../project-inception-and-readiness.md) §5，每个 probe 必须事先写明风险、
+输入、成功阈值与停止条件。本节是 P-1 的章程。
+
+**关联风险**：[平台架构](../platform-architecture.md) §8 记的约 21 GB 是粗略预算，缺实测。
+若真实占用超过 24 GB，编排、交互查询、流式、血缘四个决策同时失效。
+
+**为什么拆成两级**：[roadmap](../roadmap.md) 的 Phase 0 写明 2026 年不搭建管道组件。实际
+部署组件测 RSS 与这条边界冲突。因此 P-1 分为纸面筛与实测两级，**纸面筛不触碰该边界，现在
+即可执行**；实测需要先就边界作出决定。
+
+### 7.1 P-1a 纸面筛，已执行
+
+只用各项目自己发布的内存要求做加法，目的不是得到准确数字，而是回答"是否已经装不下"。
+
+| 组件 | 官方口径 | 出处 |
+|---|---|---|
+| Trino | 部署文档给出的起步值是 `-Xmx16G`；Kubernetes 部署中 coordinator 与 worker 各自典型 8 GB | [Deploying Trino](https://trino.io/docs/current/installation/deployment.html)、[Trino on Kubernetes](https://trino.io/docs/current/installation/kubernetes.html) |
+| Airflow | 至少 4 GB，建议 8 GB | [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html) |
+| Kafka、Flink、Superset、Marquez 及其 Postgres、Catalog 后端 | 待查 | — |
+
+**结论已经可以下了，不需要补齐其余行。** 仅 Trino 取 Kubernetes 的典型 8 GB、Airflow 取
+最低 4 GB，两项就占掉 24 GB 的一半，而这还没算流式、BI、血缘、两个数据库和操作系统本身。
+
+**因此 §8 的约 21 GB 预算不成立。** 它不是偏乐观，而是没有把各组件自己声明的要求加起来过。
+这条现在就要写回平台架构，不必等实测。
+
+**同时得出一个方向性判断**：候选里最省的组合值得优先评估，而不是把 Trino 加 Airflow 加
+Kafka 加 Flink 当成默认起点再想办法塞进去。§2.1 里的 cron 加脚本、DuckDB、以及把
+OpenLineage 事件直接落表这三个"轻"候选，从此不是陪跑项。
+
+### 7.2 P-1b 实测，待边界决定后执行
+
+- **输入**：每个候选组件的最小可用配置，逐个部署，不一次性全上。
+- **测量**：空载 RSS，以及在 §5 的 W4 负载下的峰值 RSS；每个数字附版本、配置、日期。
+- **成功阈值**：一套完整组合的常驻峰值合计不超过 24 GB 的 80%，留出操作系统与突发余量。
+- **停止条件**：单个组件空载即超过 6 GB 时停止该候选，不再测其性能。
+- **产物**：写回本文 §7.1 的表与[平台架构](../platform-architecture.md) §8。
+- **可丢弃**：部署产物一律视为一次性，不演变为 Phase 1 的部署基线。
+
+## 8. 未决项
+
+- P-1b 实测能否在 2026 年执行，取决于 roadmap 的"不搭建管道组件"边界是否放宽，见 §7。
 - Catalog 后端存储能否从对象存储中的 metadata 文件重建，以及重建耗时。§2.4 已确认它是提交
   路径上的单点，但重建路径未验证。
 - 禁止 filesystem 与 Hadoop catalog 的配置门禁做成什么形式，见 §2.4。

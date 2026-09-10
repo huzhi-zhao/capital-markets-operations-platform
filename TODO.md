@@ -116,10 +116,18 @@ handles keyed rewrites of historical partitions.
 - [x] Re-check the reversal-cost ranking. Batch compute moves to medium, because replacing the engine
   means rewriting all processing code. Object storage's S3 risk may be lower than assumed, since an
   independent REST catalog owns commit atomicity.
-- [ ] Measure resident memory of every candidate OCI component against the 24 GB budget. This runs
-  before any single-component benchmark, because it constrains orchestration, interactive query,
-  streaming and lineage at once, and picking each one on its own merits only to find the total does not
-  fit means discarding four rounds of evaluation.
+- [x] Screen the OCI memory budget on paper, using each project's own published requirements. Trino at
+  the eight gigabytes typical of its Kubernetes deployment plus Airflow at its documented four gigabyte
+  minimum already consume half the box, before streaming, BI, lineage, two databases and the operating
+  system. The roughly twenty-one gigabyte estimate in the architecture document is withdrawn.
+- [ ] Decide whether the 2026 no-pipeline-components boundary in the roadmap is relaxed for disposable
+  probes. Deploying components to measure resident memory conflicts with it, so probe P-1b cannot run
+  until this is answered. The paper screen needed no such deployment and is already done.
+- [ ] Run probe P-1b once that boundary is settled: per-candidate idle and peak resident memory under
+  the interactive query workload, deployed one component at a time, stopping any candidate that exceeds
+  six gigabytes idle.
+- [ ] Re-rank the candidates so the lighter combinations are evaluated alongside the heavy ones rather
+  than after them. The default stack is no longer the assumed starting point.
 - [x] Verify whether an independent REST catalog removes the conditional-write requirement on object
   storage. It does. The table specification requires only in-place write, seekable reads and deletes,
   and states outright that tables do not require rename except where rename itself implements the
