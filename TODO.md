@@ -88,22 +88,34 @@ handles keyed rewrites of historical partitions.
 
 - [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
   settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
-  Allocation instruction and its acknowledgement are verified against Volume 5 and A-1 is frozen.
-  Confirmation, allocation report and the ISO 20022 families remain.
+  Allocation instruction, allocation instruction acknowledgement, confirmation, confirmation
+  acknowledgement and confirmation request are verified against Volume 5, and A-1 and C-1 are frozen.
+  Allocation report, allocation report acknowledgement and the ISO 20022 families remain.
 - [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
   per-event traceability the project claims. Message-level values still wait on the volumes.
 - [ ] Add an account dimension to the generation spec. It does not exist, A-1 needs one, and accounts
   open, close, rename and merge, so it needs the same version chaining the instrument dimension has.
-  This is new work that A-1 surfaced rather than something already planned.
+  This is new work that A-1 surfaced rather than something already planned. C-1 turns it from needed
+  into blocking, because the account field is mandatory on every confirmation message.
 - [x] Settle the version claim, and correct half of it. The specification states in its own words that
   confirmation and allocation report are new to 4.4, so no comparison against 4.2 is needed. But the
   same page records that allocation existed before under a different message name, so the original
   wording, that 4.4 is the earliest carrying allocation semantics, was wrong. What 4.4 adds is
   confirmation, plus moving fees and expenses out of the allocation instruction.
-- [ ] Verify the confirmation messages and freeze C-1, using the same method. Allocation report and its
-  acknowledgement are also still unchecked.
+- [x] Verify the confirmation messages and freeze C-1, using the same method. Three messages checked
+  against Volume 5 pages 45 to 56 with enumerations from Volume 6. The specification contradicts itself
+  in three places where field rows were copied from the allocation side without editing, so the matrix
+  records the specification wording and the conditional table records the project's reading separately.
+  A third scaffold invariant proved to be the same class of error as the previous two, treating an
+  equation that holds in a narrow case as universal.
+- [ ] Verify the allocation report and its acknowledgement, the last two unchecked messages in batch two.
+- [ ] Read the specification's own example flows and rejection scenarios for allocation, Volume 5
+  pages 33 to 38. The confirmation equivalents at pages 54 to 56 are done.
+- [ ] Add a confirmation-layer assertion to the validation spec: at least one confirmation per allocated
+  account, exactly one within C-1's narrow conditions. The applicability condition has to ship with it,
+  or it starts producing false alarms as soon as C-2 lands.
 - [x] Settle the five L-1 distribution parameters. Adopted, with the scalars marked openly as arbitrary:
   what is justified is the constraints and the shape of each distribution, not the specific numbers,
   which are placeholders to be revisited once Phase 1 measures row width. Order size and fill count

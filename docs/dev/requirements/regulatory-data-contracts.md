@@ -23,7 +23,7 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 | 批次 | 范围 | 状态 |
 |---|---|---|
 | 第一批 | FIX 订单生命周期：新建、撤改、成交回报、状态机 | 五种报文的字段矩阵已核对；L-1 已填实 |
-| 第二批 | FIX 分配指令与确认 | 分配指令与应答已核对、A-1 已冻结；确认报文未开始 |
+| 第二批 | FIX 分配指令与确认 | 五种报文的字段矩阵已核对；A-1 与 C-1 已冻结；Allocation Report 未核对 |
 | 第三批 | ISO 20022 结算报文族 | 未开始 |
 | 第四批 | ISO 20022 资金报文族 | 未开始 |
 | 第五批 | FINTRAC，仅取规则版本化所需语义 | 未开始，已降级 |
@@ -197,10 +197,11 @@ L-1 要求至少两笔部分成交，再以一笔末次成交结束（即至少�
 | 持仓等于历史成交累加 | `17 ExecID`、`150 ExecType`、`54 Side`、`48/22 SecurityID`、`32 LastQty`、`60 TransactTime` | 对 L-1 中去重后的 `ExecType=F` Trade，按买卖方向对 LastQty 求和。Trade Correct/Trade Cancel 尚未进入 L-1，扩展时必须改为净效应累加 | V6 tags 17/32/54/150；**CMOP 业务推导，非 FIX 显式不变量** | **L-1 已定** |
 | `AvgPx` 与逐笔成交自洽 | `6 AvgPx`、`14 CumQty`、`31 LastPx`、`32 LastQty`、`150 ExecType` | L-1 的 Trade 回报：`CumQty=ΣLastQty`，`AvgPx=Σ(LastQty×LastPx)/CumQty`；New 接受回报中 `CumQty=0`、`AvgPx=0`。数值比较按后续 schema 冻结的价格精度进行 | V6 tag 6（所有 fills 的计算平均价）与 tags 14/31/32；公式为项目推导 | **L-1 已定** |
 
-## 3A. 第二批骨架：分配与确认，待填
+## 3A. 第二批：分配与确认
 
-**分配指令与其应答已于 2026-09-10 核对完毕**，见 §3A.3 至 §3A.7，出处为 Volume 5
-pp. 12–22。确认报文（C-1）与 Allocation Report 尚未核对，相关行仍标注待核对。
+**分配指令与其应答、确认报文与其应答、确认索取，五种报文均已于 2026-09-10 核对完毕**，
+见 §3A.3 至 §3A.7，出处为 Volume 5 pp. 12–22 与 pp. 45–56，枚举值出处为 Volume 6 字段定义。
+**Allocation Report 与 Allocation Report Ack 仍未核对**，相关行仍标注待核对。
 
 **仍未核对的部分不得当作已知使用。** 本节自身不作为出处，出处只能来自 FIX 4.4 卷本。
 
@@ -264,13 +265,17 @@ settlement"，并分为七类，其中 ALLOCATION 与 CONFIRMATION 是第一、�
 | Allocation Instruction Ack | V5 p. 21 | 受理或拒绝 | **P**，已核对 |
 | Allocation Report（aka Allocation Claim） | V5 p. 23 | 分配结果回报 | 待核对 |
 | Allocation Report Ack（aka Allocation Claim Ack） | V5 p. 31 | 回报确认 | 待核对 |
-| Confirmation | V5 p. 47 | 逐账户确认 | 待核对 |
-| Confirmation Ack（aka Affirmation） | V5 p. 52 | 确认的应答 | 待核对 |
-| Confirmation Request | V5 p. 53 | 索取确认 | 待核对 |
+| Confirmation | V5 p. 47 | 逐账户确认 | **AK**，已核对 |
+| Confirmation Ack（aka Affirmation） | V5 p. 52 | 确认的应答 | **AU**，已核对 |
+| Confirmation Request | V5 p. 53 | 索取确认 | **BH**，已核对 |
 
 **另有两处现成的流程与拒绝场景可直接对照**：分配的示例流程与拒绝场景在 V5 pp. 33–38，
-确认的示例用法与被拒确认在 V5 pp. 54–55。**填 §3A.5 状态机与 §3A.8 场景时应先读这两处**，
-它们是规范自己给出的流程，比从字段表反推可靠。
+确认的示例用法与被拒确认在 V5 pp. 54–56。**填 §3A.5 状态机与 §3A.8 场景时应先读这两处**，
+它们是规范自己给出的流程，比从字段表反推可靠。确认侧的三个示例流程已按此读法填入 §3A.6。
+
+**确认报文的方向与分配相反，这一点必须先记住。** V5-CF p. 45 原文写道，永远是 Respondent
+生成 FIX Confirmation 报文。A-1 里买方是发起方、卖方应答；**C-1 里卖方主动发出确认、买方
+应答**。Bronze 的交易对手字段在这两段链条上不是同一侧，生成器若照搬 A-1 的方向就会写反。
 
 **版本断言已结清，且原措辞有一半不准确。** V5-AI p. 12 原文在说明分配报文历史时写道，
 费用与开支的传达职责已从 Allocation Instruction 移出，改由 "the new (to version 4.4)
@@ -281,7 +286,7 @@ Allocation Report 是 4.4 新增的**，无需再与 4.2 对照。
 **因此"分配语义 4.4 才有"是错的，分配一直都在。** 4.4 真正新增的是确认报文，以及把费用与
 开支从分配指令里剥离出来。§3.1 的理由已按此改写。
 
-### 3A.3 字段矩阵：J 与 P 已核对
+### 3A.3 字段矩阵：J、P 与确认三报文已核对
 
 出处缩写：`V5-AI` 为 Volume 5 “Allocation Instruction” pp. 12–20，`V5-AIA` 为
 “Allocation Instruction Ack” pp. 21–22。义务级别照抄规范的 Req'd 列。
@@ -335,8 +340,81 @@ Allocation Report 是 4.4 新增的**，无需再与 4.2 对照。
 | 776 | IndividualAllocRejCode | — | 条（组内） | 是（出现时） | V5-AIA p.22 | 2026-09-10 |
 | — | Standard Trailer | 必 | 必 | 否 | V5-AI p.20；V5-AIA p.22 | 2026-09-10 |
 
-**骨架里三个猜测被证伪，一处证实。** `AS`/`AT`/`AK`/`AU` 未在本轮核对；骨架臆测的
-`ConfirmID` 等四个确认字段不属于 J 与 P，已从本表移除，留待 C-1。骨架漏掉了
+#### 确认侧：AK、AU、BH 已核对
+
+出处缩写：`V5-CF` 为 Volume 5 “Confirmation” pp. 47–51，`V5-CFA` 为 “Confirmation Ack
+(aka Affirmation)” p. 52，`V5-CFR` 为 “Confirmation Request” pp. 53–54。义务级别照抄规范的
+Req'd 列，`—` 表示该字段不属于这张报文。
+
+| 标签 | 名称 | AK | AU | BH | 进 Bronze | 出处 | 核对日期 |
+|---|---|---|---|---|---|---|---|
+| — | Standard Header | 必（`MsgType=AK`） | 必（`MsgType=AU`） | 必（`MsgType=BH`） | 是 | V5-CF p.47；V5-CFA p.52；V5-CFR p.53 | 2026-09-10 |
+| 664 | ConfirmID | 必 | 必 | — | 是 | V5-CF p.47；V5-CFA p.52 | 2026-09-10 |
+| 772 | ConfirmRefID | 条 | — | — | 是（出现时） | V5-CF p.47 | 2026-09-10 |
+| 859 | ConfirmReqID | 条 | — | 必 | 是（出现时） | V5-CF p.47；V5-CFR p.53 | 2026-09-10 |
+| 666 | ConfirmTransType | 必 | — | — | 是 | V5-CF p.47 | 2026-09-10 |
+| 773 | ConfirmType | 必 | — | 必 | 是 | V5-CF p.47；V5-CFR p.53 | 2026-09-10 |
+| 665 | ConfirmStatus | 必 | — | — | 是 | V5-CF p.47 | 2026-09-10 |
+| 940 | AffirmStatus | — | 必 | — | 是 | V5-CFA p.52 | 2026-09-10 |
+| 774 | ConfirmRejReason | — | 条 | — | 是（出现时） | V5-CFA p.52 | 2026-09-10 |
+| 797 | CopyMsgIndicator | 选 | — | — | 是（出现时） | V5-CF p.47 | 2026-09-10 |
+| 650 | LegalConfirm | 选 | — | — | 是（出现时） | V5-CF p.47 | 2026-09-10 |
+| — | component `<Parties>` | 选 | — | — | 是（出现时） | V5-CF p.48 | 2026-09-10 |
+| 73 | NoOrders | 选 | — | 选 | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 11 | ClOrdID | 条（组内） | — | 条（组内） | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 37 | OrderID | 选（组内） | — | 选（组内） | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 38 | OrderQty | 选（组内） | — | 选（组内） | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 799 | OrderAvgPx | 选（组内） | — | 选（组内） | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 800 | OrderBookingQty | 选（组内） | — | 选（组内） | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 70 | AllocID | 选 | — | 选 | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 467 | IndividualAllocID | 选 | — | 选 | 是（出现时） | V5-CF p.48；V5-CFR p.53 | 2026-09-10 |
+| 60 | TransactTime | 必 | 必 | 必 | 是 | V5-CF p.48；V5-CFA p.52；V5-CFR p.53 | 2026-09-10 |
+| 75 | TradeDate | 必 | 必 | — | 是 | V5-CF p.48；V5-CFA p.52 | 2026-09-10 |
+| — | component `<Instrument>` | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 711 | NoUnderlyings | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 555 | NoLegs | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 80 | AllocQty | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 54 | Side | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 15 | Currency | 选 | — | — | 是（出现时） | V5-CF p.49 | 2026-09-10 |
+| 862 | NoCapacities | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 528 | OrderCapacity | 必（组内） | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 863 | OrderCapacityQty | 必（组内） | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 79 | AllocAccount | 必 | — | 选 | 是 | V5-CF p.49；V5-CFR p.54 | 2026-09-10 |
+| 6 | AvgPx | 必 | — | — | 是 | V5-CF p.49 | 2026-09-10 |
+| 381 | GrossTradeAmt | 必 | — | — | 是 | V5-CF p.50 | 2026-09-10 |
+| 118 | NetMoney | 必 | — | — | 是 | V5-CF p.50 | 2026-09-10 |
+| 63 | SettlType | 选 | — | — | 是（出现时） | V5-CF p.50 | 2026-09-10 |
+| 64 | SettlDate | 选 | — | — | 是（出现时） | V5-CF p.50 | 2026-09-10 |
+| — | component `<SettlInstructionsData>` | 选 | — | — | 是（出现时） | V5-CF p.50 | 2026-09-10 |
+| — | component `<CommissionData>` | 选 | — | — | 是（出现时） | V5-CF p.50 | 2026-09-10 |
+| 136 | NoMiscFees | 选 | — | — | 是（出现时） | V5-CF p.51 | 2026-09-10 |
+| 573 | MatchStatus | — | 选 | — | 是（出现时） | V5-CFA p.52 | 2026-09-10 |
+| 58 | Text | — | 选 | 选 | 是（出现时） | V5-CFA p.52；V5-CFR p.54 | 2026-09-10 |
+| — | Standard Trailer | 必 | 必 | 必 | 否 | V5-CF p.51；V5-CFA p.52；V5-CFR p.54 | 2026-09-10 |
+
+**规范在这三张表里留下了三处自相矛盾，必须记下来，不能照抄。** 它们都是从分配侧复制字段行
+时没有改干净的痕迹：
+
+1. AK 的 `NoOrders`(73) 注释写"`AllocNoOrdersType = 1` 时必填"，但 `AllocNoOrdersType`(857)
+   **不是 AK 的字段**（V5-CF pp. 47–51 全表无此标签）。该条件在 AK 上无法求值。
+2. AU 的 `ConfirmRejReason`(774) 注释写"Required for `ConfirmStatus = 1` (rejected)"，但
+   AU **没有 `ConfirmStatus`(665)**，而且 `ConfirmStatus = 1` 的含义是 Received 而非
+   rejected（V6 p. 232）。按语义，正确的条件是 `AffirmStatus = 2`（Confirm rejected）。
+3. AU 的 `Text`(58) 注释写"can include explanation for `AllocRejCode = 7` (other)"，但 AU 里
+   没有 `AllocRejCode`，且 other 在 `ConfirmRejReason` 上的取值是 99 而非 7（V6 p. 266）。
+
+**处理方式是登记而非改写。** 矩阵照抄规范的义务级别，§3A.4 记 CMOP 的取用口径并标明它是
+推断。**不要把推断混进出处列**，否则下一个人无法分辨哪一条是规范说的。
+
+**还有一处不是矛盾但同样容易踩。** `NoUnderlyings`(711) 与 `NoLegs`(555) 在 AK 里标为必填，
+而 CMOP 的标的是普通股票，既无 underlying 也无 leg。**A-1 与 C-1 的取值定为 0**，这与"必填"
+不冲突：必填的是计数字段本身，不是它下面的重复组。
+
+#### 骨架核对小结
+
+**骨架里三个猜测被证伪，一处证实。** `AS` 与 `AT` 仍未核对；骨架臆测的
+`ConfirmID` 等四个确认字段不属于 J 与 P，已从本表移除，现已在上面的确认侧矩阵中各就各位。
+骨架漏掉了
 `AllocNoOrdersType`(857) 与 `AllocPrice`(366)，二者均已补入。`Commission`(12) 不是
 J 的顶层字段，而在组内 `<CommissionData>` 组件块中，骨架写错了位置。
 
@@ -354,12 +432,23 @@ J 的顶层字段，而在组内 `<CommissionData>` 组件块中，骨架写错�
 | AllocRejCode(88) | P | `AllocStatus = 1` 时必填；`AllocStatus = 2` 且本报文未逐账户给出拒绝原因时必填 | V5-AIA p.21 |
 | IndividualAllocRejCode(776) | P | `NoAllocs > 0` 时必填 | V5-AIA p.22 |
 | NoAllocs(78) | P | 仅在 `AllocStatus = 2` 时可用；**其他取值下不得填充该组** | V5-AIA p.22 |
+| ConfirmRefID(772) | AK | `ConfirmTransType` 为 Replace 或 Cancel 时必填 | V5-CF p.47 |
+| ConfirmReqID(859) | AK | 仅在本报文用于应答一条 Confirmation Request 时使用 | V5-CF p.47 |
+| ClOrdID(11) | AK、BH | `NoOrders > 0` 时必填，且**必须是组内第一个字段** | V5-CF p.48；V5-CFR p.53 |
+| NoOrders(73) | AK、BH | 规范写 `AllocNoOrdersType = 1` 时必填，**但 857 不是这两张报文的字段**；CMOP 口径：该组整体可选，A-1 与 C-1 不填 | V5-CF p.48（矛盾见 §3A.3） |
+| ConfirmRejReason(774) | AU | 规范写 `ConfirmStatus = 1` 时必填，**但 AU 无 665**；CMOP 口径：`AffirmStatus = 2` 时必填 | V5-CFA p.52（矛盾见 §3A.3） |
+| EncodedTextLen(354) | AU | 出现 `EncodedText`(355) 时必填，且**必须紧邻其前** | V5-CFA p.52 |
 
-**注意最后一条的方向。** 它不是"某条件下必填"，而是"其他条件下禁止出现"。生成器若在
-`AllocStatus = 0` 的 Ack 上带出 NoAllocs 组，就违反了规范，**而这类错误不会被"必填"式
-校验发现**。
+**注意 `NoAllocs`(78) 那条的方向。** 它不是"某条件下必填"，而是"其他条件下禁止出现"。
+生成器若在 `AllocStatus = 0` 的 Ack 上带出 NoAllocs 组，就违反了规范，**而这类错误不会被
+"必填"式校验发现**。
 
-### 3A.5 分配状态机：AllocStatus 已核对
+**表里有两行的出处列写着"矛盾见 §3A.3"，那是有意的。** 这两条不是规范原文，是 CMOP 在规范
+自相矛盾处选的口径。**任何以它们为前提的下游断言都要标成推断，不能标成 FIX 明确。**
+
+### 3A.5 状态机：AllocStatus、ConfirmStatus 与 AffirmStatus 已核对
+
+#### 分配侧：AllocStatus
 
 `AllocStatus`(87) 的四个取值与语义，逐条抄自 V5-AIA p.21：
 
@@ -381,10 +470,44 @@ J 的顶层字段，而在组内 `<CommissionData>` 组件块中，骨架写错�
 
 **A-1 只走 3（可选）到 0 这一条路径。** 取值 1 与 2 属 A-2，取值 3 是否生成留作决策，见 §3A.6。
 
-**照旧不写"FIX 不合法"。** 本节只登记规范明确给出的转移。A-1 不允许而规范未禁止的，标注为
-"不合法（仅 A-1）"，解除条件写在 §3A.8 的对应场景上。
+#### 确认侧：三个状态字段管三件不同的事
 
-### 3A.6 A-1 的逐步取值
+**这一点最容易搞混，所以先说结论：AK 上有两个"状态"，AU 上还有第三个，三者互不替代。**
+取值抄自 Volume 6 字段定义（下称 `V6`）。
+
+| 字段 | 在哪张报文 | 管什么 | 取值 | 出处 |
+|---|---|---|---|---|
+| `ConfirmTransType`(666) | AK | 这条确认是新发、替换还是撤销 | 0=New、1=Replace、2=Cancel | V6 p.232 |
+| `ConfirmType`(773) | AK、BH | 这条确认是真确认还是状态播报 | 1=Status、2=Confirmation、3=Confirmation Request Rejected | V6 p.265 |
+| `ConfirmStatus`(665) | AK | 卖方对这一笔的处理结果 | 1=Received、2=Mismatched account、3=Missing settlement instructions、4=Confirmed、5=Request rejected | V6 p.232 |
+| `AffirmStatus`(940) | AU | 买方对这条确认的回应 | 1=Received、2=Confirm rejected（即未 affirm）、3=Affirmed | V6 p.315 |
+| `ConfirmRejReason`(774) | AU | 买方拒绝的原因 | 1=Mismatched account、2=Missing settlement instructions、99=Other | V6 p.266 |
+
+**规范自己给出的三种用法**（V5-CF p.54），照抄而非推断：
+
+1. **电子交易确认**，需要对方 affirm 或 reject。
+2. **抄送确认**，`CopyMsgIndicator = Y`，发给第三方，**收件方无权 affirm 或 reject**，
+   且规范要求它排在主确认被 affirm 之后再发。
+3. **状态播报**，`ConfirmType = 1`，用 `ConfirmStatus` 报 Mismatched account、
+   Missing SSI 之类的卡点。
+
+**三种用法的成功终态都是 `AffirmStatus = 3`（Affirmed）**，规范原文说这可以理解为该笔已可
+进入结算。**这句话就是 C-1 与结算段之间的接口**，第三批的 ISO 20022 结算报文接在这里。
+
+**被拒之后的恢复路径也是规范给的**（V5-CF pp. 55–56），与分配侧同构但不同名：
+
+- 先发一条 `ConfirmTransType = Cancel` 的确认，再发一条 `New`；
+- 或直接发一条 `ConfirmTransType = Replace`。
+
+**C-1 只走用法 1，且一次通过：`ConfirmStatus = 4` → `AffirmStatus = 1` → `AffirmStatus = 3`。**
+用法 2 与用法 3、以及 Cancel/Replace 恢复路径属 C-2，见 §3A.8。
+
+**照旧不写"FIX 不合法"。** 本节只登记规范明确给出的转移。A-1 与 C-1 不允许而规范未禁止的，
+标注为"不合法（仅 A-1）"或"不合法（仅 C-1）"，解除条件写在 §3A.8 的对应场景上。
+
+### 3A.6 A-1 与 C-1 的逐步取值
+
+#### A-1
 
 输入固定为 L-1 的终态，见 §3A.1。`AllocType` 取 Calculated，因为它是四种取值中唯一包含
 MiscFees 与 NetMoney 的（V5-AI p.12），金额链条完整才谈得上对账。
@@ -398,17 +521,52 @@ MiscFees 与 NetMoney 的（V5-AI p.12），金额链条完整才谈得上对账
 多出一条报文而不增加任何被检验的语义。**该决定必须在 A-3 重新审视**：迟到场景下，"已收到但
 未处理"正是最有信息量的状态。
 
-### 3A.7 不变量：已核对，且其中一条骨架写法是错的
+#### C-1
 
-#### 先说错的那条
+**输入固定为 A-1 的终态**：一条 `AllocStatus = 0` 的 Ack，以及 A-1 派生出的 N 个账户明细。
+**C-1 对每个账户各跑一遍下面三步**，因此 C-1 产出 3N 条报文，而 A-1 只有 2 条。
 
-骨架写的是"各账户 `AllocQty` 之和等于**被分配订单的成交总量**"。**规范不支持这个写法。**
+`ConfirmType` 取 2（Confirmation）而非 1（Status），因为 C-1 要的是需 affirm 的真确认；
+状态播报留给 C-2。`OrderCapacity` 取 `A`（Agency，V6 p.185），与 CMOP 的经纪业务设定一致。
+
+| 步 | 报文 | 方向 | 关键取值 | 之后状态 |
+|---|---|---|---|---|
+| 1 | AK | 卖方 → 买方 | `ConfirmID` 新编、`ConfirmTransType=0`（New）、`ConfirmType=2`、`ConfirmStatus=4`（Confirmed）、`CopyMsgIndicator` 不填、`AllocID` 回引 A-1、`IndividualAllocID` 回引该账户、`AllocAccount` 为该账户、`AllocQty` 取 A-1 派生的该账户数量、`AvgPx` 取该账户 `AllocAvgPx`、`NoCapacities=1` 且 `OrderCapacity=A`、`OrderCapacityQty=AllocQty`、`NoUnderlyings=0`、`NoLegs=0`、`Side` 与 `<Instrument>` 与 `TradeDate` 承自 L-1 | 待应答 |
+| 2 | AU | 买方 → 卖方 | `ConfirmID` 回引第 1 步、`AffirmStatus=1`（Received）、`TradeDate` 与 `TransactTime` 必填 | 已收到 |
+| 3 | AU | 买方 → 卖方 | `ConfirmID` 回引第 1 步、`AffirmStatus=3`（Affirmed） | 已确认，C-1 结束，该笔可进结算 |
+
+**第 2 步保留，与上面 A-1 那条"不生成 `AllocStatus=3`"的决定看似矛盾，其实不是。** 两处的差别
+在于规范怎么给：`AllocStatus=3` 是规范允许的可选中间态；而 Received → Affirmed 两条 Ack 是
+**规范 Model 1 示例流程里并排列出的两行**（V5-CF p.54），不是可选装饰。**更实际的理由是
+C-3 需要它**：确认迟到场景要测的正是 Received 与 Affirmed 之间的时间差跨越了结算日，
+若第 2 步不生成，C-3 就没有可测的量。
+
+**`AvgPx` 在 AK 里是 gross price，不是净价。** V5-CF p.49 原文写 "Gross price for the trade
+being confirmed"。费用与佣金走 `<CommissionData>` 与 `NoMiscFees`，净额走 `NetMoney`。
+生成器若把扣费后的价格填进 `AvgPx`，金额三件套会自洽地全错，**而每一条单独看都对**。
+
+### 3A.7 不变量：已核对，且骨架里有两条写法是错的
+
+#### 先说错的两条
+
+**第一条。** 骨架写的是"各账户 `AllocQty` 之和等于**被分配订单的成交总量**"。**规范不支持
+这个写法。**
 
 V5-AI p.13 的原文是总分配数量必须等于 `Quantity`(53)，并**专门加了一个脚注**说明
 `Quantity` 不必然等于被分配订单的总数量，举的例子是 GT 订单与跨日均价场景。
 
 **这与第一批 `CumQty + LeavesQty = OrderQty` 是同一类错误**：把一个在窄场景下成立的等式，
 写成了普遍不变量。区别是这次在填表时就被规范自己的脚注挡住了，没有流进生成器。
+
+**第二条，同一类错误的第三次出现。** 骨架写的是"每个分配账户**恰好**对应一条 Confirmation"。
+规范说的是账户层级、每个账户一条报文（V5-CF p.45），**但"恰好一条"不成立**：`ConfirmTransType`
+的 Replace 与 Cancel 会让同一账户出现多条确认，`CopyMsgIndicator = Y` 的抄送确认又会再加一条。
+正确写法是**每个分配账户至少一条**；"恰好一条"只在 C-1 的窄条件下成立，即全部为 New、无抄送、
+无 Cancel/Replace。
+
+**三次都是同一个动作：把窄场景等式当成普遍不变量。** 前两次靠规范原文挡下，这次靠规范的
+Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的系统性倾向**，第三批写 ISO 20022
+骨架时应默认每条候选断言都带适用条件列，而不是事后补。
 
 #### 核对结果
 
@@ -421,7 +579,11 @@ V5-AI p.13 的原文是总分配数量必须等于 `Quantity`(53)，并**专门�
 | `NetMoney`(118) = Σ`AllocNetMoney`(154) | **FIX 明确** | 出现该字段时 | V5-AI p.17 |
 | 卖出：`AllocNetMoney` = (`AllocQty`×`AllocAvgPx`) − Commission − Σ(MiscFeeAmt + AccruedInterestAmt)；买入为加 | **FIX 明确** | 出现该字段时 | V5-AI p.19 |
 | `SettlDate` = `TradeDate` + 1 营业日 | **CMOP 决定，非 FIX** | T+1 生效期之后；且 `SettlDate` 在 J 中并非必填 | 见 §6 |
-| 每个分配账户恰好对应一条 Confirmation | 待核对 | 待填 | 留待 C-1 |
+| 每个分配账户**至少**对应一条 Confirmation | **FIX 明确** | 无条件 | V5-CF p.45 |
+| 每个分配账户**恰好**对应一条 Confirmation | **仅窄条件成立** | 全为 New、无抄送、无 Cancel/Replace；C-1 满足 | V5-CF p.45、pp. 55–56 |
+| 一条 AK 内 Σ`OrderCapacityQty`(863) = 该报文的 `AllocQty`(80) | **FIX 明确** | 无条件 | V5-CF p.47、p.49 |
+| 各账户 AK 的 `AllocQty`(80) 之和 = 分配指令的 `Quantity`(53) | **CMOP 推论，非 FIX 明确** | 由"总分配数量 = Quantity"与"每账户恰好一条确认"合成，故只在 C-1 窄条件下成立 | 推自 V5-AI p.13 与 V5-CF p.45 |
+| 抄送确认排在主确认被 affirm 之后 | **FIX 明确** | `CopyMsgIndicator = Y` 且买方走 Model 1 时 | V5-CF p.54 |
 
 **买卖方向进入了金额公式，这一条容易被漏。** `AllocNetMoney` 的符号取决于 `Side`，生成器若
 两边同号，差异会以"金额对不上"的形式出现在 R1，而根因在生成器，不在管道。
@@ -437,12 +599,16 @@ V5-AI p.13 的原文是总分配数量必须等于 `Quantity`(53)，并**专门�
 | A-2 | 分配被拒后更正重发 | 制造同一 `AllocID` 的多版本，检验维度与事实的版本对齐 | 待解锁 |
 | A-3 | 分配迟到，T+1 早晨才到达 | **直接对应主业务流**，见[业务目标](business-objectives.md) §3.1 | 待解锁 |
 | A-4 | 分配数量与成交总量对不上 | 制造 R1 必须捕获的差异，属注入而非正常路径 | 待解锁 |
-| C-1 | 逐账户确认并被接受 | 链条第四段 | 待解锁 |
+| C-1 | 逐账户确认并被接受 | 链条第四段 | **已冻结**，见 §3A.6 |
 | C-2 | 确认被拒后重发 | 与 A-2 同理，作用在确认层 | 待解锁 |
 | C-3 | 确认迟到，跨越结算日 | 与 T+1 结算周期交互，最难的一类 | 待解锁 |
 
 **A-3 与 C-3 是这批里价值最高的两个**，因为 T+1 早晨的异常处理流是本项目唯一必须端到端跑通
-的业务流。但它们都依赖 A-1 与 C-1 先成立，**顺序不能颠倒**。
+的业务流。但它们都依赖 A-1 与 C-1 先成立，**顺序不能颠倒**。A-1 与 C-1 现已双双冻结，
+**这个前置条件已经解除**。
+
+**C-2 的范围比字面更宽。** 除了被拒后重发，规范给出的抄送确认（`CopyMsgIndicator = Y`）与
+状态播报（`ConfirmType = 1`）也归在 C-2，因为三者共用同一套 Cancel/Replace 恢复路径。
 
 ### 3A.9 填完之后要回头改的地方
 
@@ -452,9 +618,15 @@ V5-AI p.13 的原文是总分配数量必须等于 `Quantity`(53)，并**专门�
   分配数量与金额多半是派生而非采样。
 - [验证与对账规范](validation-and-reconciliation-specification.md) §2.3 的 R1 目前只在 L-1
   范围内具体化，A-1 落地后要补分配侧。
-- 同文档 §6.1 的六条注入里，前三条被标注为"L-2 落地后必须删除"。**A-1 不解除它们**，解除条件
-  仍是 L-2，不要混淆两个扩展轴。
-- §3.1 那条"4.4 是最早携带确认与分配语义的版本"的待核对标记，应在此时结清。
+- 同文档 §6.1 的六条注入里，前三条被标注为"L-2 落地后必须删除"。**A-1 与 C-1 都不解除它们**，
+  解除条件仍是 L-2，不要混淆两个扩展轴。
+- §3.1 那条"4.4 是最早携带确认与分配语义的版本"的待核对标记，**已于 2026-09-10 结清**，
+  见 §3A.2 末尾。
+- 账户维度仍然缺失，见 §3A.1。**C-1 把这个缺口从"需要"提升为"卡住"**：AK 的 `AllocAccount`
+  是必填字段，没有账户维度就生成不出一条合法的确认报文。
+- [验证与对账规范](validation-and-reconciliation-specification.md) 需要新增一条确认层断言：
+  每个分配账户至少一条确认，且 C-1 范围内恰好一条。**这条的适用条件必须一起写进去**，
+  否则 C-2 落地时它会开始误报。
 
 ## 4. ISO 20022
 
