@@ -2,9 +2,9 @@
 
 > **Status**: Draft · **Date**: 2026-09-09
 >
-> **Decision state**: **FIX 版本已定为 4.4**（§3.1）。候选字段清单已升级为按报文与场景划分的
-> 契约矩阵（§3.3 至 §3.6），第一条最小订单生命周期 L-1 的框架已冻结，格子待按规范填写。
-> 本文中标记 `待核对` 的条目来自通用记忆，**未经规范原文验证，不得直接用于 schema 设计**。
+> **Decision state**: **FIX 版本已定为 4.4**（§3.1）。第一批五种报文的候选字段矩阵已按
+> FIX 4.4 with 20030618 Errata 核对（§3.2 至 §3.3.1）；第一条最小订单生命周期 L-1
+> 已填实（§3.4 至 §3.6）。本批次未扩展到撤单、改单和拒绝场景的完整状态机。
 >
 > **Related**: [业务目标](business-objectives.md)、[原始数据源清单](raw-data-source-inventory.md)
 
@@ -22,8 +22,8 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 
 | 批次 | 范围 | 状态 |
 |---|---|---|
-| 第一批 | FIX 订单生命周期：新建、撤改、成交回报、状态机 | 规范已读，矩阵待填 |
-| 第二批 | FIX 分配指令与确认 | 未开始 |
+| 第一批 | FIX 订单生命周期：新建、撤改、成交回报、状态机 | 五种报文的字段矩阵已核对；L-1 已填实 |
+| 第二批 | FIX 分配指令与确认 | 未开始，是 BO-1 链条上的下一段 |
 | 第三批 | ISO 20022 结算报文族 | 未开始 |
 | 第四批 | ISO 20022 资金报文族 | 未开始 |
 | 第五批 | FINTRAC，仅取规则版本化所需语义 | 未开始，已降级 |
@@ -33,14 +33,15 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 
 ### 3.1 版本决定：FIX 4.4
 
-**已定案：全项目统一使用 FIX 4.4，不混用版本。** 本文以下所有标签号、枚举取值与语义
-一律以 4.4 为准；引用其他版本的资料必须显式注明版本，不得默认等价。
+**已定案：全项目统一使用 FIX 4.4 with 20030618 Errata，不混用版本。** 勘误版是取证时实际
+使用的文件，见 §7；本文以下所有标签号、枚举取值与语义一律以它为准，引用其他版本的资料必须
+显式注明版本，不得默认等价。
 
 选择理由，按权重排列：
 
 1. **后台覆盖面是决定性的。** BO-1 的链条包含确认这一环，而确认报文 Confirmation 在
    4.2 中不存在，分配指令的字段与应答机制也是 4.4 才理顺。只要项目要讲"从订单一路对到
-   确认"，4.2 即出局。此条待读规范时核对，见 §7。
+   确认"，4.2 即出局。**此条仍待核对**：第一批只读了订单生命周期，确认报文属第二批。
 2. **5.0 SP2 与 FIX Latest 多出的能力对本项目无用。** 5.0 的主要改动是把会话层拆为独立的
    FIXT，而本项目不运行 FIX 引擎，是把应用层报文批量生成落盘，会话层价值为零。其余扩展
    字段只增加需核对的表面积，不增加工程难点。4.4 的真实存量也远大于 5.0。
@@ -64,11 +65,11 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 
 | MsgType | 名称 | 用途 | 状态 |
 |---|---|---|---|
-| `D` | NewOrderSingle | 新建订单 | 待核对 |
-| `F` | OrderCancelRequest | 撤单请求 | 待核对 |
-| `G` | OrderCancelReplaceRequest | 改单请求 | 待核对 |
-| `9` | OrderCancelReject | 撤改被拒 | 待核对 |
-| `8` | ExecutionReport | 成交与状态回报 | 待核对 |
+| `D` | NewOrderSingle | 新建订单 | 已核对，V4 “New Order - Single” |
+| `F` | OrderCancelRequest | 撤单请求 | 已核对，V4 “Order Cancel Request” |
+| `G` | OrderCancelReplaceRequest | 改单请求 | 已核对，V4 “Order Cancel/Replace Request” |
+| `9` | OrderCancelReject | 撤改被拒 | 已核对，V4 “Order Cancel Reject” |
+| `8` | ExecutionReport | 成交与状态回报 | 已核对，V4 “Execution Reports” |
 
 ### 3.3 字段与报文的契约矩阵
 
@@ -78,33 +79,44 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 **义务级别取值**：`必` 必填、`条` 条件必填、`选` 可选、`—` 不适用。条件必填必须在
 §3.3.1 写明条件，只写 `条` 不写条件等于没写。
 
+下表的义务级别是 **FIX 4.4 标准报文义务**，不是说每个字段在每条 Bronze 记录中都
+非空。`进 Bronze` 标为“是（出现时）”表示 CMOP 不丢弃该标准字段；报文不适用或条件
+不成立时，字段不出现，不伪造空值。
+
+出处缩写（页码为各卷 PDF 页码）：`V4-NOS` 为 Volume 4 “New Order - Single” pp. 5–9，
+`V4-ER` 为 “Execution Reports” pp. 10–20，`V4-OCRR` 为 “Order Cancel/Replace Request”
+pp. 25–29，`V4-OCR` 为 “Order Cancel Request” pp. 30–31，`V4-OCJ` 为 “Order Cancel
+Reject” pp. 32–33；`V1-Inst` 为 Volume 1 “Instrument component block”，`V1-Qty` 为
+“OrderQtyData component block”，`V6` 为字段定义。
+
 | 标签 | 名称 | D | F | G | 9 | 8 | 进 Bronze | 出处 | 核对日期 |
 |---|---|---|---|---|---|---|---|---|---|
-| 11 | ClOrdID | | | | | | | | |
-| 41 | OrigClOrdID | | | | | | | | |
-| 37 | OrderID | | | | | | | | |
-| 17 | ExecID | | | | | | | | |
-| 150 | ExecType | | | | | | | | |
-| 39 | OrdStatus | | | | | | | | |
-| 1 | Account | | | | | | | | |
-| 55 | Symbol | | | | | | | | |
-| 48 | SecurityID | | | | | | | | |
-| 22 | SecurityIDSource | | | | | | | | |
-| 54 | Side | | | | | | | | |
-| 38 | OrderQty | | | | | | | | |
-| 40 | OrdType | | | | | | | | |
-| 44 | Price | | | | | | | | |
-| 59 | TimeInForce | | | | | | | | |
-| 32 | LastQty | | | | | | | | |
-| 31 | LastPx | | | | | | | | |
-| 14 | CumQty | | | | | | | | |
-| 151 | LeavesQty | | | | | | | | |
-| 6 | AvgPx | | | | | | | | |
-| 60 | TransactTime | | | | | | | | |
-| 15 | Currency | | | | | | | | |
-| 75 | TradeDate | | | | | | | | |
+| 11 | ClOrdID | 必 | 必 | 必 | 必 | 条 | 是（出现时） | V4-NOS/OCR/OCRR/OCJ/ER | 2026-09-09 |
+| 41 | OrigClOrdID | — | 必 | 必 | 必 | 条 | 是（出现时） | V4-OCR/OCRR/OCJ/ER | 2026-09-09 |
+| 37 | OrderID | — | 选 | 选 | 必 | 必 | 是（出现时） | V4-OCR/OCRR/OCJ/ER | 2026-09-09 |
+| 17 | ExecID | — | — | — | — | 必 | 是（出现时） | V4-ER | 2026-09-09 |
+| 150 | ExecType | — | — | — | — | 必 | 是（出现时） | V4-ER；V6 tag 150 | 2026-09-09 |
+| 39 | OrdStatus | — | — | — | 必 | 必 | 是（出现时） | V4-OCJ/ER；V6 tag 39 | 2026-09-09 |
+| 1 | Account | 选 | 选 | 选 | 选 | 条 | 是（出现时） | V4-NOS/OCR/OCRR/OCJ/ER | 2026-09-09 |
+| 55 | Symbol | 必 | 必 | 必 | — | 必 | 是（出现时） | V1-Inst；各报文的 Instrument 为必填 | 2026-09-09 |
+| 48 | SecurityID | 选 | 选 | 选 | — | 选 | 是（出现时） | V1-Inst | 2026-09-09 |
+| 22 | SecurityIDSource | 条 | 条 | 条 | — | 条 | 是（出现时） | V1-Inst | 2026-09-09 |
+| 54 | Side | 必 | 必 | 必 | — | 必 | 是（出现时） | V4-NOS/OCR/OCRR/ER | 2026-09-09 |
+| 38 | OrderQty | 条 | 条 | 条 | — | 条 | 是（出现时） | V1-Qty；V4-NOS/OCR/OCRR/ER | 2026-09-09 |
+| 40 | OrdType | 必 | — | 必 | — | 选 | 是（出现时） | V4-NOS/OCRR/ER | 2026-09-09 |
+| 44 | Price | 条 | — | 条 | — | 条 | 是（出现时） | V4-NOS/OCRR/ER | 2026-09-09 |
+| 59 | TimeInForce | 选 | — | 选 | — | 选 | 是（出现时） | V4-NOS/OCRR/ER | 2026-09-09 |
+| 32 | LastQty | — | — | — | — | 条 | 是（出现时） | V4-ER；V6 tag 32 | 2026-09-09 |
+| 31 | LastPx | — | — | — | — | 条 | 是（出现时） | V4-ER；V6 tag 31 | 2026-09-09 |
+| 14 | CumQty | — | — | — | — | 必 | 是（出现时） | V4-ER；V6 tag 14 | 2026-09-09 |
+| 151 | LeavesQty | — | — | — | — | 必 | 是（出现时） | V4-ER；V6 tag 151 | 2026-09-09 |
+| 6 | AvgPx | — | — | — | — | 必 | 是（出现时） | V4-ER；V6 tag 6 | 2026-09-09 |
+| 60 | TransactTime | 必 | 必 | 必 | 选 | 选 | 是（出现时） | V4-NOS/OCR/OCRR/OCJ/ER | 2026-09-09 |
+| 15 | Currency | 选 | — | 选 | — | 选 | 是（出现时） | V4-NOS/OCRR/ER | 2026-09-09 |
+| 75 | TradeDate | 选 | — | 选 | 选 | 选 | 是（出现时） | V4-NOS/OCRR/OCJ/ER | 2026-09-09 |
 
-出处写到卷与节，例如 `V4 §x.y`。**没有出处的行不算已核对**，即使格子填满了。
+出处至少写到卷与具名章节；页码稳定时一并登记。**没有出处的行不算已核对**，即使格子
+填满了。
 
 #### 3.3.1 条件必填的条件
 
@@ -114,19 +126,35 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 
 | 标签 | 报文 | 条件 | 条件不成立时 | 出处 |
 |---|---|---|---|---|
-| | | | | |
+| 11 ClOrdID | ExecutionReport (`8`) | 电子提交的订单由机构或中介分配了 ClOrdID；CMOP 合成订单全部满足 | 仅手工录入且未分配 ClOrdID 的订单可不出现 | V4-ER |
+| 41 OrigClOrdID | ExecutionReport (`8`) | 回应电子撤单或改单，且 `ExecType` 为 Pending Cancel、Replace 或 Canceled | 其他执行回报不出现 | V4-ER |
+| 1 Account | ExecutionReport (`8`) | 电子提交的订单在原始订单上由机构或中介分配了 Account | 原始订单未分配账户时不出现 | V4-ER |
+| 22 SecurityIDSource | `D`/`F`/`G`/`8` 的 Instrument | 出现 `SecurityID(48)` | 不出现；不得单独发送 tag 22 | V1-Inst |
+| 38 OrderQty | `D`/`F`/`G` | `OrderQtyData` 为必填组件，且选用可交易单位数量；标准允许以 `CashOrderQty(152)` 或 CIV 的 `OrderPercent(516)` 代替 | 使用 tag 152 或 516；CMOP L-1 限定股数数量，因此实际不走代替分支 | V1-Qty；V4-NOS/OCR/OCRR |
+| 38 OrderQty | ExecutionReport (`8`) | 单标的订单，除非是拒绝或确认使用 CashOrderQty/OrderPercent 的订单；CMOP L-1 全部满足 | 只在规范允许的 CashOrderQty/OrderPercent 拒绝或确认场景下不出现 | V4-ER |
+| 44 Price | NewOrderSingle (`D`)、OrderCancelReplaceRequest (`G`) | `OrdType` 为限价类型 | 市价等不需要限价的类型不出现 | V4-NOS/OCRR |
+| 44 Price | ExecutionReport (`8`) | 原始订单指定了 Price | 原始订单没有 Price 时不出现 | V4-ER |
+| 32 LastQty | ExecutionReport (`8`) | `ExecType=F` (Trade) 或 `ExecType=G` (Trade Correct) | 非成交/成交更正回报不出现 | V4-ER |
+| 31 LastPx | ExecutionReport (`8`) | `ExecType=F` (Trade) 或 `ExecType=G` (Trade Correct) | 非成交/成交更正回报不出现 | V4-ER |
 
 ### 3.4 订单状态机
 
-从 Appendix D 的状态变化矩阵抄录。**非法转移清单和合法转移一样重要**：生成器按它注入状态机
-违规类脏数据，验证规范按它写断言。
+从 Volume 4 “Order State Change Matrices” 抄录。FIX 4.4 原文明确提醒：**矩阵没有展示某个
+转移，不必然表示该转移被 FIX 禁止**。因此不得把合法矩阵的简单补集写成“FIX 非法
+转移”。
+
+本批次只填 L-1 使用的 A.1.a 路径。表中“不合法（L-1）”是 **CMOP 场景契约违规**，
+不宣称在其他 FIX 工作流中也非法。
 
 | 起始状态 | 事件 | 目标状态 | 合法 | 出处 |
 |---|---|---|---|---|
-| | | | | |
-
-合法转移直接来自矩阵。**非法转移需要你从"矩阵里没出现的组合"里推**，那部分规范不会直接给，
-是这项工作里唯一需要判断的地方。推导出的每一条要注明是推导而非抄录。
+| 未确认（尚无 OrdStatus） | ExecutionReport: `ExecType=0` (New) | `OrdStatus=0` (New) | 是 | V4 A.1.a，步骤 1→2 |
+| New (`0`) | ExecutionReport: `ExecType=F` (Trade) | Partially Filled (`1`) | 是 | V4 A.1.a，首次部分成交 |
+| Partially Filled (`1`) | ExecutionReport: `ExecType=F` (Trade) | Partially Filled (`1`) | 是 | V4 A.1.a，后续部分成交 |
+| Partially Filled (`1`) | ExecutionReport: `ExecType=F` (Trade) | Filled (`2`) | 是 | V4 A.1.a，末次成交 |
+| 未确认（尚无 OrdStatus） | 直接产生 L-1 的 Trade 回报，跳过 New 接受回报 | Partially Filled 或 Filled | 不合法（仅 L-1） | 项目推导：违反冻结的 L-1 顺序；非 FIX 全局禁止 |
+| New (`0`) | L-1 的首笔 Trade 就结束整单 | Filled (`2`) | 不合法（仅 L-1） | 项目推导：L-1 要求至少两笔部分成交后再全部成交；FIX 本身允许单笔全成 |
+| Filled (`2`) | 继续发送未配套更正/取消语义的 L-1 Trade | Partially Filled 或 Filled | 不合法（仅 L-1） | 项目推导：Filled 是 L-1 终点；后续 Trade Correct/Trade Cancel 属于未展开场景 |
 
 ### 3.5 已冻结的最小订单生命周期 L-1
 
@@ -138,10 +166,15 @@ BQ-2 的解释链恰恰要求多事件。
 
 | 步骤 | 报文 | MsgType | ExecType | OrdStatus | CumQty | LeavesQty | AvgPx | 出处 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | 新建订单 | `D` | — | — | — | — | — | |
-| 2 | 接受回报 | `8` | | | | | — | |
-| 3 | 首次部分成交 | `8` | | | | | | |
-| 4 | 末次成交，全部成交 | `8` | | | | | | |
+| 1 | 新建订单 | `D` | — | — | — | — | — | V4-NOS |
+| 2 | 接受回报 | `8` | `0` (New) | `0` (New) | `0` | `Q` | `0` | V4 A.1.a；V6 tags 150/39 |
+| 3 | 首次部分成交 | `8` | `F` (Trade) | `1` (Partially Filled) | `q₁` | `Q - q₁` | `p₁` | V4 A.1.a；V6 tags 150/39 |
+| 4 | 后续部分成交（至少一次） | `8` | `F` (Trade) | `1` (Partially Filled) | `Σqᵢ` | `Q - Σqᵢ` | `Σ(qᵢ×pᵢ) / Σqᵢ` | V4 A.1.a；V6 tags 6/14/31/32 |
+| 5 | 末次成交，全部成交 | `8` | `F` (Trade) | `2` (Filled) | `Q` | `0` | `Σ(qᵢ×pᵢ) / Q` | V4 A.1.a；V6 tags 6/14/31/32/151 |
+
+`Q` 是 `OrderQty(38)`，`qᵢ`/`pᵢ` 分别是第 i 笔成交的 `LastQty(32)`/`LastPx(31)`。
+L-1 要求至少两笔部分成交，再以一笔末次成交结束（即至少三笔 Trade），且每笔 `qᵢ > 0`；
+末笔之前 `Σqᵢ < Q`，末笔之后 `Σqᵢ = Q`。
 
 **冻结的含义**：这条路径的报文序列与各步终态一经填定即为基准。生成器按它产出，验证规范按它
 写断言，两侧不得各自解释。改动它需要在本节留下明确的变更记录，不能就地改表。
@@ -151,20 +184,14 @@ BQ-2 的解释链恰恰要求多事件。
 
 ### 3.6 不变量与适用范围
 
-原来的三条不变量写成了无条件成立，这很可能是错的，**需要你用刚读到的状态机确认**。
+三条规则已按 L-1 的适用范围填实。第一条是 FIX 明示带例外的通则；后两条由 FIX 字段语义
+推导为 CMOP 验收规则，不冒充 FIX 原文。
 
 | 不变量 | 依赖字段 | 适用条件 | 出处 | 结论 |
 |---|---|---|---|---|
-| `CumQty` 与 `LeavesQty` 之和等于 `OrderQty` | | | | 待核对 |
-| 持仓等于历史成交累加 | | | | 待核对 |
-| `AvgPx` 与逐笔成交自洽 | | | | 待核对 |
-
-**第一条有个具体疑问，请在填表时一并回答。** 部分成交后撤单时，`LeavesQty` 归零而 `CumQty`
-停在部分成交量，`OrderQty` 不变。若如此，该等式在订单终止后不成立，它就不是不变量，而是
-**仅在订单存活期间成立的条件式**。改单改变 `OrderQty` 时可能有同样的问题。
-
-这个区别不是措辞问题。写成无条件不变量，验证规范会在正常的撤单订单上报出大量假差异，运营
-分析员很快就会不再看异常队列，主 BO 随之失效。**适用条件列必须填，不能留空。**
+| `CumQty + LeavesQty = OrderQty` | `38 OrderQty`、`14 CumQty`、`151 LeavesQty`、`150 ExecType`、`39 OrdStatus` | L-1 的 New、Partially Filled 和 Filled 回报。不得无条件推广到 Canceled、DoneForTheDay、Expired、Calculated 或 Rejected，这些终止状态下 LeavesQty 可为 0 | V4 “Execution Reports” 通则；V6 tag 151 | **已核对：条件式** |
+| 持仓等于历史成交累加 | `17 ExecID`、`150 ExecType`、`54 Side`、`48/22 SecurityID`、`32 LastQty`、`60 TransactTime` | 对 L-1 中去重后的 `ExecType=F` Trade，按买卖方向对 LastQty 求和。Trade Correct/Trade Cancel 尚未进入 L-1，扩展时必须改为净效应累加 | V6 tags 17/32/54/150；**CMOP 业务推导，非 FIX 显式不变量** | **L-1 已定** |
+| `AvgPx` 与逐笔成交自洽 | `6 AvgPx`、`14 CumQty`、`31 LastPx`、`32 LastQty`、`150 ExecType` | L-1 的 Trade 回报：`CumQty=ΣLastQty`，`AvgPx=Σ(LastQty×LastPx)/CumQty`；New 接受回报中 `CumQty=0`、`AvgPx=0`。数值比较按后续 schema 冻结的价格精度进行 | V6 tag 6（所有 fills 的计算平均价）与 tags 14/31/32；公式为项目推导 | **L-1 已定** |
 
 ## 4. ISO 20022
 
@@ -197,6 +224,6 @@ BQ-2 的解释链恰恰要求多事件。
 
 | 标准 | 版本 | 出处 | 获取日期 |
 |---|---|---|---|
-| FIX | 4.4 | | |
+| FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，Volume 6 字段枚举 | 2026-09-09 |
 | ISO 20022 | | | |
 | FINTRAC | | | |
