@@ -78,7 +78,12 @@ Silver 的首要消费者是 Spark，不是 BI 用户。Gold 固定常用业务�
 |---|---|---|
 | NAS | 4 核 8 线程、16 GB、8 TB 可扩，7×24 | S3-compatible storage、Bronze、Silver；**常驻日增量执行端**；不承载查询引擎 |
 | MacBook Pro | 规格待补，按需上线 | **首次全量回填、全量重算、宽扫描 EDA/特征工程、周期性 compaction**；本地 NVMe shuffle；driver 语言待定 |
-| OCI Montreal | 4 核、24 GB、200 GB，7×24 | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
+| OCI Montreal | 4 核、24 GB、200 GB，7×24。**该规格未被证实，见下** | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
+
+> **2026-09-09 实测警告。** SSH 配置中可达的两台 Oracle 主机均为 2 核、956 MB 内存、97 GB
+> 根分区，且都已运行 MinIO、Docker 与 web 服务，**与上表 OCI 一行相差一个数量级**。4 核
+> 24 GB 的实例是否已开通尚未确认。在确认之前，本文 §8 及依赖 OCI 容量的全部推导都悬空，
+> 详见[技术选型评估要求](requirements/technology-selection-evaluation.md) §7.1.1。
 
 NAS 对象存储当前偏好 SeaweedFS，但最终选择仍是 Proposed。兼容性与恢复能力比 GitHub
 热度更重要，接受前需要用 Spark、Iceberg 和 Trino 进行实测。

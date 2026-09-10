@@ -130,10 +130,13 @@ handles keyed rewrites of historical partitions.
 - [x] Decide whether the 2026 no-pipeline-components boundary is relaxed for disposable probes. It is,
   within four conditions recorded in the roadmap. The generator, the pipeline itself and the ordering
   of full backfill after the baseline freeze are untouched.
-- [ ] Take a read-only inventory of the OCI host once access works: cores, total and free memory, and
-  anything resident. The host is reported empty, so this is a baseline rather than a contention check.
-  Blocked: the SSH key shared by both Oracle hosts is not loaded in the agent, so batch login is
-  refused. Also confirm which of the two hosts is the CMOP instance.
+- [x] Take a read-only inventory of the reachable Oracle hosts. Both are two cores with 956 MB of
+  memory and a 97 GB root volume, an order of magnitude below the four-core, 24 GB, 200 GB instance the
+  architecture assumes, and neither is idle; both already run MinIO, Docker and web services.
+- [ ] Confirm whether the four-core, 24 GB instance exists at all. Every capacity derivation for OCI
+  rests on it, and it is not among the hosts in the SSH configuration.
+- [ ] Check whether the block-storage allowance is already consumed. The two hosts hold 97 GB each,
+  totalling 194 GB, close to the 200 GB the architecture assigns to the CMOP instance alone.
 - [ ] Run probe P-1b, now narrowed by the completed paper screen. Measure only what documentation does
   not answer, meaning Superset, Marquez, the catalog backend and Kafka, plus the light combination as a
   whole. The default stack needs no measurement, having already failed on paper.
