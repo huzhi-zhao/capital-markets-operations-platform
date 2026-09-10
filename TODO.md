@@ -50,7 +50,11 @@
 - [x] Run the forty-quarter SEC extraction and replace the planning estimates with measurements.
   Instrument universe is 12505, extracted volume is 6 MB, split-ratio adjudication rate is ten percent,
   and twenty-nine percent of reverse-split filers were later delisted.
-- [ ] Run the second SEC pass for name changes, which needs one submissions call per CIK.
+- [x] Run the second SEC pass for name changes. 49 percent of the universe has former names, at five
+  times the split rate, but the formerNames date fields are EDGAR name-appearance windows rather than
+  legal change dates, so counts are usable and dates are not.
+- [ ] Decide whether the generator needs accurate name-change dates. If so, they must be recovered from
+  the filings themselves, which is separate work.
 - [x] Decide where extraction output lives in the repo and in what format. Answer: scripts under
   tools/sec-extract, pinned raw responses plus a manifest under data/reference/sec, committed rather
   than regenerated because SEC data drifts as filers amend.
