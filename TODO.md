@@ -65,11 +65,12 @@
   tunnel, and per-event Silver drill-down stays a LAN-only engineering capability.
 - [x] Read the FIX 4.4 field tables and state machine, and upgrade the candidate field list into a
   contract matrix organised by message and scenario, with a frozen minimal lifecycle L-1.
-- [ ] Fill the contract matrix: per-message obligation levels, the conditional-required conditions,
-  the state transition table including illegal transitions, and L-1's per-step values, each with a
-  volume and section citation.
-- [ ] Answer whether CumQty plus LeavesQty equals OrderQty unconditionally or only while the order is
-  live, and fill the applicability column for all three invariants.
+- [x] Fill the contract matrix: per-message obligation levels, conditional-required conditions, the
+  L-1 transition table and per-step values, each carrying a volume and section citation. Transitions
+  outside the matrices are recorded as L-1 scenario violations rather than FIX violations, because the
+  specification warns its own matrices are not exhaustive.
+- [x] Answer whether CumQty plus LeavesQty equals OrderQty unconditionally. It does not. It holds on
+  L-1's New, Partially Filled and Filled reports, and must not be asserted on terminal states.
 - [x] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story. Three of five criteria pass, two lack evidence rather than failing,
   and the ranking needs no change. See business-objectives.md section 5.1.
@@ -82,8 +83,11 @@
 - [x] Draft the synthetic-data generation contract: reproducibility, instrument dimension, measured
   corporate-action distributions, and the dirty-data contract. The trade-lifecycle distributions and
   three of the invariants stay blank until the FIX field evidence lands.
-- [ ] Fill the trade-lifecycle distributions and the FIX-dependent invariants in the generation spec
-  once the field tables are verified.
+- [ ] Decide the five L-1 distribution parameters left open in generation spec section 6.2: fills per
+  order, OrderQty, quantity split across fills, price dispersion, and timestamp spacing. These need a
+  decision, not further evidence.
+- [ ] Read FIX 4.4 batch two, the allocation and confirmation messages, applying the same matrix and
+  frozen-lifecycle method that batch one established.
 - [x] Draft the validation and reconciliation specification: four reconciliation pairs, per-pair date
   basis, the difference taxonomy, rerun assertions and gate semantics. Thresholds and tolerances stay
   open until Phase 1 measures them.

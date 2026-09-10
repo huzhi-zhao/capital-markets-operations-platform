@@ -108,9 +108,9 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 项目定位与系统范围 | Draft，主要边界已形成 | [项目概览](requirements/project-overview.md)、[ADR 0001](adr/0001-project-boundaries-and-system-context.md) |
 | 主 BO 与代表性 BQ | Draft，假设已通过检验，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1、§3.2 代表性 BQ、§5.1 检验结果；冻结只卡在 FIX 与 ISO 20022 字段证据 |
 | 原始数据 source inventory | Draft，渠道已闭合并实测 | [原始数据源清单](requirements/raw-data-source-inventory.md) §5.3–§5.7；四十个季度全量抽取已完成，产物钉在 `data/reference/sec/` |
-| 监管与行业数据契约 | 骨架已建立，字段未核对 | [监管与行业数据契约](requirements/regulatory-data-contracts.md)；FIX 版本已定为 4.4，字段表待逐行读规范填写 |
-| 合成数据契约 | Draft，公司行为部分已由实测支撑 | [合成数据生成规范](requirements/data-generation-specification.md)；交易生命周期分布被 FIX 证据阻塞 |
-| 验证与对账规范 | Draft，口径与门禁语义已定 | [验证与对账规范](requirements/validation-and-reconciliation-specification.md)；阈值与容差待 Phase 1 实测 |
+| 监管与行业数据契约 | 第一批已核对，其余未开始 | [监管与行业数据契约](requirements/regulatory-data-contracts.md)；FIX 4.4 订单生命周期已成矩阵并冻结 L-1，分配确认与 ISO 20022 各族待读 |
+| 合成数据契约 | Draft，L-1 范围内已写实 | [合成数据生成规范](requirements/data-generation-specification.md)；剩余空白是 §6.2 的五项分布参数，属决策而非证据 |
+| 验证与对账规范 | Draft，L-1 内已具体化 | [验证与对账规范](requirements/validation-and-reconciliation-specification.md)；R1/R2 口径与状态机违规注入已写实，阈值与容差待 Phase 1 实测 |
 | 数据规模模型 | Draft，包络已补齐 | [工作负载基线](workload-baseline.md) §5 已覆盖到达速率、新鲜度、访问模式、并发、保留与 RPO/RTO；数字仍是规划假设，待 Phase 1 实测 |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
