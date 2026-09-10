@@ -78,12 +78,12 @@ Silver 的首要消费者是 Spark，不是 BI 用户。Gold 固定常用业务�
 |---|---|---|
 | NAS | 4 核 8 线程、16 GB、8 TB 可扩，7×24 | S3-compatible storage、Bronze、Silver；**常驻日增量执行端**；不承载查询引擎 |
 | MacBook Pro | 规格待补，按需上线 | **首次全量回填、全量重算、宽扫描 EDA/特征工程、周期性 compaction**；本地 NVMe shuffle；driver 语言待定 |
-| OCI Montreal | 4 核、24 GB、200 GB，7×24。**该规格未被证实，见下** | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
+| OCI Montreal | 4 核、24 GB、175 GB，7×24。**已被 UOIP 占用 16 GB 与 143 GB，见下** | 编排、Catalog、Gold、Trino、窄流处理、BI、血缘、监控和公网入口 |
 
-> **2026-09-09 实测警告。** SSH 配置中可达的两台 Oracle 主机均为 2 核、956 MB 内存、97 GB
-> 根分区，且都已运行 MinIO、Docker 与 web 服务，**与上表 OCI 一行相差一个数量级**。4 核
-> 24 GB 的实例是否已开通尚未确认。在确认之前，本文 §8 及依赖 OCI 容量的全部推导都悬空，
-> 详见[技术选型评估要求](requirements/technology-selection-evaluation.md) §7.1.1。
+> **2026-09-09 实测。** 该实例存在，规格属实：4 核 aarch64、23974 MB 内存、175 GB 根分区。
+> **但它不是空的**，上面跑着 UOIP 与若干个人服务共 26 个容器，占用 16 GB 内存与 143 GB 磁盘。
+> CMOP 实际可用约 7.9 GB 内存与 32 GB 磁盘，详见
+> [技术选型评估要求](requirements/technology-selection-evaluation.md) §7.1.2。
 
 NAS 对象存储当前偏好 SeaweedFS，但最终选择仍是 Proposed。兼容性与恢复能力比 GitHub
 热度更重要，接受前需要用 Spark、Iceberg 和 Trino 进行实测。
@@ -190,23 +190,25 @@ Airflow task 不得在 OCI 进程内枚举 Bronze/Silver 对象。需要宽扫�
 目标总数据量、各层预算与测量计划见 [workload-baseline.md](workload-baseline.md)。
 当前 Gold 预算为 40 GB；超过预算首先视为粒度或保留策略信号，而不是直接扩盘理由。
 
-**原先记的约 21 GB 粗略预算已被推翻。**
+> **Gold 的 40 GB 预算目前放不下。** OCI 实例根分区 175 GB 已用 143 GB，只剩 32 GB，且尚未
+> 计入 catalog 后端、日志与 Iceberg 元数据。这是本次实测里唯一的硬阻塞。三条出路各有代价：
+> 压缩 Gold 粒度或保留期、扩块存储、或把 Gold 挪到家庭侧而只在 OCI 保留服务层。**这条必须
+> 先定，它决定的是容量模型而不是选型。**
+
+**原先记的约 21 GB 粗略预算已被推翻，但推翻它的是实测而不是纸面加法。**
 [技术选型评估要求](requirements/technology-selection-evaluation.md) §7.1 用各项目自己发布的
 内存要求做了一次纸面筛：仅 Trino 按其 Kubernetes 部署的典型 8 GB、Airflow 按其文档的最低
 4 GB，两项就占掉 24 GB 的一半，而流式、BI、血缘、两个数据库与操作系统尚未计入。
 
-那份预算的问题不是偏乐观，**是从未把各组件声明的要求加起来过**。补齐后，Trino、Airflow、
-Flink 三项按各自官方口径下限合计约 15.3 GB，留给 Superset、Marquez、两个 Postgres、catalog
-后端与操作系统的不到 4 GB。**答案是否，且不需要实测。**
+实测结果是：这套组合本身只占约 7.6 GB，比纸面估算低三倍，**在空机器上完全装得下**。问题
+不在组件大小，在于这台机器已被 UOIP 占掉 16 GB。
 
-Kafka 那一项更麻烦。它的文档不给固定堆大小，只给方法，并明确要求依赖操作系统 page cache、
-让空闲内存被自动利用。**一台填到八成的机器没有空闲内存**，因此把 Kafka 放进常驻集与它唯一
-明确的资源要求直接冲突。§7 已限定 Kafka 与 Flink 只承载窄窗口演示，为一个演示用途接受这种
-冲突不划算，是否改为按需启停或移出常驻集应单独决定。
+**因此约束从"组件太大"变成"机器已被占用"**，可用内存约 7.9 GB，与这套组合的实测占用几乎
+相等。结论是不能再起一套平行的栈，只能复用。
 
-直接后果是候选顺序要改。**不能再把 Trino 加 Airflow 加 Kafka 加 Flink 当作默认起点**，
-再想办法塞进 24 GB。较轻的候选，例如 cron 加脚本、DuckDB、以及把 OpenLineage 事件直接落表，
-必须与重组件同场评估。
+直接后果不是换轻组件，而是**复用那台机器上已经在跑的重组件**。Trino、Airflow、Kafka、
+Flink、Superset、Postgres 全部已在运行，CMOP 再装一套装不下。轻候选仍应评估，但理由从
+"重组件装不下"改为"少一个常驻进程就少一份运维负担"，见 §4 第 4 条。
 
 ## 9. 可观测性与治理
 

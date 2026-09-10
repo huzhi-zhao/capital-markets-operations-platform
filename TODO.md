@@ -116,30 +116,26 @@ handles keyed rewrites of historical partitions.
 - [x] Re-check the reversal-cost ranking. Batch compute moves to medium, because replacing the engine
   means rewriting all processing code. Object storage's S3 risk may be lower than assumed, since an
   independent REST catalog owns commit atomicity.
-- [x] Screen the OCI memory budget on paper against each project's own published figures. Trino,
-  Airflow and Flink at their documented minima total about 15.3 GB against a 19.2 GB ceiling, leaving
-  under 4 GB for BI, lineage, two databases, the catalog backend and the operating system. The default
-  stack is eliminated without deploying anything, and the twenty-one gigabyte estimate is withdrawn.
-- [x] Resolve the Kafka row. It is a judgement, not missing data. Kafka publishes no fixed heap size and
-  instead requires ample free memory for the operating system page cache, which a host filled to eighty
-  percent does not have. Placing it in the resident set contradicts its one explicit resource
-  requirement, and measurement would only reproduce that.
-- [ ] Decide whether Kafka and Flink move to on-demand start or leave the resident set entirely. They
-  carry only a narrow-window demonstration, which does not justify a component in direct conflict with
-  the memory budget.
+- [x] Screen the OCI memory budget on paper, then discard the screen's conclusion. Measurement showed
+  it overstated Trino threefold and the others by comparable factors, because published figures are
+  capacity recommendations for production throughput rather than idle footprints. The lesson is kept in
+  the document: a paper screen can raise a risk, it cannot eliminate a candidate.
 - [x] Decide whether the 2026 no-pipeline-components boundary is relaxed for disposable probes. It is,
   within four conditions recorded in the roadmap. The generator, the pipeline itself and the ordering
   of full backfill after the baseline freeze are untouched.
-- [x] Take a read-only inventory of the reachable Oracle hosts. Both are two cores with 956 MB of
-  memory and a 97 GB root volume, an order of magnitude below the four-core, 24 GB, 200 GB instance the
-  architecture assumes, and neither is idle; both already run MinIO, Docker and web services.
-- [ ] Confirm whether the four-core, 24 GB instance exists at all. Every capacity derivation for OCI
-  rests on it, and it is not among the hosts in the SSH configuration.
-- [ ] Check whether the block-storage allowance is already consumed. The two hosts hold 97 GB each,
-  totalling 194 GB, close to the 200 GB the architecture assigns to the CMOP instance alone.
-- [ ] Run probe P-1b, now narrowed by the completed paper screen. Measure only what documentation does
-  not answer, meaning Superset, Marquez, the catalog backend and Kafka, plus the light combination as a
-  whole. The default stack needs no measurement, having already failed on paper.
+- [x] Locate and inventory the four-core instance. It exists and matches its stated specification, but
+  it is not idle: 26 containers of the sibling project and personal services occupy 16 GB of memory and
+  143 GB of disk, leaving roughly 7.9 GB and 32 GB for this project.
+- [ ] Resolve the Gold storage blocker. Its budget is 40 GB and only 32 GB remains, before the catalog
+  backend, logs and Iceberg metadata. Compress the grain or retention, extend block storage, or move
+  Gold to the home side and keep only the serving layer on OCI.
+- [ ] Turn the reuse question into a decision. Reusing the running orchestrator, query engine and
+  streaming components is no longer a preference but the only thing that fits. The catalog stays
+  separate regardless, since the running Hive metastore belongs to the sibling project.
+- [ ] Add a host block for the four-core instance to the SSH configuration so it is addressable by name.
+- [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
+  install, so the figures come from real running instances. The default combination occupies about
+  7.6 GB, comfortably inside 24 GB.
 - [ ] Re-rank the candidates so the lighter combinations are evaluated alongside the heavy ones rather
   than after them. The default stack is no longer the assumed starting point.
 - [x] Verify whether an independent REST catalog removes the conditional-write requirement on object
