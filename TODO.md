@@ -95,10 +95,15 @@ handles keyed rewrites of historical partitions.
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
   per-event traceability the project claims. Message-level values still wait on the volumes.
-- [ ] Add an account dimension to the generation spec. It does not exist, A-1 needs one, and accounts
-  open, close, rename and merge, so it needs the same version chaining the instrument dimension has.
-  This is new work that A-1 surfaced rather than something already planned. C-1 turns it from needed
-  into blocking, because the account field is mandatory on every confirmation message.
+- [x] Add an account dimension to the generation spec. Two levels, client and account, because the
+  accounts in one allocation must belong to one client and a flat set cannot express that. Unlike the
+  instrument dimension it has no real source to inherit from, so every size figure is a setting rather
+  than a measurement, and the outward claim has to say so. Three of its four lifecycle events match the
+  instrument dimension; account merges do not, because they move positions across keys and a
+  single-key version chain cannot represent that. The contract is that a merge never rewrites history.
+- [ ] Decide how the merge chain is materialised in Silver: walk the chain per query, or pre-expand to
+  the chain tail in the dimension. A performance and correctness trade-off, not a design question, so
+  it waits for Phase 1 measurements.
 - [x] Settle the version claim, and correct half of it. The specification states in its own words that
   confirmation and allocation report are new to 4.4, so no comparison against 4.2 is needed. But the
   same page records that allocation existed before under a different message name, so the original
