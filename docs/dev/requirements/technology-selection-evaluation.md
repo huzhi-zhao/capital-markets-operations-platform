@@ -2,9 +2,11 @@
 
 > **Status**: Draft · **Date**: 2026-09-09
 >
-> **Decision state**: 本文规定**怎样评估**，不选择任何产品。执行入口依赖 BO baseline 冻结；
-> source inventory 与 workload envelope 已就绪，因此评估范围可以现在设计，见
-> [立项与就绪度](../project-inception-and-readiness.md) §6。
+> **Decision state**: 本文规定**怎样评估**，不选择任何产品。执行入口条件是 **workload
+> envelope 就绪**，不是 BO baseline 冻结——§5 的七个代表性负载全部引自
+> [工作负载基线](../workload-baseline.md) §5，没有一个引自 FIX 或 ISO 20022，因此再读多少
+> 报文规范也不会改变哪个候选能做好带主键的历史改写。该条件已于 2026-09-09 满足，评估随
+> Phase 0B-1 开始执行，见[立项与就绪度](../project-inception-and-readiness.md) §6。
 >
 > **Related**: [工作负载基线](../workload-baseline.md)、[平台架构](../platform-architecture.md)、
 > [ADR 索引](../adr/README.md)
@@ -22,13 +24,57 @@ ADR。
 | 决策 | 当前状态 | 事实源 |
 |---|---|---|
 | 对象存储实现 | Proposed 偏好 SeaweedFS，未验证 | [平台架构](../platform-architecture.md) §4 |
-| 表格式与 catalog | Iceberg 加独立 REST Catalog，未实测 | [ADR 0002](../adr/0002-transaction-centric-lakehouse-layering.md) |
+| 表格式 | Iceberg，未实测 | [ADR 0002](../adr/0002-transaction-centric-lakehouse-layering.md) |
+| Catalog 实现 | **只定了"独立 REST Catalog"，具体实现未定** | 同上 |
 | 批计算引擎 | Spark，未实测 | [ADR 0003](../adr/0003-hybrid-deployment-topology-and-component-placement.md) |
 | 交互查询引擎 | Trino，未实测 | 同上 |
 | 编排 | Airflow，是否复用既有实例未定 | [平台架构](../platform-architecture.md) §4.2、§10 |
 | 流式组件 | Kafka 与 Flink，仅窄窗口演示 | [平台架构](../platform-architecture.md) §7 |
 | 血缘 | OpenLineage 与 Marquez | [平台架构](../platform-architecture.md) §9 |
 | 语言与 LTS JDK | 只有原则，模块映射未定 | [ADR 0004](../adr/0004-language-and-runtime-boundaries.md) |
+
+**Catalog 实现是新拆出来的一行。** 原来它和表格式合并在一格里，"Iceberg 加独立 REST
+Catalog"读起来像已经定了，实际上定的只是接口形态，背后是哪一个实现完全没选。两者的回滚成本
+也不同，合并会让深度要求跟着错。
+
+### 2.1 候选清单
+
+上表每一行原本只写了一个倾向值。**只有一个候选的评估不是评估**，因此 0B-1 先把真实备选摆出来。
+下表的"候选属性"一律是**待核实的说法，不是已确认的事实**，核实本身就是 0B-1 的工作。
+
+| 决策 | 候选 | 先淘汰谁，为什么 |
+|---|---|---|
+| 对象存储 | SeaweedFS、Garage、MinIO、RustFS、直接用文件系统 | 直接用文件系统会让 §5 的 W7 跨隧道写入失去可测对象，保留但排在最后 |
+| 表格式 | Iceberg、Delta Lake、Hudi | 不重开。三者都支持按主键改写，Iceberg 的多引擎中立性是本项目 Spark 写、Trino 读拓扑的直接需求 |
+| Catalog | REST Catalog 的各实现、JDBC catalog | JDBC catalog 部署最轻，但会把 catalog 绑死在一个数据库实例上 |
+| 批计算 | Spark、DuckDB、Polars | 见 §2.2 |
+| 交互查询 | Trino、DuckDB、其他 MPP | 见 §2.3 |
+| 编排 | Airflow、Dagster、Prefect、cron 加脚本 | 见 §2.3 |
+| 流式 | Kafka 加 Flink、Redpanda、不上流式 | 用途只有窄窗口演示，按 §3 属低回滚成本 |
+| 血缘 | Marquez、把 OpenLineage 事件直接落表 | 落表方案省掉一个常驻 web 应用与一个 Postgres |
+
+### 2.2 单机方案必须被认真对待，不能默认 Spark
+
+回填量是 800 GB–1.5 TB，日增量只有 200–360 MB。**这两个数字之间差了三个数量级**，而
+[平台架构](../platform-architecture.md) §4.1 已经据此判定日增量不需要按需算力节点。同样的
+逻辑往前推一步：如果只有 W1 首次回填真正需要分布式,那么为一个一次性负载常驻一整套 Spark
+运维负担,按 §4 第 4 条"一个兼职的人"衡量是亏的。
+
+必须验的是 DuckDB 或 Polars 对 Iceberg 的**写入**成熟度,不是读取。读取早已可用,写入才是
+W2 与 W6 的前提。如果写入不成熟,Spark 就是被证据选中的,而不是被默认选中的。这个区别会写进
+ADR。
+
+### 2.3 OCI 常驻内存预算是第一道横切筛子
+
+[平台架构](../platform-architecture.md) §8 已经指出 24 GB 要同时装下多个常驻组件,现有约
+21 GB 是粗略预算,缺实测。**这一条应当先于任何单组件评测执行**,因为它一次同时约束四个决策:
+编排、交互查询、流式、血缘。
+
+理由是 §1 已经写明的"评估必须以组合为单位"。逐个组件挑最优,再发现总和装不下 24 GB,等于把
+四轮评测全部作废重来。**先测常驻占用,再测性能**,顺序反了代价很高。
+
+因此 0B-1 的第一个动作不是选对象存储,而是给出一份 OCI 常驻组件的实测内存清单,并据此决定
+哪些候选在进入性能评测之前就已经出局。
 
 ## 3. 评估深度与回滚成本挂钩
 
@@ -41,8 +87,23 @@ ADR。
 | 中 | 需要迁移但数据可原样搬 | 独立 ADR，可用兼容性验证替代完整 probe |
 | 低 | 换配置或换进程即可 | 不单独立 ADR，记在架构文档即可 |
 
-初判：表格式为高；对象存储为中，前提是 S3 兼容性成立，**而这个前提本身就是要验的头号问题**；
-查询引擎与编排为低。
+初判已复核并细化如下，作为 0B-1 的执行依据：
+
+| 决策 | 回滚成本 | 依据 |
+|---|---|---|
+| 表格式 | 高 | 换格式要重写全部 Bronze 与 Silver 数据 |
+| 对象存储 | 中 | 数据可原样搬，前提是 S3 兼容性成立 |
+| Catalog 实现 | 中 | 元数据可重建，但全部表指针要迁移 |
+| 批计算引擎 | 中 | 换引擎要重写处理代码,数据不动 |
+| 交互查询引擎 | 低 | 只读 Gold,换掉不影响任何已写入数据 |
+| 编排 | 低 | 换调度器要重写 DAG 定义,不触及数据 |
+| 流式组件 | 低 | 只承载窄窗口演示 |
+| 血缘 | 低 | 事件格式是 OpenLineage,消费端可换 |
+
+**相对初判改了两处。** 批计算引擎从"未列"补为中,因为 §2.2 把它变成了真实的开放选择,而换
+引擎意味着重写全部处理代码,这不是低成本。对象存储的 S3 兼容性风险等级下调:本项目使用独立
+REST Catalog,提交原子性由 catalog 承担,对象存储不需要提供条件写入。**这项必须先核实**,
+若成立,对象存储的候选范围会明显放宽。
 
 ## 4. 决策轴
 
@@ -83,6 +144,9 @@ ADR。
 
 ## 7. 未决项
 
+- OCI 常驻内存预算的实测结果，见 §2.3。**这是 0B-1 的第一个动作。**
+- 独立 REST Catalog 是否真的免除了对象存储的条件写入要求，见 §3。
+- DuckDB 或 Polars 的 Iceberg 写入成熟度，见 §2.2。
 - 各 probe 的时间盒长度。
 - W1 是否允许用缩小比例的数据代跑，以及缩放后结论的有效范围。
 - 评估结果与 Proposed ADR 的对应关系：一个 ADR 对一个决策，还是一个 ADR 覆盖一组组合。

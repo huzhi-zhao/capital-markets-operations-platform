@@ -100,7 +100,20 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 
 ## 6. 当前就绪度
 
-当前处于 **Phase 0A：项目边界、业务基线与数据发现**。状态按本文链接的事实源判断。
+当前处于 **Phase 0B-1：方案评估**，同时 0A 留有两条并行未结项。状态按本文链接的事实源判断。
+
+**为什么可以在 BO baseline 未冻结时进入 0B-1。** §4 规定进入组件比较的最小条件是五条，
+五条现在都成立，且该节明确写着技术评估不要求 BO 永久冻结、也不要求每个原始字段提前确定。
+更具体地，[技术选型评估要求](requirements/technology-selection-evaluation.md) §5 的七个
+代表性负载全部引自[工作负载基线](workload-baseline.md) §5，没有一个引自 FIX 或 ISO 20022。
+**再读多少报文规范，也不会改变哪个候选能做好带主键的历史分区改写。**
+
+**两条并行未结项属于 0A-2，挡的是 Phase 1 而不是 0B-1**：FIX 分配与确认、ISO 20022 结算与
+现金各族尚未核对，BO baseline 因此不能冻结；生成器分布参数待确认。
+
+**没有放宽的两条。** 0B-3 开工就绪仍要求不存在会推翻最小纵向切片的未决问题，分配与结算语义
+未证正属此类。[BO 收敛循环](../images/bo-convergence-loop.drawio)中"全量回填必须在冻结
+之后"的次序约束照旧；0B 只做评估与一次性 probe，不触及回填。
 
 | 能力 | 当前状态 | 事实源或缺口 |
 |---|---|---|
@@ -115,8 +128,8 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
-| 完整技术选型评估 | 评估要求已写，执行入口未开 | [技术选型评估要求](requirements/technology-selection-evaluation.md)；source inventory 与 workload envelope 已就绪，执行仍等 BO baseline 冻结 |
-| 选型 probe | 未开始 | 进入 Phase 0B 后按风险触发 |
+| 完整技术选型评估 | **执行中** | [技术选型评估要求](requirements/technology-selection-evaluation.md)；候选清单与回滚成本排序已就位，第一个动作是 §2.3 的 OCI 常驻内存实测 |
+| 选型 probe | 未开始 | 按 §5 的六条边界与回滚成本排序触发，高成本决策优先 |
 | 正式实现 | 禁止进入 | 以 [roadmap](roadmap.md) 的 Phase 0 退出条件为准 |
 
 ## 7. 恢复工作时的顺序

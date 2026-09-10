@@ -1,6 +1,6 @@
 # TODO
 
-> **Current phase**: Phase 0A - project boundary, business baseline, and data discovery.
+> **Current phase**: Phase 0B-1 - solution evaluation, with two Phase 0A items running in parallel.
 >
 > This file is the mutable project task queue. Long-lived requirements and decisions belong in
 > [developer documentation](docs/dev/README.md); stage definitions and readiness evidence belong in
@@ -18,7 +18,7 @@
   a single orchestrator on OCI.
 - [x] Correct the settlement cycle to T+1 across the documentation.
 
-## Now: Complete Phase 0A Inputs
+## Done: Phase 0A Inputs
 
 - [x] Provisionally rank BO-1, BO-2, and BO-3 as primary, supporting, or rejected candidates.
 - [x] Define the target personas, critical business flow, and at least one representative BQ.
@@ -27,8 +27,6 @@
 - [x] Establish the initial raw-data source inventory: source class, owner, rights, format, arrival mode,
   expected history, quality risks, and sensitivity.
 - [x] Adopt the ranking as the working BO hypothesis (loop step 1).
-- [ ] Gather evidence for the hypothesis: minimum FIX order/execution/allocation subset, ISO 20022
-  settlement and cash message families, and the semantics needed for corporate-action restatement.
 - [x] Probe whether ten years of corporate actions can actually be obtained. Answer: yes, from the SEC
   structured endpoints, which are free, cover ten years, and are explicitly redistributable.
 - [x] Decide the corporate-action sourcing method: extract real splits, dividends, name changes and
@@ -53,13 +51,9 @@
 - [x] Run the second SEC pass for name changes. 49 percent of the universe has former names, at five
   times the split rate, but the formerNames date fields are EDGAR name-appearance windows rather than
   legal change dates, so counts are usable and dates are not.
-- [ ] Decide whether the generator needs accurate name-change dates. If so, they must be recovered from
-  the filings themselves, which is separate work.
 - [x] Decide where extraction output lives in the repo and in what format. Answer: scripts under
   tools/sec-extract, pinned raw responses plus a manifest under data/reference/sec, committed rather
   than regenerated because SEC data drifts as filers amend.
-- [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
-  is confirmed and needs no revision.
 - [x] Decide the drill-down boundary for Silver. Answer: excluded from external scope. The difference
   explanation chain is materialized into Gold during the batch, the interactive path never crosses the
   tunnel, and per-event Silver drill-down stays a LAN-only engineering capability.
@@ -74,8 +68,6 @@
 - [x] Test the leading BO against public-rule coverage, source feasibility, target scale, hardware limits,
   and an end-to-end acceptance story. Three of five criteria pass, two lack evidence rather than failing,
   and the ranking needs no change. See business-objectives.md section 5.1.
-- [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
-  freeze the initial success measures and in-scope/out-of-scope boundary.
 - [x] Extend the workload baseline beyond capacity to cover velocity, freshness, access patterns,
   concurrency, retention, RPO/RTO, network limits, and operational constraints. Written as the
   workload envelope in workload-baseline.md section 5, and renamed that file from
@@ -83,25 +75,60 @@
 - [x] Draft the synthetic-data generation contract: reproducibility, instrument dimension, measured
   corporate-action distributions, and the dirty-data contract. The trade-lifecycle distributions and
   three of the invariants stay blank until the FIX field evidence lands.
-- [ ] Confirm or replace the five proposed L-1 distribution parameters in generation spec section 6.2.
-  Two of them carry real consequences: the quantity split must not round to a zero fill or the derived
-  quantity fields stop reconciling, and fill prices must come from the same series used for valuation
-  or reconciliation R1 shows a permanent difference that has nothing to do with the pipeline.
-- [ ] Read FIX 4.4 batch two, the allocation and confirmation messages, applying the same matrix and
-  frozen-lifecycle method that batch one established.
 - [x] Draft the validation and reconciliation specification: four reconciliation pairs, per-pair date
   basis, the difference taxonomy, rerun assertions and gate semantics. Thresholds and tolerances stay
   open until Phase 1 measures them.
 
-## Next: Enter Phase 0B
+## Parallel: Close the Remaining Phase 0A Items
 
-- [ ] Confirm that the BO baseline, source inventory, and workload envelope satisfy the entry gate in
-  `docs/dev/project-inception-and-readiness.md`.
+These block freezing the BO baseline and therefore Phase 1. They do not block 0B-1, because every
+representative workload in the evaluation requirement comes from the workload envelope rather than
+from any message specification, so no amount of further message reading changes which candidate
+handles keyed rewrites of historical partitions.
+
+- [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
+  settlement and cash message families, applying the matrix and frozen-lifecycle method that batch one
+  established.
+- [ ] Confirm or replace the five proposed L-1 distribution parameters in generation spec section 6.2.
+  Two carry real consequences: the quantity split must not round to a zero fill or the derived quantity
+  fields stop reconciling, and fill prices must come from the same series used for valuation or
+  reconciliation R1 carries a permanent difference that has nothing to do with the pipeline.
+- [ ] Decide whether the generator needs accurate name-change dates. If so, they must be recovered from
+  the filings themselves, which is separate work.
+- [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
+  is confirmed and needs no revision.
+- [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
+  freeze the initial success measures and in-scope/out-of-scope boundary.
+
+## Now: Phase 0B-1 Solution Evaluation
+
 - [x] Create the cross-cutting technology-selection evaluation requirement with scope, decision axes,
   evaluation criteria, representative workloads, and evidence requirements. Evaluation depth is tied to
   reversal cost, and the workloads come from the workload envelope rather than generic benchmarks.
-- [ ] Confirm the first-pass reversal-cost ranking in the evaluation requirement, which decides which
-  choices get their own ADR.
+- [x] Confirm that the source inventory and workload envelope satisfy the entry gate. They do. The gate
+  is the five conditions in the readiness document, all of which hold, and that section states that
+  technology evaluation requires neither a permanently frozen BO nor every raw field settled.
+- [x] Correct the evaluation requirement's own entry condition, which said it waited on a BO freeze and
+  contradicted the readiness gate. It waits on the workload envelope, which is ready.
+- [x] Build the candidate slate. Every decision previously listed one preferred answer, and an
+  evaluation with one candidate is not an evaluation. Also split catalog implementation out of the
+  table-format row, since only the interface shape was ever decided and the two differ in reversal cost.
+- [x] Re-check the reversal-cost ranking. Batch compute moves to medium, because replacing the engine
+  means rewriting all processing code. Object storage's S3 risk may be lower than assumed, since an
+  independent REST catalog owns commit atomicity.
+- [ ] Measure resident memory of every candidate OCI component against the 24 GB budget. This runs
+  before any single-component benchmark, because it constrains orchestration, interactive query,
+  streaming and lineage at once, and picking each one on its own merits only to find the total does not
+  fit means discarding four rounds of evaluation.
+- [ ] Verify whether an independent REST catalog removes the conditional-write requirement on object
+  storage. If it does, the object-store candidate set widens materially.
+- [ ] Verify DuckDB and Polars Iceberg write maturity, not read. Read support is long settled; write is
+  the precondition for the keyed-merge and restatement workloads. A negative result makes Spark the
+  evidence-backed choice rather than the default one.
+- [ ] Produce the evaluation matrix and risk list, and open Proposed ADRs for the high and medium
+  reversal-cost decisions only.
+## Next: Phase 0B-2 and 0B-3
+
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
