@@ -95,8 +95,9 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 5. 保存环境、版本、数据规模、配置和关键测量值；
 6. 将结论写回 requirement、容量基线或 Proposed ADR。
 
-如果 2026 年继续维持完全不写代码的时间边界，0B 阶段可放在 2027 年初；在 probe 完成前，
-依赖实测证据的产品 ADR 保持 `Proposed`。
+**该时间边界已于 2026-09-09 为一次性 probe 有界放宽**，理由与例外范围见
+[roadmap](roadmap.md) 的"probe 例外"。上面六条继续全部适用，放宽的只是"2026 年内一律不
+部署"这一条。在 probe 完成前，依赖实测证据的产品 ADR 保持 `Proposed`。
 
 ## 6. 当前就绪度
 
@@ -129,7 +130,7 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
 | 完整技术选型评估 | **执行中** | [技术选型评估要求](requirements/technology-selection-evaluation.md)；候选清单与回滚成本排序已就位，第一个动作是 §2.3 的 OCI 常驻内存实测 |
-| 选型 probe | 未开始 | 按 §5 的六条边界与回滚成本排序触发，高成本决策优先 |
+| 选型 probe | P-1a 纸面筛已完成，P-1b 待执行 | [技术选型评估要求](requirements/technology-selection-evaluation.md) §7；时间边界已放宽，见 [roadmap](roadmap.md) |
 | 正式实现 | 禁止进入 | 以 [roadmap](roadmap.md) 的 Phase 0 退出条件为准 |
 
 ## 7. 恢复工作时的顺序

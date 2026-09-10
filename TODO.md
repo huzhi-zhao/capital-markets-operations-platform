@@ -120,9 +120,15 @@ handles keyed rewrites of historical partitions.
   the eight gigabytes typical of its Kubernetes deployment plus Airflow at its documented four gigabyte
   minimum already consume half the box, before streaming, BI, lineage, two databases and the operating
   system. The roughly twenty-one gigabyte estimate in the architecture document is withdrawn.
-- [ ] Decide whether the 2026 no-pipeline-components boundary in the roadmap is relaxed for disposable
-  probes. Deploying components to measure resident memory conflicts with it, so probe P-1b cannot run
-  until this is answered. The paper screen needed no such deployment and is already done.
+- [x] Decide whether the 2026 no-pipeline-components boundary is relaxed for disposable probes. It is,
+  within four conditions recorded in the roadmap. The generator, the pipeline itself and the ordering
+  of full backfill after the baseline freeze are untouched.
+- [ ] Take a read-only inventory of the OCI host before deploying anything: cores, total and free
+  memory, resident processes by size, and what already listens. The remaining budget cannot be computed
+  without knowing what the host already spends, and the sibling project may already reside there.
+  Blocked: the SSH key for both Oracle hosts is not loaded in the agent, so batch login is refused.
+- [ ] Confirm which Oracle host is the CMOP instance, and whether deploying disposable probe components
+  onto it is acceptable given whatever else already runs there.
 - [ ] Run probe P-1b once that boundary is settled: per-candidate idle and peak resident memory under
   the interactive query workload, deployed one component at a time, stopping any candidate that exceeds
   six gigabytes idle.
