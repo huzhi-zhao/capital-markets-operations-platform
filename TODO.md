@@ -238,9 +238,15 @@ handles keyed rewrites of historical partitions.
   business roles, and adds two fields S-1 had missed: the safekeeping account, which is where the
   account dimension attaches to the settlement leg, and the credit-debit indicator, whose sign flips
   with direction the same way the allocation net money does. S-1 is frozen.
-- [ ] Recover the status transition ordering. The report delegates it to a decision diagram agreed by
-  the market practice group, which is an image with no text behind it, so the three status axes are
-  recorded without any transition rules. S-2 cannot land until this is filled.
+- [x] Recover the status transition ordering. The decision diagram is an image inside the report, read
+  block by block. It organises status by which party performed the step rather than by kind of status,
+  and it settles the rule S-2 needs: the settlement branch first asks whether the current moment is
+  before or after the instructed settlement date, and pending becomes failing at the end of that date.
+  It also shows that matching status is not monotonic, that the two matching axes differ by who issued
+  them, and that an unmatched trade carries only the account owner's reason.
+- [ ] Follow the diagram's one external pointer, a chapter reference that is not in this report and
+  points at the market practice group's own document. It affects boundary detail on the
+  before-or-after judgement, not the main rule.
 - [ ] Read Parts 2 and 3 of the same report for the per-element definitions and usage rules. S-1 does
   not depend on them; S-2 through S-4 do.
 - [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
