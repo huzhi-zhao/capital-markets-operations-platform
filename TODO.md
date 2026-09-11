@@ -254,3 +254,21 @@ handles keyed rewrites of historical partitions.
   branch is mandatory while all three of its children are optional.
 - [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
   introduces both and the two-level client and account structure has neither.
+
+- [x] Verify the ISO 20022 cash families from their schemas. Twelve messages across the two cash
+  message sets, identifiers, roots and cardinality all taken from the registration authority's own
+  XSD. Three findings matter beyond bookkeeping. The payments family is batch-oriented where the
+  securities family is one instruction per message, so Bronze needs a group table and a transaction
+  table rather than one row per message. The status report's transaction level has no mandatory
+  element at all, an even weaker guarantee than the settlement leg's. And the end-to-end identifier
+  is the only mandatory identifier in the payment identification block, which makes it the single
+  anchor that ties the cash leg back to the securities leg.
+- [ ] Obtain the External Code Sets. The cash families declare their status, balance-type and bank
+  transaction code types as plain four-character strings with no enumeration in the schema, unlike
+  the securities family where the equivalents are inline. Twenty-three such types in the status
+  report alone, thirty-two in the statement. Until the code sets are in hand the cash leg has a
+  verified structure and no legal values, and no status code may be invented.
+- [ ] Read the Message Definition Reports for both cash message sets. Business flows, roles and
+  worked examples are there, the same position they occupied for the settlement leg.
+- [ ] Decide how the batch-oriented payment messages land in Bronze. The group header and the
+  transaction list need separate tables; their primary keys and partition keys are open.

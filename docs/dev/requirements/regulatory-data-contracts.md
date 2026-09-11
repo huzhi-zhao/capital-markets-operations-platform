@@ -25,7 +25,7 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 | 第一批 | FIX 订单生命周期：新建、撤改、成交回报、状态机 | 五种报文的字段矩阵已核对；L-1 已填实 |
 | 第二批 | FIX 分配指令与确认 | 七种报文的字段矩阵与规范自带流程已核对；A-1 与 C-1 已冻结 |
 | 第三批 | ISO 20022 结算报文族 | 三种核心报文已从规范 XSD 与 MDR 核对；S-1 已冻结；状态转移已取得 |
-| 第四批 | ISO 20022 资金报文族 | 未开始 |
+| 第四批 | ISO 20022 资金报文族 | 十二种报文已从规范 XSD 核对；发现状态词表不在 schema 内，见 §4A.5 |
 | 第五批 | FINTRAC，仅取规则版本化所需语义 | 未开始，已降级 |
 | 不做 | CIRO 深入报送规格、SEC EDGAR XBRL | 排除 |
 
@@ -775,8 +775,8 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
 | 领域 | 报文族 | 用途 | 状态 |
 |---|---|---|---|
 | 证券结算 | `sese` | 结算指令、状态通知、结算确认 | **已核对**，见 §4.1 起 |
-| 资金账户 | `camt` | 账户报告、对账单、借贷通知 | 待核对，属第四批 |
-| 支付 | `pacs` | 资金划拨 | 待核对，属第四批 |
+| 资金账户 | `camt` | 账户报告、对账单、借贷通知 | **已核对**，见 §4A |
+| 支付 | `pacs` | 资金划拨 | **已核对**，见 §4A |
 | 公司行为 | `seev` | 公司行为通知与权益变动确认 | 待核对，优先级低 |
 
 加拿大 Lynx 大额支付系统已采用 ISO 20022，其公开材料可作为本地化的出处之一。
@@ -1025,6 +1025,143 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 - **S-1 引入了 Instructing Party 与 Executing/Servicing Party 两个角色**，
   [合成数据生成规范](data-generation-specification.md) §3A 的两层结构里没有它们。是复用客户层
   还是新增一层，未决。
+## 4A. 第四批：资金报文族
+
+**第四批于 2026-09-10 开工。** 与第三批同样的读法：先读规范 XSD 取标识符、基数与枚举，
+不读 MDR 不下业务结论。**本批只做了 schema 这一层**，欠什么写在 §4A.8。
+
+### 4A.1 出处与消息集
+
+| 消息集 | 编号 | 最后更新 | 覆盖 |
+|---|---|---|---|
+| Bank-to-Customer Cash Management | 1246 | 2026-03-19 | `camt.052`、`camt.053`、`camt.054`、`camt.060` |
+| Payments Clearing and Settlement | 1249 | 2026-03-19 | `pacs.002/003/004/007/008/009/010/028` |
+
+两个消息集的 XSD 均由注册机构站点直接取得，**全程在浏览器内存中读取，未落盘**，与第三批一致。
+
+### 4A.2 报文标识符与版本，已核对
+
+| 报文标识符 | 根元素 | 用途 |
+|---|---|---|
+| `camt.052.001.14` | `BankToCustomerAccountReportV14` | 日内账户报告 |
+| `camt.053.001.14` | `BankToCustomerStatementV14` | 日终对账单 |
+| `camt.054.001.14` | `BankToCustomerDebitCreditNotificationV14` | 借贷通知 |
+| `camt.060.001.07` | `AccountReportingRequestV07` | 报告请求 |
+| `pacs.002.001.16` | `FIToFIPaymentStatusReportV16` | 支付状态回报 |
+| `pacs.003.001.12` | `FIToFICustomerDirectDebitV12` | 客户直接借记 |
+| `pacs.004.001.15` | `PaymentReturnV15` | 退汇 |
+| `pacs.007.001.14` | `FIToFIPaymentReversalV14` | 冲正 |
+| `pacs.008.001.14` | `FIToFICustomerCreditTransferV14` | 客户贷记划拨 |
+| `pacs.009.001.13` | `FinancialInstitutionCreditTransferV13` | 机构间贷记划拨 |
+| `pacs.010.001.06` | `FinancialInstitutionDirectDebitV06` | 机构间直接借记 |
+| `pacs.028.001.07` | `FIToFIPaymentStatusRequestV07` | 状态查询 |
+
+**版本号与第三批的 `sese` 不同步。** 同一天发布的两个消息集，版本尾号各自演进，
+**不能从一个族的版本推另一个族的版本**，解析层按报文标识符逐一登记。
+
+### 4A.3 `pacs` 是批量结构，`sese` 不是
+
+这是第四批与第三批之间最大的结构差异，**直接影响 Bronze 的分区与关联口径**。
+
+`pacs.008` 与 `pacs.009` 的根元素同形：
+
+| 元素 | 类型 | 基数 |
+|---|---|---|
+| `GrpHdr` | `GroupHeader131` | 1..1 |
+| `CdtTrfTxInf` | `CreditTransferTransaction73`（`pacs.008`）／`...79`（`pacs.009`） | **1..unbounded** |
+| `SplmtryData` | `SupplementaryData1` | 0..unbounded |
+
+**一条报文里可以装任意多笔交易。** `sese` 一条报文一笔指令，`pacs` 不是。Bronze 若按报文落行，
+`pacs` 一行会藏着 N 笔业务事实；若按交易落行，又丢掉组层的 `GrpHdr`。**两者都要留**，
+组层与交易层分两张表，靠 `GrpHdr/MsgId` 连接。
+
+`GroupHeader131` 必填四项：`MsgId`、`CreDtTm`、**`NbOfTxs`**、`SttlmInf`。
+**`CtrlSum` 是选填。** 批量报文强制带笔数、不强制带金额合计，
+所以**"组内金额合计等于交易金额之和"这条校验只在 `CtrlSum` 出现时才可评估**，
+不能写成无条件不变量——与 §3A.7 记下的同一类错误。
+
+`SettlementInstruction15/SttlmMtd` 为 1..1，`SettlementMethod1Code` 取值为
+`INDA`、`INGA`、`COVE`、`CLRG`，**这四个值在 schema 内联**。
+
+### 4A.4 必填字段少得异常，`pacs.002` 一个都没有
+
+| 类型 | 元素总数 | 必填数 | 必填项 |
+|---|---|---|---|
+| `CreditTransferTransaction73`（`pacs.008` 交易层） | 48 | 7 | `PmtId`、`IntrBkSttlmAmt`、`ChrgBr`、`Dbtr`、`DbtrAgt`、`CdtrAgt`、`Cdtr` |
+| `CreditTransferTransaction79`（`pacs.009` 交易层） | 42 | 4 | `PmtId`、`IntrBkSttlmAmt`、`Dbtr`、`Cdtr` |
+| `PaymentTransaction177`（`pacs.002` 交易层） | 19 | **0** | 无 |
+
+**同为贷记划拨，客户版比机构版多三个必填项**：`ChrgBr`、`DbtrAgt`、`CdtrAgt`。
+`ChargeBearerType1Code` 内联取值 `DEBT`、`CRED`、`SHAR`、`SLEV`。
+
+**`pacs.002` 的交易层零必填**，比第三批 `sese.024` 的同类发现更极端：
+根元素下 `OrgnlGrpInfAndSts` 与 `TxInfAndSts` 都是 0..unbounded，
+**一条 schema 合法的 `pacs.002` 可以什么状态都不带**。结论与结算段相同：
+**schema 校验在支付段几乎不证明任何事**，业务校验层必须自己写。
+
+`OriginalGroupHeader22` 里只有 `OrgnlMsgId` 与 `OrgnlMsgNmId` 必填，
+**`GrpSts` 是选填**——组层状态可以缺席，状态只落在交易层。
+
+### 4A.5 本批最大的发现：状态词表不在 schema 里
+
+`pacs.002` 中 `ExternalPaymentTransactionStatus1Code`、`ExternalPaymentGroupStatus1Code`、
+`ExternalStatusReason1Code` 三个类型，**在 XSD 里的定义只是 `xs:string`，
+`minLength` 1、`maxLength` 4，没有任何 enumeration**。
+
+`pacs.002` 一张报文里这样的 `External*` 类型共 **23 个**；`camt.053` 共 **32 个**，
+包括 `ExternalEntryStatus1Code`、`ExternalBalanceType1Code`、
+`ExternalBankTransactionDomain1Code` 与其 Family、SubFamily。
+
+**这与 `sese` 族不同。** 第三批里 `SecuritiesTransactionType23Code` 一类是内联枚举，
+读 schema 就能拿到全部合法值。资金族把词表搬进了单独发布的 External Code Sets，
+**只读 schema 无法告诉生成器哪些状态值合法**。
+
+对 CMOP 的直接后果：
+
+1. **资金段的枚举必须另取一份出处**，External Code Sets 未读，列入 §4A.8。
+2. 在拿到词表之前，**不得编造状态码**。第四批只能定结构，定不了取值。
+3. Bronze 解析层对 `External*` 字段**不能建枚举约束**，只能存字符串，
+   合法性校验推到业务校验层，且该层依赖外部词表的版本。
+
+### 4A.6 关联键：`EndToEndId` 是资金段回连证券段的唯一必填锚点
+
+`PaymentIdentification13` 五个子元素：`InstrId`、`EndToEndId`、`TxId`、`UETR`、`ClrSysRef`，
+**只有 `EndToEndId` 是 1..1**。
+
+所以**资金段与证券结算段之间唯一保证存在的关联键就是 `EndToEndId`**。
+CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
+`InstrId` 与 `UETR` 即便生成也只作冗余，**不作为连接依据**。
+
+### 4A.7 `camt` 三张报表结构几乎相同，差别在基数
+
+| | `camt.052` | `camt.053` | `camt.054` |
+|---|---|---|---|
+| 组头 | `GroupHeader116` | `GroupHeader116` | `GroupHeader116` |
+| 主体元素 | `Rpt`（`AccountReport38`） | `Stmt`（`AccountStatement15`） | `Ntfctn`（`AccountNotification25`） |
+| 主体基数 | 1..unbounded | 1..unbounded | 1..unbounded |
+| 明细项类型 | `ReportEntry16` | `ReportEntry16` | `ReportEntry16` |
+| `Bal` 余额 | **0..unbounded** | **1..unbounded** | **无此元素** |
+
+**三张报表共用同一个明细项类型 `ReportEntry16`**，Bronze 的明细解析可以复用一套。
+
+**差别在余额。** 对账单必须带至少一条余额，日内报告可以不带，通知根本没有余额元素。
+这三条是 schema 直给的，构成三张报表在 CMOP 里的分工依据：
+**只有 `camt.053` 能作为余额对账的基准**。
+
+`ReportEntry16` 必填四项：`Amt`、`CdtDbtInd`、`Sts`、`BkTxCd`，
+`CashBalance8` 必填四项：`Tp`、`Amt`、`CdtDbtInd`、`Dt`。
+**`Sts` 与 `BkTxCd` 的取值都落在 External Code Sets 里**，见 §4A.5。
+
+### 4A.8 第四批还欠什么
+
+- **External Code Sets 未取。** 这是本批的主要缺口，资金段的状态、余额类型、
+  银行交易码全部悬空。取到之前，资金段只能定结构不能定取值。
+- **两个消息集的 MDR 未读。** 业务流程、角色、报文流与样例都在里面，
+  与第三批同样的位置。
+- **`pacs` 批量结构的 Bronze 落地方案未定**，组层与交易层两张表的主键与分区键待定。
+- `camt.060` 只取了根结构，请求侧未展开。
+- `seev` 公司行为族仍未开始，优先级低。
+
 
 ## 5. FINTRAC
 
@@ -1045,8 +1182,13 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 | 标准 | 版本 | 出处 | 获取日期 |
 |---|---|---|---|
 | FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)，Vol. 1–7 加勘误单，7.5 MB；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，**Volume 5 分配与确认**，Volume 6 字段枚举 | 2026-09-09 初次，2026-09-10 重新取得 |
-
-**本地副本**：`~/Downloads/fix-4-4-spec/`，文件名形如 `fix-44_VOL-5_w_Errata_20030618.pdf`。
-**不入库**：规范文本属第三方版权材料，仓库只保留引用，不保留 PDF。
-| ISO 20022 | Settlement and Reconciliation 消息集，维护周期 2025–2026，证券 SEG 于 2026-01-27 批准，最后更新 2026-03-17 | [ISO 20022 报文定义目录](https://www.iso20022.org/iso-20022-message-definitions)，`sese` 族规范 XSD 与 **MDR Part 1** 逐条取得；**Part 2 与 Part 3 尚未读** | 2026-09-10 |
+| ISO 20022 证券 | Settlement and Reconciliation 消息集，维护周期 2025–2026，证券 SEG 于 2026-01-27 批准，最后更新 2026-03-17 | [ISO 20022 报文定义目录](https://www.iso20022.org/iso-20022-message-definitions)，`sese` 族规范 XSD 与 **MDR Part 1** 逐条取得；**Part 2 与 Part 3 尚未读** | 2026-09-10 |
+| ISO 20022 资金 | Bank-to-Customer Cash Management（消息集 1246）与 Payments Clearing and Settlement（消息集 1249），均于 2026-03-19 最后更新 | 同上目录，`camt` 与 `pacs` 共十二种报文的规范 XSD；**两个消息集的 MDR 均未读** | 2026-09-10 |
+| ISO 20022 外部词表 | External Code Sets | **尚未取得**，见 §4A.5；资金段的状态、余额类型与银行交易码取值全部依赖它 | — |
 | FINTRAC | | | |
+
+**FIX 本地副本**：`~/Downloads/fix-4-4-spec/`，文件名形如 `fix-44_VOL-5_w_Errata_20030618.pdf`。
+**不入库**：规范文本属第三方版权材料，仓库只保留引用，不保留 PDF。
+
+**ISO 20022 未落盘**：`sese`、`camt`、`pacs` 的 XSD 与 MDR 全部在浏览器内存中读取，
+本机无副本，仓库只保留核对结论与引用。
