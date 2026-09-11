@@ -248,7 +248,16 @@ handles keyed rewrites of historical partitions.
   points at the market practice group's own document. It affects boundary detail on the
   before-or-after judgement, not the main rule.
 - [ ] Read Parts 2 and 3 of the same report for the per-element definitions and usage rules. S-1 does
-  not depend on them; S-2 through S-4 do.
+  not depend on them; S-3 and S-4 do. S-2 turned out not to need them: its rule came from the
+  decision diagram and its value ranges from the schema.
+- [x] Freeze S-2, the failed-then-late settlement scenario. It reuses S-1's instruction rather than
+  issuing a new one, and adds two status advices carrying the same reason code on two different
+  axes, pending before the settlement date ends and failing after it. Counting the two enumerations
+  from the schema settles which codes S-2 may use: sixty-one pending, sixty-four failing, fifty-seven
+  shared, and only the shared ones can appear on both steps. All five reasons the main business flow
+  cares about are in the shared set. The confirmation's effective settlement date is mandatory while
+  the instructed one is optional, so both are now always written and the delay is measurable as their
+  difference.
 - [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
   here: an instruction that names no security passes the schema, because the security identification
   branch is mandatory while all three of its children are optional.
