@@ -4,7 +4,7 @@
 >
 > **Related architecture**: [Platform architecture](../platform-architecture.md)
 >
-> **Capacity basis**: [Data volume baseline](../data-volume-baseline.md)
+> **Capacity basis**: [Workload baseline](../workload-baseline.md)
 >
 > **Logical data layers**: [ADR 0002](0002-transaction-centric-lakehouse-layering.md)
 
@@ -91,6 +91,53 @@ WireGuard 隧道只允许四类预期流量：作业提交与状态、Gold 批�
 保存值得长期追溯的选型理由。若多项技术确实作为一个不可拆分的组合被比较和替换，可以
 建立组合 ADR，但不能仅为了减少篇数把能够独立变化的产品塞进同一篇。
 
+## Amendment 2026-09-09: OCI 侧全面复用 UOIP 既有实例
+
+**决定：CMOP 在 OCI 上不新建常驻组件，复用同一台主机上已运行的 Airflow、Spark、Trino、
+Flink 与 Kafka。唯一例外是 Catalog。**
+
+### 依据
+
+复用的对象已由实测确认存在并可查版本：Airflow 3.2.2、Spark 3.5.1（Scala 2.12.18、JDK 11）、
+Trino 451（JDK 22）、Flink 1.18.1、Kafka 7.6.0，见
+[技术选型评估要求](../requirements/technology-selection-evaluation.md) §7.1.2。
+
+**理由不是容量。** 容量已确认可回收，另起一套栈是做得到的。理由是两条：
+
+1. 两个项目各养一套 Airflow 与 Spark，运维负担翻倍而收益为零。
+2. 重活已经不在 OCI。首次回填与全量重算归 MBP，见 §4.1，**OCI 侧的 Spark 绝大多数时间空闲**。
+   为一个长期空闲的角色维护第二套部署，代价与收益不成比例。
+
+### 明确接受的代价
+
+**爆炸半径。** CMOP 的作业或一次性 probe 有能力干扰 UOIP，反之亦然。所有者已就此表态：本平台
+没有依赖其可用性的真实用户，偶发中断可以承担。**这条接受的是可用性风险，不是正确性风险。**
+对账口径、业务不变量与可复现性契约不因复用而放宽——它们正是本项目要证明的东西。
+
+**可复现性附带环境前提。** "同种子同结果"从此还依赖一套会被另一个项目改动的运行环境。该前提
+必须在对外口径里说出来，而不是默认成立。
+
+### 由复用带来的三条具体约束
+
+实测发现复用不是零成本，以下三项在部署前必须处理：
+
+1. **那台 Spark 完全没有 Iceberg。** 容器内不存在任何 iceberg jar，配置里也没有相关扩展。
+   复用它需要加入 `iceberg-spark-runtime` 并匹配 Spark 3.5.1 与 Scala 2.12，**而这是对共享
+   容器的改动**，需与 UOIP 侧协调。
+2. **既有 Trino 的 iceberg catalog 指向 Hive Metastore**（`iceberg.catalog.type=hive_metastore`），
+   与 CMOP 要求的独立 REST Catalog 不同。做法是**在同一个 Trino 里新增一个独立 catalog**，
+   而不是改动既有那个。这恰好同时满足了复用与命名空间隔离：两个项目在同一引擎内、不同 catalog
+   下，表互不可见。新增 catalog 文件通常需要重启 Trino，该重启会中断 UOIP，须择时。
+3. **Spark 镜像跑在 JDK 11 上。** 复用即意味着 CMOP 的 Java 模块受此约束。
+   [ADR 0004](0004-language-and-runtime-boundaries.md) 关于 LTS JDK 的选择因此不再是开放
+   问题，而是要么接受 JDK 11、要么承担升级共享镜像的代价——**兼容性证据必须针对这些具体版本
+   收集，不是针对最新版**。
+
+### 不变的部分
+
+Catalog 仍独立，理由是命名空间隔离而非资源。家庭侧的分工不变：NAS 承担日增量与 Bronze/Silver
+存储，MBP 承担回填、全量重算与 compaction。
+
 ## Consequences
 
 ### Positive
@@ -104,6 +151,9 @@ WireGuard 隧道只允许四类预期流量：作业提交与状态、Gold 批�
 ### Negative and risks
 
 - 跨隧道下钻延迟高于本地 Gold，必须通过查询门禁和 Iceberg manifest 裁剪控制对象数。
+  本 ADR 保留该能力，但[平台架构](../platform-architecture.md) §5.1 已决定**不把它作为
+  对外能力使用**：差异解释链在批次内物化进 Gold，对外交互路径不跨隧道。二者不冲突，
+  后者是在本 ADR 允许的范围内主动收窄。
 - MBP 不在线时无法进行宽扫描、生成、回填或 Gold 重建。
 - OCI 24 GB 内存余量有限，编排、可选流处理、查询和可观测组件不能无约束扩张。
 - Gold 跨隧道写入虽然远小于 Silver，仍需要幂等提交、失败恢复和可观测状态。
@@ -112,9 +162,9 @@ WireGuard 隧道只允许四类预期流量：作业提交与状态、Gold 批�
 ## Open questions
 
 - MBP 的具体 CPU、内存与本地 NVMe 可用空间。
-- Airflow 复用既有实例还是为 CMOP 独立部署。
 - Iceberg snapshot 保留窗口与 `expire_snapshots` 调度。
 - Gold 重建的提交协议、失败恢复和触发入口。
-- OCI 清理后可持续提供给 Gold 的真实磁盘与内存余量。
+- OCI 清理后可持续提供给 Gold 的真实磁盘与内存余量（所有者称可释放 100 GB 以上，未测量）。
+- 共享 Spark 加入 Iceberg runtime、以及新增 Trino catalog 所需重启的协调窗口。
 - SeaweedFS、Garage、RustFS 等候选的兼容性、维护状态与恢复演练结果。
 - 编码前技术选型审查中，哪些决策达到独立 ADR 的准入门槛。

@@ -95,28 +95,42 @@ Probe 属于架构验证，不等于正式实现，也不自动放宽整个阶�
 5. 保存环境、版本、数据规模、配置和关键测量值；
 6. 将结论写回 requirement、容量基线或 Proposed ADR。
 
-如果 2026 年继续维持完全不写代码的时间边界，0B 阶段可放在 2027 年初；在 probe 完成前，
-依赖实测证据的产品 ADR 保持 `Proposed`。
+**该时间边界已于 2026-09-09 为一次性 probe 有界放宽**，理由与例外范围见
+[roadmap](roadmap.md) 的"probe 例外"。上面六条继续全部适用，放宽的只是"2026 年内一律不
+部署"这一条。在 probe 完成前，依赖实测证据的产品 ADR 保持 `Proposed`。
 
 ## 6. 当前就绪度
 
-当前处于 **Phase 0A：项目边界、业务基线与数据发现**。状态按本文链接的事实源判断。
+当前处于 **Phase 0B-1：方案评估**，同时 0A 留有两条并行未结项。状态按本文链接的事实源判断。
+
+**为什么可以在 BO baseline 未冻结时进入 0B-1。** §4 规定进入组件比较的最小条件是五条，
+五条现在都成立，且该节明确写着技术评估不要求 BO 永久冻结、也不要求每个原始字段提前确定。
+更具体地，[技术选型评估要求](requirements/technology-selection-evaluation.md) §5 的七个
+代表性负载全部引自[工作负载基线](workload-baseline.md) §5，没有一个引自 FIX 或 ISO 20022。
+**再读多少报文规范，也不会改变哪个候选能做好带主键的历史分区改写。**
+
+**两条并行未结项属于 0A-2，挡的是 Phase 1 而不是 0B-1**：FIX 分配与确认、ISO 20022 结算与
+现金各族尚未核对，BO baseline 因此不能冻结；生成器分布参数待确认。
+
+**没有放宽的两条。** 0B-3 开工就绪仍要求不存在会推翻最小纵向切片的未决问题，分配与结算语义
+未证正属此类。[BO 收敛循环](../images/bo-convergence-loop.drawio)中"全量回填必须在冻结
+之后"的次序约束照旧；0B 只做评估与一次性 probe，不触及回填。
 
 | 能力 | 当前状态 | 事实源或缺口 |
 |---|---|---|
 | 文档边界与索引规则 | 已建立 | [开发文档索引](README.md) |
 | 项目定位与系统范围 | Draft，主要边界已形成 | [项目概览](requirements/project-overview.md)、[ADR 0001](adr/0001-project-boundaries-and-system-context.md) |
-| 主 BO 与代表性 BQ | Draft，已有暂定排序，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1 |
-| 原始数据 source inventory | Draft | [原始数据源清单](requirements/raw-data-source-inventory.md)；证券主数据与公司行为的获取渠道未闭合 |
-| 监管与行业数据契约 | 未建立 | 规划中的 `requirements/regulatory-data-contracts.md` |
-| 合成数据契约 | 未建立 | 规划中的 `requirements/data-generation-specification.md` |
-| 验证与对账规范 | 未建立 | 规划中的 `requirements/validation-and-reconciliation-specification.md` |
-| 数据规模模型 | Draft，只有容量假设 | [容量基线](data-volume-baseline.md) 尚缺 velocity、freshness、访问模式、并发和 RPO/RTO |
+| 主 BO 与代表性 BQ | Draft，假设已通过检验，baseline 未冻结 | [业务目标](requirements/business-objectives.md) §2.1、§3.2 代表性 BQ、§5.1 检验结果；冻结只卡在 FIX 与 ISO 20022 字段证据 |
+| 原始数据 source inventory | Draft，渠道已闭合并实测 | [原始数据源清单](requirements/raw-data-source-inventory.md) §5.3–§5.7；四十个季度全量抽取已完成，产物钉在 `data/reference/sec/` |
+| 监管与行业数据契约 | 第一批已核对，其余未开始 | [监管与行业数据契约](requirements/regulatory-data-contracts.md)；FIX 4.4 订单生命周期已成矩阵并冻结 L-1，分配确认与 ISO 20022 各族待读 |
+| 合成数据契约 | Draft，L-1 范围内已写实 | [合成数据生成规范](requirements/data-generation-specification.md)；剩余空白是 §6.2 的五项分布参数，属决策而非证据 |
+| 验证与对账规范 | Draft，L-1 内已具体化 | [验证与对账规范](requirements/validation-and-reconciliation-specification.md)；R1/R2 口径与状态机违规注入已写实，阈值与容差待 Phase 1 实测 |
+| 数据规模模型 | Draft，包络已补齐 | [工作负载基线](workload-baseline.md) §5 已覆盖到达速率、新鲜度、访问模式、并发、保留与 RPO/RTO；数字仍是规划假设，待 Phase 1 实测 |
 | 逻辑数据分层 | Proposed | [ADR 0002](adr/0002-transaction-centric-lakehouse-layering.md) |
 | 物理拓扑与组件落位 | Proposed，节点职责已细化 | [ADR 0003](adr/0003-hybrid-deployment-topology-and-component-placement.md)、[平台架构](platform-architecture.md) §4.1–4.2 |
 | 语言与运行时边界 | Proposed，只有原则 | [ADR 0004](adr/0004-language-and-runtime-boundaries.md)；具体模块映射与 JDK 尚待 BO 和兼容性证据 |
-| 完整技术选型评估 | 尚不具备执行入口 | 可先设计评估范围；执行依赖 BO baseline、source inventory 和 workload envelope |
-| 选型 probe | 未开始 | 进入 Phase 0B 后按风险触发 |
+| 完整技术选型评估 | **执行中** | [技术选型评估要求](requirements/technology-selection-evaluation.md)；候选清单与回滚成本排序已就位，第一个动作是 §2.3 的 OCI 常驻内存实测 |
+| 选型 probe | P-1a 纸面筛已完成，P-1b 待执行 | [技术选型评估要求](requirements/technology-selection-evaluation.md) §7；时间边界已放宽，见 [roadmap](roadmap.md) |
 | 正式实现 | 禁止进入 | 以 [roadmap](roadmap.md) 的 Phase 0 退出条件为准 |
 
 ## 7. 恢复工作时的顺序

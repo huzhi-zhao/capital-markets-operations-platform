@@ -69,7 +69,7 @@ CMOP 是 2026–2028 求职周期内唯一规划中的大型 side project。农�
 - 对账差异能够定位到具体事件，而不是只报告总数不一致。
 - 设计选择、被否决方案、实测证据与运行限制都有可审查记录。
 
-容量假设见 [data-volume-baseline.md](../data-volume-baseline.md)，当前架构见
+容量假设见 [workload-baseline.md](../workload-baseline.md)，当前架构见
 [platform-architecture.md](../platform-architecture.md)。
 
 ## 6. 当前阶段
@@ -80,7 +80,7 @@ CMOP 是 2026–2028 求职周期内唯一规划中的大型 side project。农�
 
 ## 7. 尚未定案
 
-- 主 BO 及其目标使用者。
+- 主 BO。目标使用者与关键业务流程已定，见[业务目标](business-objectives.md) §1.1 与 §3.1。
 - FINTRAC、FIX、ISO 20022 与 CIRO 各自进入 MVP 的具体字段范围。
 - 数据生成器需要覆盖的账户、产品和交易类型边界。
 - 对账与监管报送之间谁是主线、谁是支持性能力。
