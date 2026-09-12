@@ -927,3 +927,22 @@ handles keyed rewrites of historical partitions.
 - [ ] Build the multiple-intraday-reports variant alongside the changed-since-last-query filter. The
   frozen scenario emits one intraday report because the disappearance is already judgeable from the
   statement, and a second report adds volume without adding a check.
+- [x] Gather the three method catalogues that grew during the session into one section of the
+  validation spec, placed before the first check list, and declare it the baseline the way the
+  anchor-strength table already is for reference keys. The three are the five shapes of check, the
+  four sources of applicability, and the negative assertions. Two of the five shapes and one of the
+  four sources were added in a single day, which is why counting them inline stopped working.
+- [x] Stop numbering negative assertions inline. Three sections each said "this is the Nth", and the
+  three numberings had already diverged. The list now lives in one place and the sections point at
+  it.
+- [x] Classify the negative assertions by what backs them. Two are backed by the specification
+  explicitly denying the plausible reading, two by the specification having no structure to support
+  it, one by a message scope forbidding what no constraint enforces, and four are this project's own
+  house rule. That distribution has to reach the external write-up, because "the platform catches X"
+  is a different sentence depending on which of the four it is.
+- [x] Audit the negative assertions against the injection lists. Five of the nine had no paired
+  injection producing legitimate silence, which by this project's own rule means they had never been
+  verified, while showing green throughout. Add one injection each. The lesson to keep is that a
+  negative assertion with no injection behaves identically to a correctly implemented one.
+- [x] Record where the four baseline tables divide. The anchor table answers whether two records can
+  be joined at all; the three new ones answer how a check gets written once they can.
