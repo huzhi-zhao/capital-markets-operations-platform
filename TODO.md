@@ -247,10 +247,12 @@ handles keyed rewrites of historical partitions.
   to self-written Java modules and already allows third-party components their own runtimes, so that
   part needs no revision. What the map must now fix is a concrete runtime per component, using the
   measured versions rather than the newest releases.
-- [ ] Add the measured Java evidence for both engines to the runtime boundaries record, and with it a
-  risk it does not currently carry: the query engine requires exactly Java 22 and refuses Java 21 and
-  below, so that component may be stuck on a non-long-term release indefinitely. The record notes the
-  cost of separate runtimes only as image and patching work. Public evidence, no host access needed.
+- [x] Add the measured Java evidence for both engines to the runtime boundaries record. Done as an
+  amendment dated 2026-09-12. The two supported ranges do not overlap, which turns that record's
+  permission to run components on their own runtimes into a necessity without changing the principle.
+  It also carries the risk the record was missing: the query engine requires exactly Java 22 and
+  refuses Java 21 and below, so that component may have no long-term release available at all. Two
+  responses are recorded and neither is chosen, because choosing belongs to the candidate re-ranking.
 - [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
 
 ## Later: Formal Implementation
