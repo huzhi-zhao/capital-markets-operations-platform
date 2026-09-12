@@ -429,3 +429,29 @@ handles keyed rewrites of historical partitions.
   key plus physical ordinal, so that a rerun is idempotent while a genuine re-delivery survives as the
   duplicate it is. Partitioning follows the ingest batch, not the business date, because every late
   message would otherwise rewrite a committed history partition and late messages are the main flow.
+- [x] Freeze P-2, and in doing so correct the scenario as it was originally sketched. It was written
+  as "cash leg late, securities leg normal", on the reasoning that this would test the two legs
+  coming apart. Under delivery versus payment the two legs cannot come apart: payment not happening
+  is delivery not happening. A cash-only delay is possible only under free-of-payment settlement,
+  which no frozen scenario uses. The original wording would have produced a batch of data that
+  violates the chain's own contract quietly, because every message is individually legal and the
+  invariant tying the two dates together is conditioned on delivery versus payment and so would never
+  have been evaluated against it. The coherent scenario is both legs late together, paired with S-2,
+  which tests the same thing the original wording was reaching for: the effective settlement date
+  separating from the instructed one. The instructed date is deliberately left unchanged, since a
+  delay does not rewrite the original instruction.
+- [x] Lift the cross-segment check that a failing securities leg forbids a completed cash leg out of
+  its not-evaluated state. It was recorded that way because the only scenario that could exercise it
+  was locked. Freezing P-2 gives it test data for the first time, and brings two checks with it: the
+  two legs' effective settlement dates must be equal, and the cash leg must not reach a terminal
+  state while the securities leg is still pending. The equality check cannot be merged into the
+  existing one comparing instructed dates, because separating those two date pairs is the entire
+  point of the scenario.
+- [x] Freeze P-4, the end-of-day statement. Its whole difficulty is that one entry is not one
+  payment: the report's own example batches twenty. Reconciliation therefore never runs on row
+  counts, only on the end-to-end identifier echoed per transaction inside the entry. That echo is
+  optional in the schema and mandatory in CMOP, because without it a broken reconciliation can only
+  report a wrong total and never say which payment caused it, and saying which payment is the whole
+  content of the primary business objective. Five invariants follow, of which exactly one is
+  decidable from the statement alone; that one is run as its own batch, matching the real operational
+  window where the bank's statement arrives before the internal ledger does.
