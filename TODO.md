@@ -712,3 +712,46 @@ handles keyed rewrites of historical partitions.
   registered and both are deferred for the same reason: the restatement path and the correction path
   look alike from downstream, so each can mask the other's failure. They are only worth building once
   the two component checks pass on their own.
+- [x] Freeze the unbooked-entry reconciliation scenario, and correct the message it was registered
+  against. The registered sketch put pending and future-dated entries into the end-of-day statement,
+  but that message's own scope paragraph says it carries booked entries only, while the intraday
+  report's scope says it carries pending and booked items. The scenario therefore crosses two
+  messages rather than living in one, which makes it the second cross-document scenario after the
+  late-confirmation one.
+- [x] Record that nothing enforces that scope. The statement's complete constraint list runs to
+  thirty-one entries and not one of them mentions the entry status, so a message carrying a pending
+  entry passes schema validation and passes every constraint while contradicting the paragraph that
+  defines what the message is for. This is a fourth distinct shape of gap, after prose disagreeing
+  with formalisation, constraints hanging off optional elements, and vocabularies living outside the
+  schema.
+- [x] Note the fifth way searching a specification by name goes wrong. Searching the report for the
+  booked-entry code finds two hits and both are a clearing-channel code that happens to share the
+  spelling; the pending and future codes appear nowhere at all, because that vocabulary is an
+  external code set. So a name search can miss what is there and also find something else entirely.
+- [x] Record that the booking date changes meaning with the status. It is the expected date while the
+  entry is pending and the actual date once it is booked, and the value date behaves the same way.
+  An assertion that the two dates agree across the two messages therefore looks obviously right and
+  is false; the difference is forecast error, which is an output. The generation mix deliberately
+  keeps that difference non-zero for part of the population, because otherwise the assertion
+  forbidding the comparison would never have any data to prove it works.
+- [x] Record how much weaker this anchor is than the group-return one. Every one of the five levels
+  from the entry down to the end-to-end identifier is optional, and the transaction detail component
+  has twenty-nine elements with not a single mandatory one, which is the second zero-mandatory block
+  found. The only pressure the specification applies is a guideline that uses "should". Unlike the
+  group return, where the structure forbids per-payment identification outright, here it is permitted
+  and simply never required, so a generation convention can fix it. That produces a fourth shape of
+  check, structural existence, which asserts the anchor is present before anything asserts it matches.
+- [x] Record the prose prohibition with no constraint behind it. Where availability information is
+  given the value date must not be used, stated with "must not" and absent from all thirty-one
+  constraints. The injection for it expects silence from the schema and from the constraint set, and
+  a finding only from this project's own checks.
+- [x] Record the reversal direction, which will be needed for the reversal scenario later. The credit
+  or debit indicator on a reversing entry describes that entry, not the one being reversed, so signed
+  summation over entries is correct and counting entries as payments double-counts.
+- [ ] Build the pending-then-rejected variant. It needs the intraday report to be driven by the
+  payment status report, so that a payment rejected after being reported as pending disappears from
+  the statement rather than appearing as booked. It is the negative twin of the frozen scenario and
+  shares its anchor.
+- [ ] Build the future-dated variant together with the case where the value date differs from the
+  booking date. Both pull the scenario across a day boundary, which is why the frozen version uses
+  only the pending status and keeps the two dates equal.
