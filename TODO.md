@@ -907,3 +907,23 @@ handles keyed rewrites of historical partitions.
   happens, and sampling at the real rate would leave them permanently unverified. Event withdrawal is
   generated at zero, because producing it would give the roll-back check and the must-not-roll-back
   check data at the same time and let each mask the other.
+- [x] Freeze the pending-then-rejected variant. Its whole check is an absence, which makes it the
+  legal counter-example to the frozen scenario's main assertion, so that assertion now needs a
+  condition. The condition lives on a third message, which is a fourth source of applicability after
+  unconditional, a field on the message being judged, and another message on the same chain.
+- [x] Record why that fourth source is dangerous. The specification does not require the status
+  report at all, so an absent rejection means either the payment was not rejected or it was and
+  nobody said so, and the data cannot tell those apart. The new check therefore has to sit alongside
+  the existing one that catches this project failing to emit its own status reports; without that
+  pairing a generator can make any payment vanish by dropping one message.
+- [x] Record that a payment that never booked produces no reversal entry, because the reversal
+  indicator describes an entry that undoes a posting and there was no posting. Simply disappearing is
+  the correct representation, and appearing as a reversal is an injection.
+- [x] Pair this scenario with the denied-cancellation one in the settlement segment. Both ask a
+  question an operator asks on the morning after, both are answered by a code in a third message, and
+  both have assertions whose satisfied state is that nothing happened. Assertions of that kind look
+  permanently green without a paired injection, so both get two injections: one producing a violation
+  and one producing legitimate silence.
+- [ ] Build the multiple-intraday-reports variant alongside the changed-since-last-query filter. The
+  frozen scenario emits one intraday report because the disappearance is already judgeable from the
+  statement, and a second report adds volume without adding a check.
