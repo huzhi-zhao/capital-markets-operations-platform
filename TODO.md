@@ -473,3 +473,24 @@ handles keyed rewrites of historical partitions.
   never affects generation because CMOP always has a reference, but which forbids writing the
   join-back check as an unconditional assertion and forbids joining on that field at all. And a
   linkage number, if given at all, must carry the linked message's own identifier.
+- [x] Rerun the whole-list method over the three already-frozen settlement messages, on the reasoning
+  that if "searched by name and found nothing" is unreliable, then so is "searched by name and
+  concluded I was done". Seventy-one, thirty-one and fifty-five named entries respectively. It found
+  a missing mandatory block in the frozen minimal scenario: when no standing settlement instruction
+  applies, the counterparty side's depository and first settlement party are both required, and CMOP
+  never produces standing settlement instructions, so every instruction and every confirmation needs
+  that block. The schema marks it optional, so no XML validator would ever have caught it. The frozen
+  status sequences are unchanged; the block is added, dated, and sourced.
+- [x] Settle the first case where a rule and a guideline point different ways. The same passage that
+  makes the depository mandatory also says to populate it with a real central securities depository's
+  registered code, which the project forbids itself from inventing. The rule is satisfied and the
+  guideline is deliberately not: the depository carries a proprietary identifier, the deviation is
+  recorded where it happens, and the price is stated, which is that the identifier corresponds to no
+  real market. Generalized into a standing rule for the project: wherever a guideline asks for a
+  real-world registered identifier, use a proprietary one and record the deviation, because inventing
+  something that looks registered is worse than saying plainly that it is not.
+- [x] Record that an absent status axis carries meaning. A status advice bearing only the settlement
+  status means the transaction is matched, not that its matching status is unknown, so the downstream
+  mapping must not fill it with a null and read that as unmatched. This is the second constraint of
+  its kind after the no-reference sentinel, and together they say that absence in these messages is
+  not the database's null. The Bronze-to-Silver mapping has to declare, per field, what absence means.

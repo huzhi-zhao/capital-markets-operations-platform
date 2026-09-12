@@ -172,6 +172,8 @@ XML 校验器都会执行；另一种是 MDR Part 2 的**具名约束**，形如
 | 编号 | 检查 | 依据 | 适用条件 |
 |---|---|---|---|
 | V1-ALL-1 | 结算方链条 `Party1` 至 `Party5` 连续填写，不跳号 | **规范**。`Party2PresenceRule` 一族四条 | 全部证券报文。**`Party3` 填而 `Party2` 空即为违规，哪怕两者各自合法** |
+| V1-ALL-4 | 对手方一侧的 `Dpstry` 与 `Pty1` 都非空 | **规范**。`DeliveringDepositoryAndParty1Rule` 与其镜像，见契约 §4C.7.1 | `sese.023` 与 `sese.025`，**且不带常设结算指令时**。CMOP 从不带，**故对全部数据恒适用**。方向决定看哪一侧：交收方向看收方块，收方向看交付方块 |
+| V1-ALL-5 | 只带结算状态轴的 `sese.024`，**判为已匹配，不判为匹配状态缺失** | **规范**。`SettlementStatusAndMatchedRule`，见契约 §4C.7.3 | `sese.024`，且市场存在匹配过程。**已冻结场景全部满足该前提** |
 | V1-ALL-2 | `AcctOwnrTxId` 为 `NONREF` 时，**不参与任何回连检查，也不参与去重与连接** | **规范**。`NoAccountOwnerTransactionIdentificationRule` | 全部。**CMOP 自身不产生 `NONREF`**，本条只在读取外部数据时起作用 |
 | V1-ALL-3 | 链接结构若填 `LongNumber`，其值必须是被链报文的 XML 报文标识符 | **规范**。`ShortLongNumberRule` | 仅在填了链接结构时。**CMOP 一律不填 `ShortNumber`**，因为不产生 FIN 报文，这半句是 CMOP 决定 |
 
@@ -729,6 +731,8 @@ C4-7 比的是**实际的**结算日，**而 P-2 存在的全部意义就是让�
 | `Pmt=APMT` 但不带 `SttlmAmt` | 稀 | V1-023-8 | 同上。**这是具名约束 `SettlementAmountRule` 的反面** | — |
 | `Pmt=APMT` 的 `sese.025` 不带 `SttldAmt` | 稀 | V1-025-4 | 该确认作废。**这是 `SettledAmountRule` 的反面**，与上一条是同一规则的两张报文 | — |
 | 填 `Party1`、`Party3`，`Party2` 留空 | 稀 | V1-ALL-1 | 该报文标为契约违规 | — |
+| 一条收方向 `sese.023` 不带交付方一侧的 `Dpstry` | 稀 | V1-ALL-4 | 该指令作废。**XSD 判不出来，该块 schema 上是 0..1** | — |
+| 一条只带结算状态轴的 `sese.024` | 中 | **无人捕获，这是预期** | **必须判为已匹配**；若下游把匹配状态补成 NULL 并当作未匹配，即为 V1-ALL-5 未实现 | — |
 | 一批外部报文的 `AcctOwnrTxId` 全填 `NONREF` | 中 | **无人捕获，这是预期** | **回连检查必须跳过它们而不是全部报错**；若报错，说明 V1-ALL-2 没被实现成豁免 | — |
 | 两笔无关交易同填 `NONREF` 后按该字段连接 | 稀 | V1-ALL-2 | **必须不产生连接结果**；产生笛卡尔积即为实现缺陷 | — |
 | `LongNumber` 填自定义编号而非 XML 报文标识符 | 稀 | V1-ALL-3 | 该链接标为契约违规 | — |

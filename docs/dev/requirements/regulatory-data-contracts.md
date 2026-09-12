@@ -989,6 +989,18 @@ custodian）发出结算指令；后者"may"回送处理状态与结算状态；
   **取值随收付方向翻转**。**这与 `AllocNetMoney` 的符号随 `Side` 翻转是同一类坑**，见 §3A.7：
   生成器若两边同号，差错会以"金额对不上"的形式出现在很远的下游。
 
+**2026-09-12 增补一个必填块：对手方一侧的结算方。** `sese.023` 的 C23 与 C52、
+`sese.025` 的同名两条要求：不带常设结算指令时，**对手方一侧的 `Dpstry` 与 `Pty1` 都必填**。
+CMOP 从不生成常设结算指令，**所以每一条都要带**。方向决定看哪一侧：
+
+| 本笔方向 | 必填的块 | 必填的两个元素 |
+|---|---|---|
+| `SctiesMvmntTp=RECE`（买入、收券） | `DlvrgSttlmPties` | `Dpstry`、`Pty1` |
+| `SctiesMvmntTp=DELI`（卖出、交券） | `RcvgSttlmPties` | `Dpstry`、`Pty1` |
+
+**上面第 1 步与第 3 步的取值表因此各多一个块。** 状态序列与其余取值不变，
+理由与取值口径见 §4C.7.1，**存管机构用 `PrtryId` 不用 BIC 的偏离见 §4C.7.2**。
+
 ### 4.6.1 同一个关联键，三张报文三个路径
 
 **这是 MDR 读下来最实在的一个坑。** S-1 的三条报文靠同一个交易标识串起来，但它在三张报文里
@@ -1987,6 +1999,100 @@ CMOP 目前在 `StsRsnInf` 上只填码不填文本，**本条因此自动满足
 如果那段人话复述了理由码，**就是违规的**。
 
 登记为生成规范的一条否定性约束，与 §4.9"不生成自由文本"是同一条线。
+
+## 4C.7 第七批：对三张已冻结报文重跑"取全清单"的方法，发现 S-1 缺一个必填块
+
+**本批不是读新报文，是用 §4C.6.1 定下的正确方法重跑 `sese.023`、`sese.024`、`sese.025`。**
+上一批的教训是"按名字检索得出的没有某约束不可信"，那么**按名字检索得出的
+已经读完了同样不可信**。重跑的做法是先取出三张报文的全部具名条目再逐条看：
+`sese.023` 七十一条、`sese.024` 三十一条、`sese.025` 五十五条。
+
+**结果是 S-1 有一个必填块没生成。** 详见下。
+
+### 4C.7.1 `DeliveringDepositoryAndParty1Rule` 与 `ReceivingDepositoryAndParty1Rule`
+
+`sese.023` 上是 C23 与 C52，`sese.025` 上是 C15 与对称的一条。原文：
+
+> C23 If the instruction is a receive and no standing settlement instruction applies,
+> then DeliveringDepository and Party1 must be present.
+> On Condition `/SettlementTypeAndAdditionalParameters/SecuritiesMovementType` is equal to
+> value `'Receive'` And `/StandingSettlementInstructionDetails` is absent
+> Following Must be True `/DeliveringSettlementParties/Depository` Must be present
+> And `/DeliveringSettlementParties/Party1` Must be present
+
+C52 是它的镜像：交付方向下 `ReceivingSettlementParties` 的 `Depository` 与 `Party1` 必填。
+
+**对 CMOP 的后果是直接的，而且是本轮最贵的一条。**
+CMOP 不生成 `StandingSettlementInstructionDetails`（常设结算指令），
+**所以条件的后半句恒成立**；`SecuritiesMovementType` 每一笔非 `Receive` 即 `Delivery`，
+**所以两条里必有一条被触发**。也就是说：
+
+> **CMOP 的每一条 `sese.023` 与 `sese.025` 都必须带对手方一侧的
+> `Depository` 与 `Party1`，二者都是有条件必填，不是可选。**
+
+**S-1 与 S-2 的已冻结取值里没有这个块。** §4.6.1 逐步取值表只写了自身一侧的账户与方，
+**对手方结算方一侧整块没有出现**。这不是写漏了一个字段，**是漏了一个结构块**，
+而且是 XSD 判不出来的那一类——schema 上 `DeliveringSettlementParties` 是 0..1。
+
+**处理方式与 §4.6.3 的做法一致：补齐，不是推翻。** 两个已冻结场景的状态序列不变，
+增补的是每条 `sese.023` 与 `sese.025` 必须带的对手方结算方块。**冻结不等于不可增补**，
+只是增补必须像这一条一样**有规范条文作为依据并注明日期**。
+
+### 4C.7.2 补齐带来一个与 §3B.5 冲突的取值问题
+
+同一处的 `DepositoryGuideline` 说：
+
+> In a delivery, the receiving depository is to be understood as the requested depository
+> of the receiving counterparty. ... The field must be populated with the BIC of a national
+> or international CSD. When no CSD exists in a particular market, the stock exchange BIC is to be used.
+
+**它要求填 BIC，而 CMOP 禁止使用 BIC**，理由见
+[数据生成规范](data-generation-specification.md) §3B.5 与具名约束 `AnyBIC`
+（只允许 ISO 9362 注册局已注册并公布的码，**编造的 BIC 就是违规值**）。
+
+**这是本项目第一次出现 Rule 与 Guideline 指向不同结论的情形，处理口径在此定下：**
+
+- **Rule 必须满足**：`Depository` 与 `Party1` 一定要填。
+- **Guideline 可以不满足，但必须显式记下不满足**：CMOP 用 `PrtryId` 填存管机构，
+  **不用 `AnyBIC`**。schema 上 `PartyIdentification` 的 BIC 与自定义标识是并列选择，
+  **填自定义标识不违反任何 Rule**。
+- **代价要写出来**：CMOP 的存管机构标识**不能与任何真实市场对上号**。
+  凡是需要"按存管机构路由"的下游演示，**只能在 CMOP 内部自洽，不能声称与真实市场一致**。
+
+**这条口径可以一般化**：本项目**凡遇 Guideline 要求填真实世界注册标识的，一律改填自定义标识，
+并在该处记下偏离**。理由与 §3.1 那条可信度支点同源——**编造一个看起来像真的注册标识，
+比明说这是自定义标识要糟得多**。
+
+### 4C.7.3 `SettlementStatusAndMatchedRule`：状态缺席是有含义的
+
+`sese.024` 的 C34：
+
+> If settlement status/reason is present alone, then it means that the transaction is matched
+> (if a matching process exists in the concerned market or at the concerned account servicer).
+
+**这条改变的是读取语义，不是填写要求。** §4C.1 已记了四条状态存在性约束，
+**它们说的是至少要有一个状态轴**；本条说的是**只有结算状态轴时，匹配状态的缺席不是未知，
+是已匹配**。
+
+**后果落在校验层与对账层：** 一条只带结算状态的 `sese.024`，
+**不得判定为"匹配状态缺失"**，也不得在下游补成 NULL 后当作未匹配处理。
+**这是第二次遇到"缺席带含义"**，第一次是 §4C.6.3 的 `NONREF`。
+两者合起来说明一件事：**ISO 20022 的缺席不是 SQL 的 NULL**，
+Bronze 到 Silver 的映射必须逐字段声明缺席的含义，不能统一映成 NULL。
+
+**括号里的条件不要丢**："if a matching process exists"。CMOP 的所有已冻结场景都在
+有匹配过程的市场里，**所以本条无条件适用；若将来加入无匹配过程的市场，本条自动失效**。
+
+### 4C.7.4 三条限定适用范围的约束，记下来是为了挡住后续扩张
+
+| 约束 | 原文要点 | 对 CMOP 的作用 |
+|---|---|---|
+| `SecuritiesFinancingSettlementRule`（023 C66） | 证券融资（回购、逆回购、借贷）场景下，结算指令**只能**用于开仓腿与平仓腿的普通结算 | **挡住"用结算指令表达回购全生命周期"这类扩张**。回购的其余环节要用别的报文 |
+| `TwoLegTransactionOpeningClosing1Rule`（023 C77、024 C37、025 C62） | 两段式交易的开平仓由 `SecuritiesMovementType` 与 `SecuritiesTransactionType` 的**特定组合**确定，逐组合列出 | 若将来做回购，**组合表是现成的，不需要自己设计** |
+| `WithLinkageRule`（023 C80） | 用 `WITH` 链接的若干指令**绑定执行**，一条不能执行则其余全部保持挂起；**因此 `WITH` 的使用应限于 2 至 3 笔** | **它是 S-2 挂起逻辑的一个放大版本**。CMOP 目前不生成链接，**一旦生成，挂起的传播范围就不再是单笔** |
+
+**这三条现在都不产生检查，只产生边界。** 按 §6.2 的口径，
+**没有数据就不写断言**；但**边界不写下来，下一次扩张就会在不知情的情况下越过它**。
 
 ## 5. FINTRAC
 
