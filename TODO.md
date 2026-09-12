@@ -184,17 +184,13 @@ handles keyed rewrites of historical partitions.
   recorded as an amendment to the topology ADR. The deciding argument is that the heavy work already
   sits on the laptop, so the OCI engine is idle most of the time and a second deployment earns nothing.
   Blast radius is accepted explicitly, as availability risk only.
-- [ ] Add the Iceberg runtime to the shared Spark, matching 3.5.1 and Scala 2.12. It currently has no
-  Iceberg support at all, and this modifies a container the sibling project uses. Note from the
-  maintenance-procedure check: on Spark 3.x the procedures only exist when the SQL extensions are
-  loaded, so the extensions are mandatory here rather than optional.
-- [ ] Add a separate Trino catalog for this project rather than altering the existing one, which points
-  at the sibling project's Hive metastore. Two projects then share one engine while their tables stay
-  invisible to each other. Adding a catalog generally needs a restart, which interrupts the sibling
-  project, so it needs a window.
-- [ ] Gather the JDK and compatibility evidence against the versions actually running, not the latest
-  releases. The shared Spark image runs JDK 11, which constrains the runtime boundaries ADR.
-- [ ] Add a host block for the four-core instance to the SSH configuration so it is addressable by name.
+- [ ] Execute the shared-host enablement plan. All four remaining items land on the same machine,
+  which the sibling project also uses, so they are written up as a staged launch plan in the design
+  doc dated 2026-09-12 rather than tracked as loose tasks. Two stages need no downtime and can be
+  done any time: adding the host to the SSH configuration, and a read-only version inventory. Two
+  need a restart window the owner does not currently have: the Iceberg runtime on the shared Spark,
+  and a separate Trino catalog. Every stage gates on the sibling project's smoke test passing before
+  this project's own check counts.
 - [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
   install, so the figures come from real running instances. The default combination occupies about
   7.6 GB, comfortably inside 24 GB.
@@ -244,8 +240,14 @@ handles keyed rewrites of historical partitions.
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
-- [ ] Finalize the component-to-language map and choose the supported LTS JDK from compatibility
-  evidence; then define the minimum Java, Python, SQL, and Spark templates needed by Phase 1.
+- [ ] Finalize the component-to-language map, then define the minimum Java, Python, SQL and Spark
+  templates needed by Phase 1. The single-LTS part of this item is already answered and the answer is
+  no: the batch engine tops out at Java 17 and the query engine requires exactly Java 22, so the two
+  ranges do not overlap and the one they force is not even a long-term release. The map has to fix a
+  runtime per component and say so explicitly.
+- [ ] Amend the runtime boundaries decision record to state the split rather than imply a single
+  platform JDK. The evidence is public and needs no host access; only the running versions still have
+  to be confirmed on the machine.
 - [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
 
 ## Later: Formal Implementation

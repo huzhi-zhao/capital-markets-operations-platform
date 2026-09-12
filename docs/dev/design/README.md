@@ -33,4 +33,6 @@ Open questions，并在顶部链接相关 requirement 与 ADR。
 
 ## 当前索引
 
-目前没有 design doc。
+| Design | 状态 | 内容 |
+|---|---|---|
+| [2026-09-12 在共享主机上启用 Iceberg](2026-09-12-shared-host-iceberg-enablement.md) | Draft，未执行 | Spark 运行时、独立 Trino catalog、运行版本取证与 SSH 寻址的分阶段上线计划 |
