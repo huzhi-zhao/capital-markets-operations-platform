@@ -755,3 +755,29 @@ handles keyed rewrites of historical partitions.
 - [ ] Build the future-dated variant together with the case where the value date differs from the
   booking date. Both pull the scenario across a day boundary, which is why the frozen version uses
   only the pending status and keeps the two dates equal.
+- [x] Take the complete constraint list for all four messages in the cash management family and
+  compare them side by side, the first time the whole-list method has been applied across sibling
+  messages rather than within one. The intraday report and the end-of-day statement carry thirty-one
+  constraints with identical names except one, and that one differs only because the element it
+  governs is named differently in each message, so the rule is renamed to match. That is exactly the
+  reason the method exists, now confirmed by an independent route. The notification carries thirty,
+  missing the balance-availability rule because it has no balances at all, which the structure tables
+  say too.
+- [x] Record that no constraint in the entire family mentions the entry status, so the split between
+  which message may carry unbooked entries and which may not is enforced nowhere.
+- [x] Expand the reporting-request message, closing the last open item from the fourth batch. Its
+  nine constraints are all generic datatype checks with no business rule at all. The name of the
+  report being requested is free text rather than a code, so a request for a message that does not
+  exist passes everything. The account is optional while the account owner is mandatory, and the
+  reporting period may be left open-ended.
+- [x] Record the inverse of the optional-block pattern. Three earlier cases had a whole group of
+  constraints go dormant when an optional element was absent; here an optional block makes two of its
+  children mandatory the moment it appears. Filtering by entry status therefore forces you to pin the
+  direction too, and since the status is a non-repeating choice, asking for both unbooked and booked
+  in both directions needs four separate requests or no filter at all.
+- [x] Record that the identifier pairing a report back to the request that asked for it is optional
+  on the report side, the same shape as the entry-level anchor: permitted, never required.
+- [ ] Freeze the request-and-response scenario, registered as the first message in the chain sent by
+  the account holder rather than pushed by the servicer. It is blocked on the intraday report
+  generator that the unbooked-entry scenario introduces, and its three assertions stay unevaluated
+  until then.
