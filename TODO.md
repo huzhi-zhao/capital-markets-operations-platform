@@ -586,3 +586,25 @@ handles keyed rewrites of historical partitions.
   the grounds that the data is XML and that a superset cannot reject compliant values, and the JSON
   gap is recorded as a known divergence. The verdict now has to carry the format, not just the
   version.
+- [x] Correct the code-set decision made an hour earlier, which was right about the facts and wrong
+  about what to do with them. The three sets where the schema and JSON distributions disagree turn
+  out to differ by exactly the obsolete codes, and checking all hundred and forty enumerated sets
+  confirms the JSON membership equals the registered-only membership code for code. So the schema
+  distribution is a superset whose extra content is precisely what the validation rule exists to
+  reject, and choosing it because a superset cannot reject compliant data would have quietly disabled
+  that rule. The judgement table is now built from the spreadsheet filtered on registration status,
+  with the JSON as a cross-check that must agree; a disagreement means the release itself is wrong
+  and is a reason to stop rather than to pick one. The schema keeps its role for schema validity,
+  which is not the same question as business validity.
+- [x] Record the one recycled code value in the whole inventory. A local instrument code was made
+  obsolete in 2018 under one name by one requester and re-registered in 2021 under a different name
+  and meaning by another. It is the only such pair among three thousand three hundred and
+  forty-seven, checked pairwise. Nothing needs to change now, since CMOP neither generates that code
+  nor spans those years, but it is the only hard evidence for the claim that a code set is a
+  slowly-changing dimension keyed by value and validity period rather than an enumeration, and that
+  claim decides where reference data has to live.
+- [x] Record a spreadsheet-parsing requirement for reference-data ingestion. Empty cells are simply
+  absent from the file, so reading values in order of appearance rather than by column coordinate
+  shifts every affected row left. It happened on the first parse here and produced a status column
+  full of dates, which looks exactly like dirty source data and is not. The failure mode is the
+  dangerous kind: every field is individually well-formed, so nothing downstream can catch it.
