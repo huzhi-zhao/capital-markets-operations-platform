@@ -533,3 +533,24 @@ handles keyed rewrites of historical partitions.
   one, and the symptom is a field that is silently always empty, which no check would ever flag. They
   are also a different shape from the settlement-date rule, which is a true exclusive or requiring
   exactly one, so the two shapes are written up separately rather than under one name.
+- [x] Freeze the reversal scenario, and drop the dependency that was blocking it. It had been
+  recorded as waiting on the corporate-action restatement path, which is wrong: the two interact, but
+  the reversal's own values need nothing from restatement. The interaction is now its own scenario,
+  and that one genuinely does depend on restatement. Three structural facts came out of the report.
+  The reversal must name the confirmation it voids, and that reference is mandatory, which makes it a
+  stronger anchor than the cancellation chain's, where the pointer to the original instruction sits
+  in an optional block. The reversal carries no reason at all: not an optional one, no such element
+  exists, which is worth stating next to the cancellation advice that does carry a reason and the
+  payment return that is required to. Any design claiming to explain automatically why something was
+  reversed would be inventing information the standard does not carry. And the reversal is a separate
+  message that restates the voided leg in full rather than editing the original, so current state is
+  the product of two messages.
+- [x] Record that the one hard part of the reversal is not in the message. Four of its five checks
+  are decidable on the message itself; the fifth is that every aggregate summing settled
+  confirmations has to subtract the reversed one. That is the only place a reversal produces a wrong
+  number, and it fails silently, since the sum always computes, just over one leg too many.
+- [x] Note a new category of element: one whose every branch is a real-world registered identifier,
+  with no proprietary alternative. The cash settlement system place is a three-way choice between a
+  digital ledger identifier, a bank identifier code and a legal entity identifier. Elsewhere the
+  project's answer to a registered identifier is to use a proprietary one and record the deviation;
+  here there is no such option, so the element is left out entirely.
