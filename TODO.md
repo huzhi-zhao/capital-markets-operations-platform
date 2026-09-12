@@ -574,3 +574,15 @@ handles keyed rewrites of historical partitions.
   no validator would catch. This is a conditional prohibition on an element that is perfectly
   legitimate elsewhere, which is the shape a generator built on "fill what you can" walks straight
   into.
+- [x] Check the two distribution formats of the external code sets against each other, since the
+  validation layer already requires every vocabulary verdict to carry a version. Of a hundred and
+  forty enumerated code sets in release 2Q2026 v3, a hundred and thirty-seven match code for code and
+  three do not. The local instrument set carries a hundred and fifteen codes in the schema
+  distribution and ninety in the JSON one; the two clearing system sets differ by four codes and one.
+  Every difference runs the same way, with the schema as the superset. This is worse than a version
+  mismatch, because both files call themselves the same version: a generator built on one and a
+  checker built on the other produce data that is legal, a checker that says it is not, and matching
+  version strings on both sides. The schema distribution is now the project's source of record, on
+  the grounds that the data is XML and that a superset cannot reject compliant values, and the JSON
+  gap is recorded as a known divergence. The verdict now has to carry the format, not just the
+  version.
