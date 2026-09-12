@@ -1,6 +1,6 @@
 # Technology Selection Evaluation Requirement
 
-> **Status**: Draft · **Date**: 2026-09-09
+> **Status**: Draft · **Date**: 2026-09-12
 >
 > **Decision state**: 本文规定**怎样评估**，不选择任何产品。执行入口条件是 **workload
 > envelope 就绪**，不是 BO baseline 冻结——§5 的七个代表性负载全部引自
@@ -64,6 +64,9 @@ Catalog"读起来像已经定了，实际上定的只是接口形态，背后是
 W2 与 W6 的前提。如果写入不成熟,Spark 就是被证据选中的,而不是被默认选中的。这个区别会写进
 ADR。
 
+**已于 2026-09-12 核实，见 §2.5。** 结论是单机方案不能承担 W2 与 W6，
+但否掉的理由与这里预设的不同：**写入是有的，缺的是写入之后的维护。**
+
 ### 2.3 OCI 常驻内存预算是第一道横切筛子
 
 [平台架构](../platform-architecture.md) §8 已经指出 24 GB 要同时装下多个常驻组件,现有约
@@ -123,6 +126,133 @@ attempting to make and commit changes"，例如 `assert-table-uuid` 与 `assert-
 
 **放宽。** 规范要求的三种操作每个 S3 兼容实现都具备，§2.1 的对象存储候选不因条件写入被淘汰。
 区分度转移到 multipart upload 行为与失败恢复上，正好落在 §4 第 3 条已经要求的轴上。
+### 2.5 已核实：单机方案的 Iceberg 写入成熟度，以及它为什么不足以承担 W2 与 W6
+
+**核实日期 2026-09-12，证据取自各项目自己的文档，不采信博客与厂商材料，符合 §6。**
+§2.2 提出的问题是"写入成熟度"，核实下来**这个提法本身不够精确**：写入是有的，
+**缺的是写入之后的维护**。
+
+#### DuckDB：写得进去，管不起来
+
+DuckDB 的 `iceberg` 扩展（1.5 版文档）**通过 REST catalog 支持完整的 DML**：
+`CREATE TABLE`、`INSERT`、`UPDATE`、`DELETE`、`MERGE INTO`，以及分区与 schema 演进。
+**路径式的 `iceberg_scan` 是只读的，写入必须挂 catalog**，这与本项目 §2.4 已定的
+独立 REST catalog 方向一致。
+
+**但它自己列的三条限制，每一条都打在本项目的要害上：**
+
+| DuckDB 文档原文的限制 | 对本项目的后果 |
+|---|---|
+| `UPDATE` 与 `DELETE` **只写 positional delete，不支持 copy-on-write** | W2 与 W6 每一批都在堆积 delete 文件 |
+| 表若把 `write.update.mode` 或 `write.delete.mode` 设成 merge-on-read 以外的值，**操作直接失败** | 见下方"跨引擎陷阱" |
+| 分区表上 `write.target-file-size-bytes` 与 `write.parquet.row-group-size-bytes` **不生效，且会报错** | 小文件治理失去唯一的表级控制手段 |
+
+**跨引擎陷阱要单独记。** Iceberg 的 `write.delete.mode` 与 `write.update.mode`
+**默认值是 copy-on-write**。也就是说，一张由 Spark 按默认配置建出来的表，
+**DuckDB 连 `UPDATE` 都执行不了，会直接失败**。两个引擎写同一批表时，
+表属性必须显式设成 merge-on-read，**这是配置约束，不是偏好**。
+
+**真正致命的是维护面。** DuckDB `iceberg` 扩展提供的函数只有八个：
+`iceberg_scan`、`iceberg_metadata`、`iceberg_snapshots`、表与 schema 的属性读写、
+以及导出到 DuckLake。**没有 compaction，没有快照过期，没有孤儿文件清理，没有 manifest 重写。**
+
+**W3 就是 compaction。** 一个只能产生 delete 文件、无法合并 delete 文件、
+也无法过期快照的引擎，**跑不了 W3，而 W3 是 §5 的七个代表性负载之一**。
+
+#### Polars：只有 append 与 overwrite，且标注为 unstable
+
+Polars 的两个写入入口 `DataFrame.write_iceberg` 与 `LazyFrame.sink_iceberg`，
+**`mode` 参数只接受 `append` 与 `overwrite` 两个值**，两者的文档都带
+"currently considered unstable" 的警告。**没有 upsert、没有 merge、没有按条件删除。**
+
+`sink_iceberg` 的参数说明里写着它使用 "the local pyiceberg writer"，
+**也就是说 Polars 的写入能力上限就是 PyIceberg 的能力**。
+
+#### PyIceberg：有 upsert，没有 compaction
+
+PyIceberg 是 Polars 写入路径的实际执行者，因此单独核实：
+
+- **有 `upsert`**，按 schema 里声明的 identifier field 做主键匹配，返回更新与插入行数。
+  **这是单机路径上唯一够得着 W2 的接口**，但它要求主键在表 schema 上声明为 identifier field。
+- **有 `overwrite` 加 `overwrite_filter`**，可作条件覆盖。
+- **维护只有快照过期一项**，`table.maintenance.expire_snapshots()`。
+- **没有数据文件 compaction。** 文档在讲 fast append 时明说
+  "Compaction is planned and will automatically rewrite all the metadata when a threshold is hit"，
+  **"planned" 就是还没有，而且这句讲的是 metadata 的重写，不是数据文件的合并。**
+- **没有孤儿文件清理**，全文检索不到相关接口。
+
+#### 对照：Spark 侧的 Iceberg 维护过程共二十一个
+
+Iceberg 1.11.0 的 Spark 过程清单里，与本项目直接相关的有：
+`rewrite_data_files`（W3）、`rewrite_position_delete_files`（消化 merge-on-read 的欠债）、
+`expire_snapshots`、`remove_orphan_files`、`rewrite_manifests`、
+`rollback_to_snapshot` 与 `rollback_to_timestamp`（W6 的回退路径）、
+`create_changelog_view`（重述前后比较）、`register_table`（见 §2.6）。
+
+**注意一条版本条件：Spark 3.x 上这些过程只有加载 Iceberg SQL extensions 才可用**，
+Spark 4.0 才原生支持。共享 Spark 是 3.5.1，**因此 extensions 是必配项，不是可选项**。
+
+#### 结论
+
+**§2.2 的问题有答案了：单机方案不能承担 W2 与 W6，理由不是写不进去，是维护不了。**
+
+| 候选 | 追加 | 主键改写 | compaction | 快照过期 | 结论 |
+|---|---|---|---|---|---|
+| Spark + Iceberg | 是 | `MERGE INTO` | `rewrite_data_files` | 有 | **W1–W7 全覆盖** |
+| DuckDB | 是 | `MERGE INTO`，仅 merge-on-read | **无** | **无** | 跑不了 W3 |
+| Polars | 仅 append/overwrite，unstable | **无** | **无** | **无** | 连 W2 都够不着 |
+| PyIceberg | 是 | `upsert` | **无** | 仅快照过期 | 跑不了 W3 |
+
+**因此 Spark 是被证据选中的，不是被默认选中的**，这正是 §2.2 要求写进 ADR 的区别。
+
+**但结论要限定范围，不能扩大。** 上面否掉的是"用单机方案替代 Spark 承担全部写入负载"，
+**没有否掉单机方案在其他位置的价值**：
+
+- **W4 与 W5 是读负载**，DuckDB 与 Polars 的读取早已成熟，本节不涉及。
+- **生成器侧的 Parquet 产出不经过 Iceberg**，不受本节结论约束。
+- **本地开发与探索**用 DuckDB 挂同一个 REST catalog 读生产表，是本节结论的自然用法。
+
+**还有一条要写进 ADR 的约束**：只要 DuckDB 会写这批表，
+**表属性就必须显式设成 merge-on-read**，且**必须由 Spark 定期跑
+`rewrite_position_delete_files` 与 `rewrite_data_files`** 把 DuckDB 留下的 delete 文件消化掉。
+**两个引擎共写一批表是可行的，但维护责任只能落在 Spark 这一侧。**
+
+### 2.6 Catalog 后端重建：路径存在，但目录清单本身不在对象存储里
+
+**§2.4 遗留的"重建未验证"这一项，本轮取得了规范层面的答案，仍需实测计时。**
+
+**存在一条官方重建路径。** Iceberg 的 Spark 过程 `register_table` 的定义是
+"Creates a catalog entry for a metadata.json file which already exists but does not have a
+corresponding catalog identifier"，输入是表名与 metadata 文件路径，
+输出包含当前快照 ID、总记录数与数据文件数。**逐表重新登记是可行的。**
+
+**但这条路径有三个缺口，缺口本身就是风险。**
+
+**一、"哪些表存在"这份清单不在对象存储里。** `register_table` 一次登记一张表，
+需要调用方已经知道表名与 metadata 文件路径。**catalog 后端丢失时，丢的正是这份清单。**
+重建要靠遍历对象存储的目录结构去反推，而目录布局是可配置的：
+`write.data.path` 与 `write.metadata.path` 都可以被改到表位置之外。
+
+**二、"哪个 metadata.json 是最新的"没有规范级的判定方式。** 每个 metadata.json 内部带一条
+metadata log，可以**向后**追溯历史版本；`write.metadata.previous-versions-max` 默认 100，
+`write.metadata.delete-after-commit.enabled` 默认 false，所以历史文件通常还在。
+**但没有任何文件指向"当前"。** 挑错一个就是静默回退到旧快照，**失败方式与 §2.4 第二条后果同类**。
+
+**三、文档自己给了警告。** 原文：同一份 metadata.json 在多个 catalog 里注册
+"can lead to missing updates, loss of data, and table corruption"，
+**只应在表已不在任何 catalog 中、或正在迁移 catalog 时使用**。
+重建场景符合这个前提，但它说明这个过程**没有幂等保护，重复执行会出事**。
+
+**因此结论是有条件的：重建路径存在，但它不是一条可以事后临时拼出来的路径。**
+要让它成为真正的恢复手段，必须先有两样东西：
+
+1. **一份与 catalog 后端分离保存的表清单**，至少含表名与表位置。它很小，
+   适合与[工作负载基线](../workload-baseline.md) §5.6 已判定不可替代的参考数据放在一起。
+2. **一次实测演练**，测出 N 张表的重建耗时，以及最新 metadata.json 的判定方法是否可靠。
+
+**在这两样东西到位之前，catalog 后端的恢复仍然只是假设，不是手段。** 这与 §2.4 的原判一致，
+本轮只是把假设的形状描清楚了。
+
 
 ## 3. 评估深度与回滚成本挂钩
 
@@ -331,10 +461,12 @@ ToucanShelf 迁走腾出。**该回收量未经测量，是所有者依据自身
 
 ## 8. 未决项
 
-- Catalog 后端存储能否从对象存储中的 metadata 文件重建，以及重建耗时。§2.4 已确认它是提交
-  路径上的单点，但重建路径未验证。
+- ~~Catalog 后端存储能否从对象存储中的 metadata 文件重建。~~ **规范层面已答，见 §2.6**：
+  路径存在，但缺表清单与最新版本判定。**重建耗时仍需实测**，且需先落地一份分离保存的表清单。
 - 禁止 filesystem 与 Hadoop catalog 的配置门禁做成什么形式，见 §2.4。
-- DuckDB 或 Polars 的 Iceberg 写入成熟度，见 §2.2。
+  **§2.5 又加了一条同类门禁**：只要 DuckDB 参与写入，表属性必须显式设为 merge-on-read，
+  两条门禁形式相同，宜合并为一份表属性与 catalog 配置的准入检查。
+- ~~DuckDB 或 Polars 的 Iceberg 写入成熟度。~~ **已核实，见 §2.5。**
 - 各 probe 的时间盒长度。
 - W1 是否允许用缩小比例的数据代跑，以及缩放后结论的有效范围。
 - 评估结果与 Proposed ADR 的对应关系：一个 ADR 对一个决策，还是一个 ADR 覆盖一组组合。

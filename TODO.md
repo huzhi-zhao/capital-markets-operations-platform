@@ -185,7 +185,9 @@ handles keyed rewrites of historical partitions.
   sits on the laptop, so the OCI engine is idle most of the time and a second deployment earns nothing.
   Blast radius is accepted explicitly, as availability risk only.
 - [ ] Add the Iceberg runtime to the shared Spark, matching 3.5.1 and Scala 2.12. It currently has no
-  Iceberg support at all, and this modifies a container the sibling project uses.
+  Iceberg support at all, and this modifies a container the sibling project uses. Note from the
+  maintenance-procedure check: on Spark 3.x the procedures only exist when the SQL extensions are
+  loaded, so the extensions are mandatory here rather than optional.
 - [ ] Add a separate Trino catalog for this project rather than altering the existing one, which points
   at the sibling project's Hive metastore. Two projects then share one engine while their tables stay
   invisible to each other. Adding a catalog generally needs a restart, which interrupts the sibling
@@ -207,12 +209,34 @@ handles keyed rewrites of historical partitions.
 - [ ] Decide the configuration gate that forbids filesystem and Hadoop catalogs. The specification's own
   exception is exactly this case, and a single job configured that way silently reintroduces the rename
   requirement, failing by dropping commits under concurrency rather than by erroring.
-- [ ] Establish whether the REST catalog backing store can be rebuilt from the metadata files in object
-  storage, and how long that takes. It now sits on the commit path as a single point, and an unverified
-  rebuild is an assumption rather than a recovery method.
-- [ ] Verify DuckDB and Polars Iceberg write maturity, not read. Read support is long settled; write is
-  the precondition for the keyed-merge and restatement workloads. A negative result makes Spark the
-  evidence-backed choice rather than the default one.
+- [x] Establish whether the REST catalog backing store can be rebuilt from the metadata files in object
+  storage. A registration procedure exists that adopts an existing metadata file into a catalog, so
+  per-table recovery is real. Three gaps make it not yet a recovery method. The list of which tables
+  exist lives only in the catalog that was lost. Nothing in object storage says which metadata file is
+  current, and picking wrongly rolls silently back to an older snapshot. And the procedure carries an
+  explicit warning that registering one metadata file in two catalogs can corrupt the table, so it is
+  not idempotent.
+- [ ] Keep a table inventory outside the catalog backing store, at least names and locations. It is
+  small enough to sit with the reference data the recovery objectives already treat as irreplaceable,
+  and without it the rebuild path cannot start.
+- [ ] Time a catalog rebuild drill and check whether the newest-metadata-file rule holds in practice.
+  Until measured, catalog recovery stays an assumption.
+- [x] Verify DuckDB and Polars Iceberg write maturity. The question was posed slightly wrong: writing
+  exists, maintenance is what is missing. DuckDB writes full DML through a REST catalog including
+  keyed merges, but only as merge-on-read positional deletes, and its extension offers no compaction,
+  no snapshot expiry and no orphan cleanup, so it cannot run the compaction workload. Polars offers
+  only append and overwrite, both flagged unstable, and delegates to the Python library underneath,
+  which has an upsert but likewise no data-file compaction. Spark with the table format's own
+  procedures covers all seven workloads. Spark is therefore the evidence-backed choice, which is the
+  distinction the evaluation asked to be written into the decision record.
+- [ ] Add a table-property and catalog admission check covering two rules that fail the same way. The
+  catalog gate already required forbidding filesystem and Hadoop catalogs. The second rule is that any
+  table DuckDB writes must be explicitly set to merge-on-read, because the format defaults to
+  copy-on-write and DuckDB fails outright against that default. Both are configuration mistakes that
+  surface far from where they were made.
+- [ ] Schedule the delete-file cleanup that mixed-engine writing implies. If DuckDB writes these
+  tables, Spark has to run the position-delete rewrite and the data-file rewrite on a cadence,
+  because the engine producing the delete files cannot consume them.
 - [ ] Produce the evaluation matrix and risk list, and open Proposed ADRs for the high and medium
   reversal-cost decisions only.
 ## Next: Phase 0B-2 and 0B-3
