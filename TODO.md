@@ -290,6 +290,24 @@ handles keyed rewrites of historical partitions.
   responses are recorded and neither is chosen, because choosing belongs to the candidate re-ranking.
 - [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
 
+- [x] Unlock two more settlement scenarios instead of the one that was queued. The queued fourth
+  scenario was the reversal, which needs the restatement path working first; the cancellation refusal
+  needs only the two scenarios already frozen and lands directly on the main business flow, since the
+  first thing an operator does with a morning exception is ask whether it can be pulled back. The
+  specification answers that with a code of its own, denied-since-settled. So cancellation-executed
+  and cancellation-refused are frozen and the reversal moves down one slot.
+  Three structural findings came out of it. The cancellation status advice has a mandatory status,
+  unlike its settlement counterpart where every status is optional, so one of the checks written for
+  the settlement leg is simply unnecessary here and the validation layer must stop treating a message
+  family as one shape. A cancellation chain has two anchors pointing in opposite directions, one from
+  the request back to the original instruction and one from the status back to the request, so they
+  have to be checked separately. And the two scenarios differ in a way that is itself a contract:
+  a successful cancellation must change the original instruction's processing status while a refused
+  one must not touch it, and writing only one of those two leaves both unenforced.
+  Bilateral cancellation is a real branch in the specification, where a matched instruction needs the
+  counterparty's consent. It is out of reach because the party model has no market counterparty, and
+  that is recorded as a boundary with its price rather than passed over.
+
 ## Later: Formal Implementation
 
 - [ ] Build the reproducible one-million-row generator prototype.
