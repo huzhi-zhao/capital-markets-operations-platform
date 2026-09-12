@@ -86,13 +86,11 @@ representative workload in the evaluation requirement comes from the workload en
 from any message specification, so no amount of further message reading changes which candidate
 handles keyed rewrites of historical partitions.
 
-- [ ] Gather the remaining hypothesis evidence: FIX allocation and confirmation, then the ISO 20022
-  settlement and cash families, applying the matrix and frozen-lifecycle method batch one established.
-  Allocation instruction, allocation instruction acknowledgement, confirmation, confirmation
-  acknowledgement, confirmation request, allocation report and allocation report acknowledgement are
-  all verified against Volume 5, and A-1 and C-1 are frozen. The securities settlement family is
-  verified from the normative schemas and the message definition report, and S-1 is frozen. The cash
-  families remain.
+- [x] Gather the remaining hypothesis evidence, applying the matrix and frozen-lifecycle method batch
+  one established. All four batches are done. Seven allocation and confirmation messages against
+  Volume 5, the securities settlement family against its schemas and report, the cash families
+  against their schemas and the external code sets. Six segments, six frozen lifecycles: order,
+  allocation, confirmation, settlement with its failure variant, and the cash leg.
 - [x] Decide that A-1 continues from L-1 rather than starting beside it, and freeze the binding
   contract: order identifier, filled quantity and average price are inherited, never regenerated,
   because regenerating any of them puts two unrelated order identities in Bronze and breaks the
@@ -142,10 +140,15 @@ handles keyed rewrites of historical partitions.
   batch, which is the hardest case to reconcile.
 - [ ] Choose the anchor window width and the share of name changes that anchor rather than falling back
   to uniform sampling. These set the difficulty of the test, not its correctness.
-- [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
-  is confirmed and needs no revision.
-- [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
-  freeze the initial success measures and in-scope/out-of-scope boundary.
+- [x] Freeze the BO baseline. The one blocking criterion was the chain evidence, and all six segments
+  now have a frozen minimal lifecycle sourced to a page or a schema element. Reconciliation and
+  difference attribution stay primary, restatement stays supporting, regulatory reporting stays
+  demoted. Rejected alternatives, the scope boundary, and what would justify unfreezing are recorded
+  with the decision rather than left implicit.
+- [x] Finalize the initial success measures. Five of the seven are binary and judgeable today, on
+  purpose: the baseline should not hang on a number nobody has measured. The two that need
+  measurement are the batch deadline and the restatement window, and both constrain the
+  implementation rather than the objective, so neither can unfreeze the baseline.
 
 ## Now: Phase 0B-1 Solution Evaluation
 
