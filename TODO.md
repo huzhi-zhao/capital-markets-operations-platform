@@ -781,3 +781,39 @@ handles keyed rewrites of historical partitions.
   the account holder rather than pushed by the servicer. It is blocked on the intraday report
   generator that the unbooked-entry scenario introduces, and its three assertions stay unevaluated
   until then.
+- [x] Take the complete constraint lists for the two cancellation messages, which the two frozen
+  cancellation scenarios had used without doing so. Twenty-five and twenty-six entries, differing in
+  only three places, and one of those has the word "Information" misspelled in the specification
+  itself. That is a sixth way searching a specification by name fails, and the hardest to guard
+  against.
+- [x] Correct the justification in the executed-cancellation scenario. It said the success reason was
+  chosen over two alternatives, citing the eleven-value vocabulary. Following the type chain shows
+  that branch resolves to a two-value vocabulary whose members are "cancelled by yourself" and
+  "other", so the two alternatives do not exist there at all. The chosen value stands; the reasoning
+  is void. This is the second time a success-side reason vocabulary has turned out too small to
+  support any analysis, after the confirmation reject codes, which promotes it to a reading habit:
+  count the vocabulary before promising analysis on it.
+- [x] Record that one distribution carries four numbered variants of the cancellation reason
+  vocabulary and four of the denial vocabulary, with heavily overlapping code letters and differing
+  definitions. Searching by code letters lands on the wrong set. The denied-because-settled code used
+  by the frozen scenario has been traced to the specific set that branch actually references.
+- [x] Record the asymmetry along the cancellation chain. The requester has eleven reasons available,
+  the servicer refusing has ten, and the servicer succeeding has two. So why a cancellation happened
+  can only be answered from the request, and the request's reason field is optional, which forces a
+  generation convention and an injection for its absence.
+- [x] Record the sentinel value. When no reference exists the account-owner transaction identifier
+  must literally be the string NONREF, and a formalised rule then requires one of three alternative
+  references. That makes a third point on the anchor-strength scale, between an always-present
+  identifier and one that is merely permitted: degraded but not gone. Any join on that field has to
+  exclude the sentinel first, or every unreferenced transaction matches every other one.
+- [x] Narrow what the reversal-and-corporate-action scenario is waiting on. The cancellation request
+  carries a corporate-action event identifier alongside a code meaning the original transaction was
+  cancelled and replaced because of a corporate action. That is a different model from restatement:
+  restatement is a new version of one fact, this is two distinct transactions. So the scenario no
+  longer waits on the restatement path, only on corporate-action event identifiers being available.
+- [x] Record the second instance this session of the inverse optional-block pattern, in the
+  cancellation request's transaction detail block, which makes three of its children mandatory the
+  moment the optional parent appears.
+- [ ] Follow up the split-and-partial-settlement code found alongside the corporate-action one. It
+  names the mechanism by which a transaction is cancelled and replaced to permit partial settlement,
+  which is the interface the deferred partial-settlement ordering check needs.

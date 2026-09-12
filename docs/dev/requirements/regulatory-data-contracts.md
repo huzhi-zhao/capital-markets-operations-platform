@@ -1682,10 +1682,11 @@ CMOP 一律有参考号，**这条因此不会被触发，登记备查**。
 
 **三处取值决定，理由如下：**
 
-- **第 5 步用 `CANI` 而不是 `CANS` 或 `CSUB`。** `CancelledStatusReason16Code` 里
-  `CANI` 是 CancelledByYourself（由请求方自己撤销），`CANS` 是系统撤销，
-  `CSUB` 是代理方撤销。**只有 `CANI` 与"账户持有方主动发起"这一事实相符**，
-  另两个会把撤销的发起方说错。
+- ~~**第 5 步用 `CANI` 而不是 `CANS` 或 `CSUB`。** `CancelledStatusReason16Code` 里
+  `CANI` 是 CancelledByYourself，`CANS` 是系统撤销，`CSUB` 是代理方撤销。~~
+  **论证已作废，见 §4.6.6。** `Canc` 分支的词表是 `CancelledStatusReason5Code`，
+  **只有 `CANI` 与 `OTHR` 两个成员**，`CANS` 与 `CSUB` 在这个分支上不存在。
+  **取值不变：两个值里只有 `CANI` 有信息量。**
 - **第 4 步保留，虽然它可以省。** 与 S-1 第 2 步同理：**撤销挂起是一个可观察的中间态**，
   没有它，S-3 就只剩请求与终态两点，测不出次序。**这是 CMOP 决定，不是规范要求。**
 - **第 6 步必须存在。** 撤销成功后，原指令的处理状态要从 `AckdAccptd` 变成 `Canc`。
@@ -1716,8 +1717,9 @@ your cancellation request or consent."**
 
 **更重要的是它直接落在主业务流上。** [业务目标](business-objectives.md) §3.1 的 T+1 早晨
 异常处理流里，操作员对着一条异常做的第一个动作就是"能不能撤"。
-**规范对这个问题给了一个带代码的答案**：`DeniedReason` 的 `DSET`，
+**规范对这个问题给了一个带代码的答案**：**`DeniedReason6Code`** 的 `DSET`，
 定义为 DeniedSinceSettled——**因为已经结算，所以撤不了**。
+**码集编号已于 §4.6.6 核实**：同族另有 `DeniedReason3/4/7Code`，码字母重合而定义不同。
 
 **冲正没有消失，它变成 S-5**，见 §4.7。
 
@@ -1822,6 +1824,151 @@ your cancellation request or consent."**
   **因此 CMOP 只能整块不填**。这与 §4C.7.2 的口径不同：那里可以改填专有标识，
   **这里没得改**。**登记为一条新的类别：没有专有出路的元素，只能整块缺席。**
 
+### 4.6.6 第十一批：撤销两张报文的约束整表，并改正 S-3 引错的一个词表
+
+**日期 2026-09-12。** S-3 与 S-4 冻结时只按需要读了 `sese.020` 与 `sese.027` 的结构，
+**没有取约束整表，也没有把撤销原因码追到底**。本节补上，**结果推翻 §4.6.3 的一处论证**。
+
+#### 先取整表：`sese.020` 二十五条，`sese.027` 二十六条
+
+**两张的名字重合度很高，差异只有四处**，且四处都说明问题：
+
+| 只在 `sese.020` | 只在 `sese.027` |
+|---|---|
+| `TransactionIdentificationPresence2Rule`（C25，**带形式化**） | `AdditionalReasonInforrmationRule`（C3） |
+| — | `SecuritiesMarketPracticeGroupGuideline`（C24） |
+
+**`AdditionalReasonInforrmationRule` 的名字在规范里就拼错了**，`Information` 多一个 r。
+**这是"按名字搜索规范"的第六种翻车方式：名字本身是错的。**
+本项目此前记过五种（§4C.10.1 与 §4B.12），这一种最简单也最难防。
+
+C25 的形式化值得抄下来，因为它是**锚点退化但不消失**的第一个实例：
+
+> On Condition …/TransactionIdentification is equal to value 'NONREF'
+> Following Must be True /AccountServicerTransactionIdentification Must be present
+> Or /MarketInfrastructureTransactionIdentification Must be present
+> Or /ProcessorTransactionIdentification Must be present
+
+配合 C12：**没有参考号时，`AcctOwnrTxId` 必须填字面量 `NONREF`。**
+**`NONREF` 是规范强制的哨兵值，不是标识。** 任何按此字段做的关联都必须先排除它，
+否则全部 `NONREF` 会被当成同一笔互相命中。
+
+**至此锚点强度有了三档，可以排成一条线：**
+
+| 档 | 实例 | 规范怎么说 |
+|---|---|---|
+| 强制且唯一 | `EndToEndId`（§4A.6） | 必填 |
+| **退化但不消失** | `AcctOwnrTxId` + C12 + C25 | **可以没有，但那时必须给出替代引用** |
+| 允许而不要求 | `TxDtls/Refs/EndToEndId`（§4B.12） | 每一层都可选 |
+| 结构上不可能 | 整组退汇（§4B.11） | 承载它的元素被禁止出现 |
+
+#### 改正：`Canc` 分支的原因词表只有两个值，不是十一个
+
+§4.6.3 第 5 步写"用 `CANI` 而不是 `CANS` 或 `CSUB`"，并引 `CancelledStatusReason16Code`。
+**引错了。** 把类型链追到底：
+
+```
+sese.027 /PrcgSts/Canc  →  CancellationStatus15Choice
+                        →  Rsn (CancellationReason10)
+                        →  Cd (CancellationReason21Choice)
+                        →  CancelledStatusReason5Code
+```
+
+**`CancelledStatusReason5Code` 只有两个成员：**
+
+| 码 | 名 |
+|---|---|
+| `CANI` | CancelledByYourself |
+| `OTHR` | Other. See Narrative. |
+
+**`CANS` 与 `CSUB` 在这个分支上根本不存在**，所以"在三者之间选 `CANI`"是一个不存在的选择。
+**结论（用 `CANI`）仍然成立，论证作废。** ~~`CancelledStatusReason16Code` 里 `CANI` 是……
+另两个会把撤销的发起方说错。~~ **改为：这个分支只有两个值，其中一个是 `OTHR`，
+于是 `CANI` 是唯一有信息量的取值。**
+
+**这一处与 §3A.11 记的确认拒绝词表是同一种病**：**成功侧的原因词表小到无法做原因分析。**
+第二次出现，可以升格为一条读法：**看到"原因"两个字先数词表大小，再决定要不要做分析。**
+
+#### 同一个词表，一份分发里有四个编号变体
+
+`sese` 这一族里，**"取消状态原因"有四个码集，"拒办原因"也有四个**：
+
+| 概念 | 码集 | 成员数 | 用在哪里 |
+|---|---|---|---|
+| 取消原因 | `CancelledStatusReason5Code` | **2** | **`sese.027` 的 `Canc` 分支** |
+| 取消原因 | `CancelledStatusReason9Code` | 多 | 别处 |
+| 取消原因 | `CancelledStatusReason12Code` | 多 | 别处 |
+| 取消原因 | `CancelledStatusReason16Code` | **11** | **`sese.020` 的 `CxlRsn`** |
+| 拒办原因 | `DeniedReason3Code` / `4` / `7` | 各不同 | 回购等别处 |
+| 拒办原因 | **`DeniedReason6Code`** | **10** | **`sese.027` 的 `Dnd` 分支** |
+
+**`DeniedReason4Code` 与 `DeniedReason6Code` 的码字母大量重合但名字不同**，
+例如 `DSET` 在前者叫 DeniedSinceAlreadySettled、在后者叫 DeniedSinceSettled。
+**按码字母搜索会搜到错的那个码集。**
+
+**S-4 用的 `DSET` 落在 `DeniedReason6Code` 上**，原文：
+"Request was denied because the instruction was settled."。**S-4 的取值不受影响，出处需更正。**
+
+`DeniedReason6Code` 全部十个：`ADEA` 账务服务方截止时间已过、`CDCY` 币种流程受限、
+`CDRE` 发行方 CSD 重整流程受限、`CDRG` 登记方流程受限、`DCAN` 已被撤销、
+`DSET` 已结算、`DPRG` 结算进行中、`DREP` 回购已结束、`LATE` 市场截止时间已过、`OTHR`。
+
+#### 撤销链上的信息量分布是不对称的，而且方向出人意料
+
+| 位置 | 词表 | 成员数 |
+|---|---|---|
+| **请求方说为什么要撤** | `CancelledStatusReason16Code` | **11** |
+| 服务方说撤成了，原因是 | `CancelledStatusReason5Code` | **2** |
+| 服务方说撤不了，原因是 | `DeniedReason6Code` | **10** |
+
+**请求侧和拒办侧都很细，成功侧几乎为零。**
+**因此"为什么撤"这个问题只能从请求侧回答，不能从结果侧回答。**
+而请求侧的 `CxlRsn` 是 **0..1**，规范不要求填。
+
+**CMOP 的取用：`sese.020/CxlRsn/Cd` 一律必填。** 不填的情形注入为负例，
+**其期望结果是只有 CMOP 判据报错**。
+
+#### `CorpActnEvtId` 是 S-7 的接口，而它就在撤销请求里
+
+`CancellationReason23` 除 `Cd` 外还有 **`CorporateActionEventIdentification` 0..1**。
+配合 `CancelledStatusReason16Code` 的三个码：
+
+| 码 | 含义 |
+|---|---|
+| `CORP` | CancelledDueToCorporateAction，因公司行为撤销 |
+| `CANT` | CancelledDueToTransformation，**原交易被撤销并因公司行为替换** |
+| `CANZ` | CancelledSplitPartialSettlement，**原交易被撤销并替换以允许部分结算** |
+| `SCEX` | 标的不再合格；**规范明说公司行为相关的应当用 `CORP`** |
+
+**`CANT` 正是 S-7 要的那条路径**：公司行为发生后，原指令不是被改写，
+**而是被撤销并由一条新指令替换**。**这与 CMOP 的重述模型不是一回事**——
+重述是同一事实的新版本，**而 `CANT` 是两条不同的交易**。
+
+**S-7 的落点因此可以先定下来：不是改写 `sese.023`，是发 `sese.020`（`CxlRsn/Cd=CANT`，
+带 `CorpActnEvtId`）再发一条新的 `sese.023`。** 仍不冻结，
+理由是它要与 §7 的公司行为回放对齐，**但依赖从"重述路径"缩小为"事件标识对得上"**。
+
+**`CANZ` 同时把部分结算的排序检查的接口也给出来了**，登记在未决项。
+
+#### `sese.020` 的 `TxDtls` 是"可选块反面"的第二个实例
+
+`TxDtls` 是 **0..1**，但它一旦出现：
+
+| 元素 | 基数 |
+|---|---|
+| `FinInstrmId` | **1..1** |
+| `SttlmDt` | **1..1** |
+| `SttlmQty` | **1..1** |
+
+**与 §4C.10.3 的 `camt.060/ReqdTxTp` 同形，本轮第二次遇到。**
+**可选块的正确读法是"要么整块不给，要么整块给够"，不是"里面的字段都可以省"。**
+
+#### 本节改动的既有条目
+
+- §4.6.3 第 5 步的论证作废，取值不变。
+- §4.6.4 的 `DSET` 出处更正为 `DeniedReason6Code`。
+- S-7 的解锁条件由"重述路径跑通"改为"公司行为事件标识可用"，见 §4.7。
+
 ### 4.7 场景清单
 
 与 L、A、C 三组一致：S-1 先冻结，其余按顺序解锁。
@@ -1834,7 +1981,7 @@ your cancellation request or consent."**
 | S-4 | 撤销请求被拒办，因为已结算 | **直接落在主业务流上**：操作员对异常做的第一个动作就是"能不能撤"，规范用 `DSET` 给了答案 | **已冻结**，见 §4.6.4 |
 | S-5 | 冲正（`sese.026`） | 宣告一条已结算确认作废。**聚合口径必须扣除它，否则同一笔算两次** | **已冻结**，见 §4.6.5。**原记的"依赖重述路径"是记错的，已更正** |
 | S-6 | 双边撤销（`sese.024` 的 `CxlReqd` 分支） | 已撮合指令的撤销需要对手方同意 | 待解锁，**先要加市场对手方角色**，见 §4.6.3 末段 |
-| S-7 | 冲正与公司行为重述交互 | 两条反向事实叠加，**顺序不同结论不同** | 待解锁，**这才是真正依赖重述路径的那一个**，见 §4.6.5 开头 |
+| S-7 | 冲正与公司行为重述交互 | 两条反向事实叠加，**顺序不同结论不同** | 待解锁，**依赖已缩小为"公司行为事件标识可用"**，落点见 §4.6.6 |
 
 ### 4.8 MDR 自身的两处不一致，登记而不改写
 
