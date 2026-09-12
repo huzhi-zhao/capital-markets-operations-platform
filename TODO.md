@@ -878,3 +878,24 @@ handles keyed rewrites of historical partitions.
   event produced, the other corrects a single posting. Writing only the first lets a generator treat
   a bookkeeping correction as a full restatement across every account, which is the most expensive
   error available in this segment.
+- [x] Freeze the corporate-action posting reversal. It sits on a fifth shape of anchor, different in
+  direction from the four already catalogued: the reversal must say which confirmation it reverses,
+  while the confirmation need not give itself an identifier at all unless it is paginated. So a
+  reversal can point at something never declared, and both messages are perfectly compliant. The
+  generation convention makes the identifier mandatory and the missing case becomes an injection.
+- [x] Record the reason-code reasoning. Of the nine reversal reasons, five are cash concepts and a
+  split is a pure securities posting with no cash leg, one would change which holdings are affected
+  and therefore belongs to a different scenario, leaving two, of which one is "other".
+- [x] Pair the invariant that the reversal must not roll back adjustment factors with the one saying
+  the event still exists and is still confirmed. They say the same thing from two sides and both are
+  kept, because the likely generator error is merging the two messages' handling paths, and that
+  error trips both at once. Both firing together is the signal.
+- [x] Record that the constraint whose prose names a non-existent element appears word for word in
+  two different messages, so it is an error at the source distributed to every message that
+  references it, not a typesetting accident.
+- [x] Record the strongest evidence yet for name search failing: a correctly spelled rule and a
+  misspelled rule with nearly identical prose coexist in one constraint list as two distinct
+  constraints, so searching either name finds half the rules.
+- [ ] Build the follow-on where a corrected confirmation is resent after a reversal. The check has to
+  tell "resent after reversal" apart from "posted twice", which needs the reversal-versus-withdrawal
+  check passing first.
