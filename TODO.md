@@ -339,5 +339,10 @@ handles keyed rewrites of historical partitions.
   for precisely this join. All three levels are now written rather than only the mandatory one.
 - [ ] Read the Message Definition Reports for both cash message sets. Business flows, roles and
   worked examples are there, the same position they occupied for the settlement leg.
-- [ ] Decide how the batch-oriented payment messages land in Bronze. The group header and the
-  transaction list need separate tables; their primary keys and partition keys are open.
+- [x] Decide how the batch-oriented payment messages land in Bronze. Settled in the design doc dated
+  2026-09-12. Five tables rather than two, because the repeating structure goes deeper than the
+  transaction list: the underlying allocations carry the link back to the securities leg, and the
+  status report has two independently repeating levels of its own. Primary keys are technical, parent
+  key plus physical ordinal, so that a rerun is idempotent while a genuine re-delivery survives as the
+  duplicate it is. Partitioning follows the ingest batch, not the business date, because every late
+  message would otherwise rewrite a committed history partition and late messages are the main flow.

@@ -243,8 +243,9 @@ Trino 451 要求的 Java 22 **不是 LTS**，而 ADR 0004 第 1 条要求正式 
 3. ~~写结算段的业务校验层。~~ **已完成，见
    [验证与对账规范](../requirements/validation-and-reconciliation-specification.md) §2A。**
    **资金段的同一层还没写**，且不能假定可以照搬，那一侧的必填字段更少。
-4. **定批量支付报文的 Bronze 落地方案。** 组层与交易层两张表的主键与分区键，
-   见[监管与行业数据契约](../requirements/regulatory-data-contracts.md) §4A.3。
+4. ~~定批量支付报文的 Bronze 落地方案。~~ **已完成，见
+   [批量支付报文的 Bronze 落地](2026-09-12-bronze-landing-for-batch-payment-messages.md)。**
+   结论比原先设想的多三张表，**因为重复结构不止一层**。
 5. **确认层断言进[验证与对账规范](../requirements/validation-and-reconciliation-specification.md)。**
    每个分配账户至少一条确认，窄条件下恰好一条，**适用条件必须与断言同时发布**。
 6. **读两个资金消息集的 MDR，以及结算 MDR 的 Part 2 与 Part 3。** S-3 与 S-4 依赖它们。
