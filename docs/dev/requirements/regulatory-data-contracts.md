@@ -846,7 +846,7 @@ Settlement and Reconciliation Variant 002，最后更新 2022-05-05），供 T2S
 **结论要写死在这里：ISO 20022 的 schema 校验通过，几乎不说明任何业务正确性。** 一条近乎
 空白的 `sese.023` 能过 XSD。**FIX 的必填列至少还挡得住一部分，ISO 20022 挡不住。**
 [验证与对账规范](validation-and-reconciliation-specification.md) 因此必须为结算段单写一层
-业务校验，**不能以"schema 校验通过"结案**。
+业务校验，**不能以"schema 校验通过"结案**。**该层已于 2026-09-12 写成，见该文 §2A。**
 
 ### 4.4 状态不是一个字段，是三个正交的轴
 
@@ -1121,7 +1121,9 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 - **MDR Part 2 与 Part 3 未读。** 逐元素定义与用法规则在这两份里。S-1 已冻结不依赖它们，
   **但 S-2 至 S-4 依赖**。
 - `camt` 与 `pacs` 属第四批，尚未开始。
-- 结算段的业务校验层未写，见 §4.3 末尾。
+- ~~结算段的业务校验层未写。~~ **已于 2026-09-12 写成**，见
+  [验证与对账规范](validation-and-reconciliation-specification.md) §2A：三级划分、逐条检查、
+  规范要求与 CMOP 决定分列、每条带适用条件。
 - **S-1 引入了 Instructing Party 与 Executing/Servicing Party 两个角色**，
   [合成数据生成规范](data-generation-specification.md) §3A 的两层结构里没有它们。是复用客户层
   还是新增一层，未决。

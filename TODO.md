@@ -294,9 +294,16 @@ handles keyed rewrites of historical partitions.
   cares about are in the shared set. The confirmation's effective settlement date is mandatory while
   the instructed one is optional, so both are now always written and the delay is measurable as their
   difference.
-- [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
-  here: an instruction that names no security passes the schema, because the security identification
-  branch is mandatory while all three of its children are optional.
+- [x] Write a business validation layer for the settlement leg. Written into the validation and
+  reconciliation spec as a new section, three tiers split by how much a check needs to see: one
+  message, one transaction identifier's worth of messages, then the scenario contract. Every check
+  says whether it comes from the specification or from this project's own choice, because only the
+  second kind may be revised as scenarios expand, and every check carries its applicability. Output
+  is contract violation rather than a reconciliation break, so failing chains stay out of the queue
+  instead of showing up there as fake quantity mismatches.
+- [ ] Write the same layer for the cash leg. The three-tier split should carry over, but the payment
+  messages have even fewer mandatory fields than the settlement ones and the status report has none
+  at all, so that has to be checked before assuming the structure transfers.
 - [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
   introduces both and the two-level client and account structure has neither.
 

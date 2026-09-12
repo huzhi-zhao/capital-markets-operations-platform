@@ -240,8 +240,9 @@ Trino 451 要求的 Java 22 **不是 LTS**，而 ADR 0004 第 1 条要求正式 
 2. ~~写表属性与 catalog 的准入检查。~~ **计划已成文，见
    [写入路径准入检查](2026-09-12-write-path-admission-checks.md)，实现未做。**
    前两层不依赖本窗口，**第三层的在线巡检依赖 catalog 存在，因此绑在本窗口上**。
-3. **写结算段的业务校验层。** schema 合法在那一段几乎不证明任何事，
-   一条不指明标的的指令都能通过校验。
+3. ~~写结算段的业务校验层。~~ **已完成，见
+   [验证与对账规范](../requirements/validation-and-reconciliation-specification.md) §2A。**
+   **资金段的同一层还没写**，且不能假定可以照搬，那一侧的必填字段更少。
 4. **定批量支付报文的 Bronze 落地方案。** 组层与交易层两张表的主键与分区键，
    见[监管与行业数据契约](../requirements/regulatory-data-contracts.md) §4A.3。
 5. **确认层断言进[验证与对账规范](../requirements/validation-and-reconciliation-specification.md)。**
