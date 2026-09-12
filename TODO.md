@@ -899,3 +899,11 @@ handles keyed rewrites of historical partitions.
 - [ ] Build the follow-on where a corrected confirmation is resent after a reversal. The check has to
   tell "resent after reversal" apart from "posted twice", which needs the reversal-versus-withdrawal
   check passing first.
+- [x] Promote the anchor-strength list to the project's classification baseline and add the column
+  saying how each shape's check must be written. Every future reference key gets filed under one of
+  the five. The fifth is the easiest to miss because the pointer side looks entirely normal.
+- [x] Set the corporate-action sampling mix. The reversal rate is deliberately far above what a real
+  market produces, because three of that scenario's six invariants only have data when a reversal
+  happens, and sampling at the real rate would leave them permanently unverified. Event withdrawal is
+  generated at zero, because producing it would give the roll-back check and the must-not-roll-back
+  check data at the same time and let each mask the other.
