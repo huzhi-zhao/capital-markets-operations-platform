@@ -262,7 +262,16 @@ handles keyed rewrites of historical partitions.
   the cadence a mandatory field on every dual-write table, so this item now has a place to live; what
   is still missing is the cadence itself, which needs the accumulation rate measured on the host.
 - [ ] Produce the evaluation matrix and risk list, and open Proposed ADRs for the high and medium
-  reversal-cost decisions only.
+  reversal-cost decisions only. Partitioning is settled and the compute unit is drafted; the other
+  four units wait on measurement.
+- [x] Promote the two decisions that were already made but had no record of their own. The protocol
+  version is one: it constrains every field table across phases and rolling it back means rewriting
+  every generated message, which is the admission bar. The drill-down boundary is the other: the
+  architecture section that held it said outright it was not yet a record and named the condition for
+  promoting it, and that condition has since come true, because the decision produced a named
+  exception to the Gold budget rule and is now relied on in four places. Both records add what a
+  decision section does not carry: the options that lost, the price being paid, and the conditions
+  under which the decision should be revisited.
 ## Next: Phase 0B-2 and 0B-3
 
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
