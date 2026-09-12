@@ -8,6 +8,8 @@
 这份文档回答一个问题：**一段内容该写进 `docs/`，还是写进 ToucanShelf？**
 以及在两边都能写的会话里，如何避免重复和漂移。
 
+它描述的是当前有效的协作约定，属于常青文档：约定变了就原地更新，历史由 git 保存。
+
 ## 1. 本项目的检出
 
 ToucanShelf 是本人的开源知识库项目，结构是 **workspace → 文件夹树 → 文档**。
@@ -116,7 +118,7 @@ memogit push            # 同步
 4. **是与本项目无关的通用方法论吗？**
    → ToucanShelf 的 `Engineering Playbook/`，不进本项目任何一边。
 5. **其余，即已经定下来且外部读者需要它才能理解或复现本系统的事实**
-   → 仓库 `docs/`，具体落点按 [docs/dev/README.md](../dev/README.md) 的路由顺序。
+   → 仓库 `docs/`，具体落点按 [docs/dev/README.md](README.md) 的路由顺序。
 
 一句话版本：**`docs/` 放结论与约束，ToucanShelf 放素材与过程。**
 

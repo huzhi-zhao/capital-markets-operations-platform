@@ -15,9 +15,11 @@ English kebab-case。面向外部读者与操作者的当前使用方法放在
 | [platform-architecture.md](platform-architecture.md)：当前系统边界、数据流与部署拓扑 | [design/](design/README.md)：一次非平凡变更计划怎样实施 |
 | [workload-baseline.md](workload-baseline.md)：容量、到达速率、新鲜度、访问模式、并发、保留与恢复目标 | [launch/](launch/README.md)：一次高风险变更实际上线的结果 |
 | [requirements/](requirements/README.md)：当前需求、BO/BQ、数据契约与验收约束 | [postmortem/](postmortem/README.md)：已造成实际影响的事故复盘 |
+| [collaboration.md](collaboration.md)：项目文档与私人笔记的边界、通道选择与内容路由规则 | — |
 
-四篇顶层常青文档当前均为草稿。它们不套 `architecture/` 或 `planning/` 目录，
-因为每类当前都只有一个规范入口。
+roadmap、project-inception-and-readiness、platform-architecture、workload-baseline
+四篇当前均为草稿，`collaboration.md` 已生效。它们不套 `architecture/` 或 `planning/`
+目录，因为每类当前都只有一个规范入口。
 
 ## 文档路由顺序
 
@@ -43,7 +45,7 @@ English kebab-case。面向外部读者与操作者的当前使用方法放在
 | 针对具体代码行的讨论 | Code review |
 | 一次提交做了什么 | Commit message |
 | 当前跨会话任务队列 | 仓库根 [TODO](../../TODO.md) |
-| 更细的临时进度、排期、阻塞和催办 | 作者的私人笔记，见 [ToucanShelf 协作约定](../collaboration/toucanshelf.md) |
+| 更细的临时进度、排期、阻塞和催办 | 作者的私人笔记，见 [ToucanShelf 协作约定](collaboration.md) |
 | 个人学习笔记、面试准备、求职语境 | 同上 |
 | 可重复执行的当前操作步骤 | `guide/`，后续规模足够时可形成 runbooks |
 
@@ -62,7 +64,7 @@ English kebab-case。面向外部读者与操作者的当前使用方法放在
 | `research/` | 形成被多个需求或决策复用、拥有独立更新周期的证据库 | 需求依据进入 `requirements/`，选型证据进入对应 ADR |
 | `runbooks/` | 安装、部署、回填、恢复等可执行操作形成稳定文档集合 | 先放 `guide/`；启用时优先建为 `guide/runbooks/` |
 | `archive/` | 仅在一次明确的文档迁移中需要临时中转 | 过时内容由 git history 保存；事件文档使用 Superseded 状态 |
-| `notes/` | 不会启用。个人笔记已有明确落点，见 [ToucanShelf 协作约定](../collaboration/toucanshelf.md) | 按上面的路由规则归类；个人学习笔记进私人笔记 |
+| `notes/` | 不会启用。个人笔记已有明确落点，见 [ToucanShelf 协作约定](collaboration.md) | 按上面的路由规则归类；个人学习笔记进私人笔记 |
 
 判断不清时，先回来检查这张表和路由顺序。真正出现新的稳定文档性质时再扩展体系，
 不要为了安置单篇材料创建目录。

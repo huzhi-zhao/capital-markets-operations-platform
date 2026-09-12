@@ -190,7 +190,9 @@ handles keyed rewrites of historical partitions.
   done any time: adding the host to the SSH configuration, and a read-only version inventory. Two
   need a restart window the owner does not currently have: the Iceberg runtime on the shared Spark,
   and a separate Trino catalog. Every stage gates on the sibling project's smoke test passing before
-  this project's own check counts.
+  this project's own check counts. The owner will run the whole plan in one sitting on a date not yet
+  fixed, so nothing here is to be split off or chased separately. Anything else that can only be
+  settled on that machine goes into the same design doc rather than becoming its own task.
 - [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
   install, so the figures come from real running instances. The default combination occupies about
   7.6 GB, comfortably inside 24 GB.
