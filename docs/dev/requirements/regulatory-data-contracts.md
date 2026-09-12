@@ -1216,6 +1216,8 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 根元素下 `OrgnlGrpInfAndSts` 与 `TxInfAndSts` 都是 0..unbounded，
 **一条 schema 合法的 `pacs.002` 可以什么状态都不带**。结论与结算段相同：
 **schema 校验在支付段几乎不证明任何事**，业务校验层必须自己写。
+**该层已于 2026-09-12 写成，见[验证与对账规范](validation-and-reconciliation-specification.md) §2C。**
+它不是结算段那一层的翻版：**批量结构把单报文一级拆成了两级**，理由见该文 §2C.1。
 
 `OriginalGroupHeader22` 里只有 `OrgnlMsgId` 与 `OrgnlMsgNmId` 必填，
 **`GrpSts` 是选填**——组层状态可以缺席，状态只落在交易层。
@@ -1284,6 +1286,8 @@ CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
   [批量支付报文的 Bronze 落地](../design/2026-09-12-bronze-landing-for-batch-payment-messages.md)。
   **不是两张表而是五张**：`UndrlygAllcn` 与 `pacs.002` 的两个层级都是 unbounded，
   各自成表。主键是技术键而非业务键，分区按摄取批次而非业务日期。
+- ~~资金段的业务校验层未写。~~ **已于 2026-09-12 写成**，见
+  [验证与对账规范](validation-and-reconciliation-specification.md) §2C。
 - `camt.060` 只取了根结构，请求侧未展开。
 - `seev` 公司行为族仍未开始，优先级低。
 

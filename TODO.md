@@ -325,9 +325,18 @@ handles keyed rewrites of historical partitions.
   second kind may be revised as scenarios expand, and every check carries its applicability. Output
   is contract violation rather than a reconciliation break, so failing chains stay out of the queue
   instead of showing up there as fake quantity mismatches.
-- [ ] Write the same layer for the cash leg. The three-tier split should carry over, but the payment
-  messages have even fewer mandatory fields than the settlement ones and the status report has none
-  at all, so that has to be checked before assuming the structure transfers.
+- [x] Write the same layer for the cash leg. Checked before assuming, and the structure does not
+  transfer. Written as section 2C of the validation and reconciliation specification. Four
+  differences each moved a piece of the skeleton. A payment message carries many transactions, so
+  the single-message tier splits into group header and transaction row, which must go to different
+  queues because a bad header voids the whole batch while a bad row voids only itself. The status
+  report has no mandatory field at all, so that whole table is CMOP with nothing behind it, unlike
+  its settlement look-alike which named constraints now back. Code vocabularies live outside the
+  schema, so an entire class of checks carries a vocabulary version and can change answer across
+  quarters, and obsolete codes are ordinary enumerations with no formal marker. A statement entry
+  can batch twenty payments, so counting rows to reconcile is wrong on the specification's own
+  terms. Four tiers, one orthogonal versioned dimension, and three injections, two of them paired to
+  prove the tier split itself rather than any single check.
 - [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
   introduces both and the two-level client and account structure has neither.
 
