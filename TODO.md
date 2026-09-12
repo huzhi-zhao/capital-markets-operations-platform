@@ -848,3 +848,24 @@ handles keyed rewrites of historical partitions.
 - [ ] Decide whether option-bearing events are in scope. The notification and instruction messages
   were left unopened because the only corporate actions generated so far are splits and reverse
   splits, neither of which offers the holder a choice.
+- [x] Take the constraint lists for all thirteen corporate-action messages, closing the item opened
+  an hour earlier. Four hundred and ninety-six constraints across the family, of which fifty-one are
+  formalised, and the notification alone accounts for more than half the formalisations.
+- [x] Record that constraint count does not track how consequential a message is. The notification
+  carries one hundred and eighteen; the advice that withdraws an already-announced event carries
+  fourteen, every one of them a generic datatype or presence check, and not one formalised. So the
+  entire meaning of withdrawing an event, that every adjustment derived from it must be rolled back,
+  has no basis in the specification at all. That is weaker than the earlier case where a scope
+  paragraph said something no constraint enforced: here there is not even a scope sentence.
+- [x] Record the three structural facts that shape the event-withdrawal scenario. Its reason code is
+  mandatory with exactly two values, issuer withdrawal and servicer processing error, and the two
+  differ downstream because only the second permits re-announcing the same event. Its account block
+  is a choice between all accounts and a named list, so withdrawing an event for a subset of accounts
+  is legal and the check must be per account rather than per event. And it still requires the event's
+  completeness and confirmation statuses, so withdrawn-and-confirmed differs from
+  withdrawn-and-unconfirmed.
+- [x] Draft six invariants for that scenario without freezing it, since it needs the corporate-action
+  replay to materialise adjustment factors first. One of them ties the corporate-action path back to
+  the main business objective through the same acceptance criterion the late-allocation scenario uses:
+  published results are restated with both versions kept. Two unrelated paths demanding the same
+  criterion is stronger evidence for it than one.
