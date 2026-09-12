@@ -494,3 +494,21 @@ handles keyed rewrites of historical partitions.
   mapping must not fill it with a null and read that as unmatched. This is the second constraint of
   its kind after the no-reference sentinel, and together they say that absence in these messages is
   not the database's null. The Bronze-to-Silver mapping has to declare, per field, what absence means.
+- [x] Apply the whole-list method to the payment messages as well, since the earlier pass over them
+  used the discredited search-by-name approach. Seventy-one named entries on the credit transfer,
+  twenty-five on the status report. One check is overturned outright and two move from CMOP decision
+  to specification requirement. The interbank settlement date is an exclusive or across two levels:
+  present in the group header forbids it on the transaction, absent from the group header requires it
+  on the transaction. The validation layer asked for it on the transaction unconditionally, which
+  under the values CMOP actually generates would have passed violating data and failed compliant
+  data, wrong in both directions. The date now sits in the group header by an explicit choice whose
+  price is written down: a block whose transactions ever need different settlement dates forces the
+  date down a level and the header cleared in the same change, because the exclusive or forbids
+  keeping both.
+- [x] Resolve the open question about pairing the clearing settlement method with a clearing system
+  element, which was left as a puzzle when the payments report was first read. The settlement method
+  rules are all prohibitions: clearing forbids a settlement account and the reimbursement agents, and
+  says nothing about requiring a clearing system. The example filled it because the example describes
+  a specific clearing system. CMOP's values are compliant, and the same passage yields a prohibition
+  CMOP must now honour, since all four of those elements are optional in the schema and no validator
+  would catch them.

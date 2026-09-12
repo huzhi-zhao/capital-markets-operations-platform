@@ -415,6 +415,9 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 | C1-3 | `CtrlSum` 若存在，等于各 `IntrBkSttlmAmt` 之和 | **CMOP**。契约 P1-2 | **仅在 `CtrlSum` 出现时可评估**；P-1 一律填 |
 | C1-4 | `SttlmInf/SttlmMtd` 取 `CLRG` | **CMOP**。四个取值 schema 内联，都合法 | 全部。理由见契约 §4B.3 |
 | C1-5 | `MsgId` 在同一摄取批次内唯一 | **CMOP** | 全部。重复 `MsgId` 会让 C3 的回连产生歧义 |
+| C1-6 | 组头 `IntrBkSttlmDt` 非空 | **规范**（异或的另一半），见契约 §4C.8.1 | 全部 `pacs.009`。**它与 C2-4 是同一条规则的两面，必须成对实现** |
+| C1-7 | `SttlmAcct` 与三个 `RmbrsmntAgt` 一律缺席 | **规范**。`SettlementMethodClearingRule`：`SttlmMtd=CLRG` 禁止这四个元素，见契约 §4C.8.3 | 全部。**四个元素 schema 上都可选，XSD 判不出来** |
+| C1-8 | `TtlIntrBkSttlmAmt` 缺席 | **CMOP** | 全部。**填了就把结算日锁在组头层**（`TotalInterbankSettlementAmountAndDateRule`），而 CMOP 不想为此放弃将来下移的余地 |
 
 **C1-2 是本节唯一一条对全部 `pacs` 报文无条件成立的检查。** 其余四条都带条件，
 **包括看起来最像规范的 C1-3**——`CtrlSum` 是选填，**写成无条件不变量就会在任何一条不填
@@ -428,8 +431,8 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 |---|---|---|---|
 | C2-1 | `PmtId`、`IntrBkSttlmAmt`、`Dbtr`、`Cdtr` 四项非空 | **规范**，`CreditTransferTransaction79` 必填四项 | 全部 |
 | C2-2 | `PmtId/EndToEndId` 非空 | **规范**，`PaymentIdentification13` 里唯一的 1..1 | 全部 |
-| C2-3 | `IntrBkSttlmAmt` 为正，且币种与该块一致 | **CMOP** | 全部 |
-| C2-4 | `IntrBkSttlmDt` 非空 | **CMOP**。schema 上可选 | 全部。不填则 P1-6 无法评估 |
+| C2-3 | `IntrBkSttlmAmt` 为正，且币种与该块一致 | **前半句 CMOP，后半句规范**（`TotalInterbankSettlementAmountRule`，见契约 §4C.8.2）。**规范那半句只在组头填了总额时成立，CMOP 不填**，所以现在两半都靠 CMOP 撑着 | 全部 |
+| C2-4 | **交易层 `IntrBkSttlmDt` 必须缺席** | **规范**。`GroupHeaderInterbankSettlementDateRule` 与 `TransactionInterbankSettlementDateRule` 构成异或，见契约 §4C.8.1。**2026-09-12 整条改写：原写"非空"，方向是反的** | **仅在组头填了日期时**，即 CMOP 现有全部取值 |
 | C2-5 | `PmtTpInf/CtgyPurp/Cd` 取 `DVPM` 或 `RVPM`，与该链 `Side` 相容 | **CMOP** | 仅 DVP 场景 |
 | C2-6 | 各 `UndrlygAllcn/Amt` 之和等于本行 `IntrBkSttlmAmt` | **CMOP**。契约 P1-3，**schema 完全不要求** | **仅在 `UndrlygAllcn` 出现时** |
 | C2-7 | 每条 `UndrlygAllcn` 带 `RltdRefs/SctiesSttlmTxId` | **CMOP**。规范为回连备了这个字段，但它可选 | 仅 DVP 场景 |
@@ -442,11 +445,13 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 
 | 编号 | 检查 | 依据 | 适用条件 |
 |---|---|---|---|
-| C2-9 | `OrgnlEndToEndId` 非空 | **CMOP** | 全部。它是回连的唯一锚点，不填这条状态就是孤儿 |
+| C2-9 | `OrgnlEndToEndId` 非空 | **规范**。`OriginalGroupInformationAbsenceRule`：组头层回连信息缺席则交易层必填，见契约 §4C.8.5。**2026-09-12 从 CMOP 改判** | 全部，**因为 CMOP 不填组头层回连信息**。改成组头层回连则本条失效 |
 | C2-10 | `TxSts` 非空 | **CMOP** | 全部。不带状态的状态回报合法但无信息量 |
 | C2-11 | `TxSts` 落在 `ExternalPaymentTransactionStatus1Code` 的 `Registered` 码内 | **CMOP**，见 §2C.7 | 全部 |
 | C2-12 | `TxSts` 取 CMOP 使用的七个值之一 | **CMOP** | 全部。二十五个值里其余十八个属支票、现金提取等分支 |
 | C2-13 | `TxSts` 为 `RJCT` 时 `StsRsnInf` 存在 | **CMOP**。schema 不要求 | 拒绝分支；**P-1 不产生，登记备用** |
+| C2-13a | `Rsn/Cd` 不得取 `NARR` | **CMOP**。取 `NARR` 则 `StatusReasonRule` 要求必须写自由文本，与不生成自由文本的口径冲突，见契约 §4C.8.4 | 全部 |
+| C2-13b | 组状态缺席时，`StsRsnInf/AddtlInf` 一律缺席 | **规范**。`StatusReasonInformationRule` 的适用条件是组状态存在；**CMOP 不填组状态，故本条实为 CMOP 的自我约定** | 全部。**依据一列此处特意写两句，因为它看着像规范而实际不是** |
 | C2-14 | `FctvIntrBkSttlmDt` 存在 | **CMOP** | **仅 `TxSts=ACCC` 时**。其余状态下它没有意义 |
 
 **C2-10 与结算段的 V1-024-2 看着像，性质完全不同。** V1-024-2 现在是规范要求，
@@ -764,6 +769,10 @@ C4-7 比的是**实际的**结算日，**而 P-2 存在的全部意义就是让�
 | `NbOfTxs` 与实际交易行数差一 | 稀 | C1-2 | **整组标为契约违规，N 笔全部不进正常对账** | — |
 | 某条 `UndrlygAllcn/Amt` 改小，组内不配平 | 稀 | C2-6 | **仅该笔作废，同组其余交易不受影响** | — |
 | `CtrlSum` 与各 `IntrBkSttlmAmt` 之和不等 | 稀 | C1-3 | 整组作废 | — |
+| 组头与交易层**同时**填 `IntrBkSttlmDt` | 稀 | C2-4 | 整组标为契约违规。**这是异或被违反的一半** | — |
+| 组头与交易层**都不**填 `IntrBkSttlmDt` | 稀 | C1-6 | 整组标为契约违规。**这是异或被违反的另一半，两条必须同时存在** | — |
+| `SttlmMtd=CLRG` 的报文带一个 `SttlmAcct` | 稀 | C1-7 | 整组标为契约违规 | — |
+| `Rsn/Cd` 填 `NARR` 且不带 `AddtlInf` | 稀 | C2-13a | 该状态回报作废。**规范在此要求自由文本，而 CMOP 不生成自由文本，唯一出路是不用这个码** | — |
 | 一条不带 `CtrlSum` 的合法报文 | 中 | **无人捕获，这是预期** | C1-3 带条件，**此注入证明它没有被写成无条件不变量** | — |
 | `pacs.002` 不带 `OrgnlEndToEndId` | 中 | C2-9 | 该状态回报标为孤儿，不进链条 | — |
 | `TxSts` 填一个已废止的码 | 稀 | C2-11 | 该笔作废。**废止码在 XSD 里是普通枚举值**，见契约 §4A.9 | — |

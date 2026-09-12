@@ -1575,7 +1575,7 @@ P-1 与 S-1 是同一笔交易的券侧与款侧，**日期必须一致**，这�
 
 | 步 | 报文 | 方向 | 关键取值 | 之后状态 |
 |---|---|---|---|---|
-| 1 | `pacs.009` | 付方代理行 → 收方代理行 | `GrpHdr/MsgId` 由种子派生；**`NbOfTxs=1`**；`CtrlSum` 填且等于交易金额；`SttlmInf/SttlmMtd=CLRG`；`PmtTpInf/CtgyPurp/Cd` 按方向取 `DVPM`（卖，交券收款）或 `RVPM`（买，收券付款）；`IntrBkSttlmDt` 取 S-1 的 `SttlmDt`；交易层 `IntrBkSttlmAmt` 为该块净额；`UndrlygAllcn` 共 N 条，每条 `Purp/Cd=SECU` | 已发出 |
+| 1 | `pacs.009` | 付方代理行 → 收方代理行 | `GrpHdr/MsgId` 由种子派生；**`NbOfTxs=1`**；`CtrlSum` 填且等于交易金额；`SttlmInf/SttlmMtd=CLRG`；`PmtTpInf/CtgyPurp/Cd` 按方向取 `DVPM`（卖，交券收款）或 `RVPM`（买，收券付款）；**组头层** `IntrBkSttlmDt` 取 S-1 的 `SttlmDt`，**交易层同名元素一律缺席**（异或，见 §4C.8.1）；交易层 `IntrBkSttlmAmt` 为该块净额；`UndrlygAllcn` 共 N 条，每条 `Purp/Cd=SECU` | 已发出 |
 | 2 | `pacs.002` | 收方代理行 → 付方代理行 | `TxInfAndSts/OrgnlEndToEndId` 回引第 1 步；**`TxSts=ACTC`**；`OrgnlGrpInf/OrgnlMsgId` 与 `OrgnlMsgNmId` 均填 | 已受理 |
 | 3 | `pacs.002` | 同上 | 同上回引；**`TxSts=ACCC`**；`FctvIntrBkSttlmDt` 取实际结算日 | 已结算，P-1 结束 |
 
@@ -1802,7 +1802,7 @@ P-2 原先写的是**"资金腿延迟，券腿正常"**，理由是"检验 DVP �
 
 | 步 | 报文 | 方向 | 关键取值 | 之后状态 |
 |---|---|---|---|---|
-| 1 | `pacs.009` | 付方代理行 → 收方代理行 | 与 P-1 第 1 步相同，**`IntrBkSttlmDt` 仍取 S-2 的 `SttlmDt`（预定日，不是实际日）** | 已发出 |
+| 1 | `pacs.009` | 付方代理行 → 收方代理行 | 与 P-1 第 1 步相同，**组头 `IntrBkSttlmDt` 仍取 S-2 的 `SttlmDt`（预定日，不是实际日）**；交易层同名元素缺席 | 已发出 |
 | 2 | `pacs.002` | 收方代理行 → 付方代理行 | 回引第 1 步；**`TxSts=ACTC`** | 已受理 |
 | 3 | `pacs.002` | 同上 | 同上回引；**`TxSts=PDNG`**，并带 `StsRsnInf` | 挂起 |
 | 4 | `pacs.002` | 同上 | 同上回引；**`TxSts=ACCC`；`FctvIntrBkSttlmDt` 取 S-2 的 `FctvSttlmDt`** | 已结算，P-2 结束 |
@@ -2093,6 +2093,117 @@ Bronze 到 Silver 的映射必须逐字段声明缺席的含义，不能统一�
 
 **这三条现在都不产生检查，只产生边界。** 按 §6.2 的口径，
 **没有数据就不写断言**；但**边界不写下来，下一次扩张就会在不知情的情况下越过它**。
+
+## 4C.8 第八批：支付报文的具名约束，取全清单逐条读
+
+**§4C.4 读支付 MDR 时用的是按名字检索，方法已在 §4C.6.1 判定不可信，本批重做。**
+取全清单的结果：`pacs.009` 七十一条、`pacs.002` 二十五条、`pacs.004` 七十四条、
+`pacs.007` 三十三条。**逐条读下来有一条直接推翻既有检查，两条把 CMOP 决定改判为规范要求。**
+
+### 4C.8.1 推翻：`IntrBkSttlmDt` 不是"填就对"，它是一对互斥约束
+
+两条约束合起来说的是一件完整的事：
+
+> `GroupHeaderInterbankSettlementDateRule`（009 C13）If `GroupHeader/InterbankSettlementDate`
+> is present, then `CreditTransferTransactionInformation/InterbankSettlementDate` is **not allowed**.
+>
+> `TransactionInterbankSettlementDateRule`（009 C71）If `GroupHeader/InterbankSettlementDate`
+> is **not** present, then `CreditTransferTransactionInformation/InterbankSettlementDate`
+> **must be present**.
+
+**两条互为逆否，合起来是一条异或**：银行间结算日**恰好出现在一层**，
+组头有则交易层禁止，组头无则交易层必填。
+
+**校验规范的 C2-4 因此是错的。** 它写的是"交易层 `IntrBkSttlmDt` 非空，依据 CMOP，适用全部"。
+**按本约束，只要组头填了日期，交易层填日期就是违规**——原检查在 CMOP 现有取值下
+**恰好把合规数据判成缺失，把违规数据判成合格**，两个方向都反了。
+
+**CMOP 的取值定在组头层，理由与代价一起写下来：**
+
+- **取组头层**：P-1 与 P-2 的每个块 `NbOfTxs=1`，两层没有区别；
+  **组头层少一层嵌套，Bronze 的五张表里日期只落在父表**，见
+  [设计文档](../design/2026-09-12-bronze-landing-for-batch-payment-messages.md)。
+- **代价是它锁死了一类将来**：一旦一个块里的多笔交易需要不同的结算日
+  （部分延迟就会造成这种情形），**日期必须整体下移到交易层，组头层同时清空**。
+  这不是加字段，**是一次跨两层的改动**，因为异或不允许两层并存。
+- **`TtlIntrBkSttlmAmt` 因此也不能随便加。** `TotalInterbankSettlementAmountAndDateRule`
+  （009 C67）说总额出现则结算日必须出现；CMOP 目前不填总额，**填了就把日期锁在组头层**。
+
+### 4C.8.2 两条改判：组内合计与币种一致性是规范要求
+
+| 约束 | 原文 | 影响 |
+|---|---|---|
+| `TotalInterbankSettlementAmountAndSumRule`（009 C68） | 组头总额若出现，**必须等于**各交易 `IntrBkSttlmAmt` 之和 | **与 C1-3 同形**。C1-3 查的是 `CtrlSum`，本条查的是 `TtlIntrBkSttlmAmt`，**两个不同字段各有一条同形规则**，一条是 CMOP 一条是规范 |
+| `TotalInterbankSettlementAmountRule`（009 C69） | 组头总额若出现，各交易金额**必须与总额同币种** | **CMOP 的 C2-3 后半句"币种与该块一致"由此获得规范依据**，前半句"金额为正"仍是 CMOP |
+
+**`CtrlSum` 与 `TtlIntrBkSttlmAmt` 的区别要写清楚，否则下一个人会把两条检查合并。**
+`CtrlSum` 是组头的控制合计，**规范不检查它与交易金额的关系**；
+`TtlIntrBkSttlmAmt` 是银行间结算总额，**规范检查它**。
+**CMOP 填前者不填后者**，所以现在只有 CMOP 那条检查在跑。
+
+### 4C.8.3 `SettlementMethod` 一族：结算方式决定哪些元素被禁止
+
+**四条约束，全部是禁止式的**，`pacs.009` C59 至 C62：
+
+| 结算方式 | 禁止出现的元素 | 必须出现的元素 |
+|---|---|---|
+| `INDA` / `INGA` | `ReimbursementAgent` 各方、`ClearingSystem` | — |
+| `CLRG` | `SettlementAccount`、`ReimbursementAgent` 各方 | — |
+| `COVE` | `SettlementAccount`、`ClearingSystem` | `InstructedReimbursementAgent` 或 `InstructingReimbursementAgent` |
+
+**这对 §4C.4 里那条观察是正面回答。** 那里记过一个疑问：MDR 的样例把
+`SttlmMtd=CLRG` 与 `ClrSys/Prtry` 配在一起，而 CMOP 不填 `ClrSys`。
+**现在可以确定 CMOP 的取值是合规的**：`CLRG` 禁止的是结算账户与偿付代理行，
+**并不要求填清算系统**。样例填了是因为样例描述的是一个具体清算系统，不是因为规则要求。
+
+**同时得到一条 CMOP 必须遵守的禁止项**：既然取 `SttlmMtd=CLRG`，
+**`SttlmAcct` 与三个 `RmbrsmntAgt` 一律不得出现**。它们在 schema 上都是可选的，
+**XSD 判不出来**。
+
+### 4C.8.4 `pacs.002` 的组状态与笔状态不是各自独立的
+
+四条约束（002 C10 至 C13）把组状态与笔状态绑在一起：
+
+| 组状态 | 对笔状态的约束 |
+|---|---|
+| `ACTC`、`ACCP`、`ACSP`、`ACSC`、`ACWC` | 笔状态**不得**为 `RJCT` |
+| `PDNG` | 笔状态**不得**为 `RJCT` |
+| `RJCT` | 笔状态若出现，**必须**为 `RJCT` |
+| `RCVD` | 见 `GroupStatusReceivedRule`，同族 |
+
+**CMOP 目前不填组状态，所以四条都不触发。** 但它们说明了一件对 §2C.2 分级有用的事：
+**规范自己也认为组头与交易行的状态不是两个独立事实**。§2C.2 按爆炸半径把组头违规与
+交易行违规分成 C1 与 C2 两级，**本族约束是这个分法在规范侧的对应物**。
+
+**还有两条与理由码有关：**
+
+- `StatusReasonInformationRule`（002 C28）：组状态不是 `RJCT` 也不是 `PDNG` 时，
+  **`StsRsnInf/AddtlInf` 必须缺席**。**这与结算段的
+  `AdditionalReasonInforrmationRule`（§4C.6.5）是同一条思路的两种写法**：
+  自由文本不是想填就填的。
+- `StatusReasonRule`（002 C29）：`Rsn/Cd` 取 `NARR` 时，`AddtlInf` **必须出现**。
+  **CMOP 不使用 `NARR`**，因为使用它就必须写自由文本，与 §4.9 冲突。**登记为禁用码值。**
+
+### 4C.8.5 `OriginalGroupInformation` 三条：回连锚点在两层之间二选一
+
+> `OriginalGroupInformationAbsenceRule`（002 C20）If `OriginalGroupInformationAndStatus` is absent,
+> then `TransactionInformationAndStatus[*]/OriginalGroupInformation` must be present.
+
+**与 §4C.8.1 的日期异或是同一个形状**：回连信息**必须至少出现在一层**，
+组头层缺席则交易层必填。**这是本轮第二次遇到"两层之间二选一"的结构**，
+足以说明它是 `pacs` 家族的通用设计，不是个例。
+
+**对 CMOP 的后果**：现在 `pacs.002` 只在交易层回引（C2-9），**这是合规的**，
+但**它现在有了规范依据，不再只是 CMOP 决定**——若将来改成只在组头层回引，
+交易层就可以不填，**C2-9 那条"不填即孤儿"的说法要同时改**。
+
+### 4C.8.6 `TransactionIdentificationPresenceRule`：又一条二选一
+
+> `TransactionIdentification` or `UETR` must be present. Both may be present.（009 C70）
+
+**CMOP 填 `TxId` 不填 `UETR`，合规。** 记下来的理由是：`UETR` 是端到端唯一交易参考号，
+**真实跨行支付里它才是主键**。CMOP 不用它，**是因为它的格式是 UUID v4，
+生成一个看起来合法的 UETR 与编造 BIC 属于同一类问题**，见 §4C.7.2 定下的口径。
 
 ## 5. FINTRAC
 
