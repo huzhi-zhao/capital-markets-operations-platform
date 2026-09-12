@@ -227,14 +227,16 @@ handles keyed rewrites of historical partitions.
   which has an upsert but likewise no data-file compaction. Spark with the table format's own
   procedures covers all seven workloads. Spark is therefore the evidence-backed choice, which is the
   distinction the evaluation asked to be written into the decision record.
-- [ ] Add a table-property and catalog admission check covering two rules that fail the same way. The
-  catalog gate already required forbidding filesystem and Hadoop catalogs. The second rule is that any
-  table DuckDB writes must be explicitly set to merge-on-read, because the format defaults to
-  copy-on-write and DuckDB fails outright against that default. Both are configuration mistakes that
-  surface far from where they were made.
+- [ ] Implement the write-path admission checks. The plan is written up in the design doc dated
+  2026-09-12; only the implementation is left. Three layers: static configuration rules in CI, a
+  property assertion on the create-table path, and an online sweep of actual table properties. The
+  first two need nothing that does not already exist. The third reads the catalog and therefore waits
+  for the enablement window. Acceptance is stated as seven negative and positive CI cases.
 - [ ] Schedule the delete-file cleanup that mixed-engine writing implies. If DuckDB writes these
   tables, Spark has to run the position-delete rewrite and the data-file rewrite on a cadence,
-  because the engine producing the delete files cannot consume them.
+  because the engine producing the delete files cannot consume them. The admission-check design makes
+  the cadence a mandatory field on every dual-write table, so this item now has a place to live; what
+  is still missing is the cadence itself, which needs the accumulation rate measured on the host.
 - [ ] Produce the evaluation matrix and risk list, and open Proposed ADRs for the high and medium
   reversal-cost decisions only.
 ## Next: Phase 0B-2 and 0B-3
