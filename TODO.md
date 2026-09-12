@@ -619,3 +619,96 @@ handles keyed rewrites of historical partitions.
   combinations, putting the issued code on a credit entry passes the table lookup while being wrong,
   so direction against family is now its own check with its own injection, and the table lookup is
   expected to stay silent on it.
+- [x] Freeze the allocation-reject scenario, and correct the sketch that defined it. The sketch called
+  for multiple versions of one allocation identifier. FIX forbids that: the identifier must be unique
+  across every allocation instruction sent as new, so the response to a block-level reject is required
+  to carry a new one. Version linkage runs through the reference-identifier chain instead, which turns
+  the alignment the scenario exists to test from a group-by on a single key into a backward traversal.
+  The goal survives; only the mechanism was wrong. The chain form is also the harder and more realistic
+  one, since downstream receives a run of identifiers that are all different.
+- [x] Read the field dictionary rather than the message page for the allocation status field, and find
+  two values the documentation had missed. The message page lists four; the dictionary lists six,
+  adding incomplete and rejected-by-intermediary. Neither is generated here, but writing the legal
+  domain as four values would reject compliant data the day fragmentation or the intermediary flow
+  arrives. This is the same lesson as the ISO 20022 constraint lists reached from a different
+  direction: the message page and the field dictionary are two documents and the message page can be
+  incomplete, so searching one of them is not evidence of absence.
+- [x] Record that the account-level reject code carries the same value domain as the block-level one
+  but is declared in FIXML without any enumeration, so only the project's own validation layer can
+  check it. A second instance turned up on the confirmation side, where one Boolean field carries an
+  enumeration and another does not. Strictness in FIXML is decided per field, not per datatype, which
+  means the validation layer cannot infer from a field's type whether the schema already covers it.
+- [x] Freeze the confirmation-reject scenario, and overturn the claim it rested on. The documentation
+  said all three confirmation models end in an affirmed state, which is what the specification's own
+  summary sentence says. The same page draws two of the three models stopping at received, and states
+  that the recipient of a copy confirmation has no power to affirm at all. Only the first model
+  reaches affirmed. Since ready-to-settle hangs on that state, the interface between the confirmation
+  segment and the settlement segment holds for one model out of three. This is the first registered
+  inconsistency where a summary sentence contradicts a diagram on the same page rather than two
+  provisions contradicting each other; the diagram is more specific and wins, and the reasoning is
+  recorded because the next reader of that sentence will raise the same objection.
+- [x] Split the confirmation-reject scenario into three. Copy confirmations and status broadcasts had
+  been folded in on the grounds that all three share one recovery path. They share the recovery path
+  but not the terminal state, and no terminal assertion can be written for a scenario whose three
+  branches end in different places.
+- [x] Record that a rejection on a copy confirmation means a transmission or processing failure rather
+  than disagreement with the content, so the same status value carries two unrelated meanings and the
+  only field separating them is the copy indicator. Any reject-rate figure must be stratified by it
+  first; an unstratified rate adds transport faults to business disputes and gets less meaningful as
+  the sample grows. The stratification key is itself one of the fields the schema does not constrain.
+- [x] Close the question of whether the confirmation side can support reason-code analysis. It cannot.
+  The vocabulary has three values and none of them covers a money mismatch, which is what
+  confirmations actually get rejected for, so real rejections land on "other" with free text. This is
+  a property of the vocabulary rather than of the sample size, and it is written down to block the
+  natural next step of collecting more data.
+- [x] Record the three copy-paste defects in the confirmation acknowledgement field table, all of them
+  inherited from the allocation acknowledgement: a condition naming a field the message does not have,
+  a text note referring to an allocation-side code, and a timestamp described as belonging to a
+  different message. The errata release did not fix them, so they are the current state of the version
+  this project uses, and the reading to be implemented is written down rather than left to whoever
+  implements it.
+- [x] Settle what "late" measures before freezing the two late-arrival scenarios. The obvious reading
+  is impossible: the session layer requires the sending timestamp to be within two minutes of atomic
+  clock time and requires the receiver to reject and disconnect otherwise, so no message can be late
+  in transit. What this project calls late is a business event that happened before the nightly
+  cut-off carried in a message that arrived after it, and the only place that is observable is batch
+  membership, which has no field in the protocol at all.
+- [x] Record the two duplicate mechanisms and the fact that their dedupe keys are opposite. A possible
+  duplicate keeps its sequence number and is mechanically removable; a possible resend carries a new
+  sequence number with a byte-identical body, and the specification hands that case to the application
+  rather than solving it. That turns "Bronze keeps the session header" from a principle into a
+  requirement with a named failure, because a resend and its original agree on every business field
+  including the event timestamp.
+- [x] Record the trap in the original-sending-time field. It is set equal to the sending time when the
+  real value is unknown, so a zero difference means either an instant retransmit or no information at
+  all. Averaging them together skews the retransmit-delay distribution while every individual sample
+  stays legal.
+- [x] Freeze the late-allocation scenario. Its acceptance criterion is not the reconciliation result:
+  the first batch reporting a missing allocation is correct behaviour and the next batch clearing it
+  is easy. What the scenario exists to prove is that the first batch's published result is restated
+  with both versions kept, which is the main business objective itself. An implementation that
+  overwrites in place passes every equation check and fails only that, so the injection is paired with
+  a second one that differs only in overwriting.
+- [x] Record the inversion found while freezing it. The allocation instruction makes the trade date
+  mandatory and the event timestamp optional, and the acknowledgement does the reverse, so neither
+  message carries both. On the instruction the only guaranteed time information is a date with no time
+  of day, which means allocation-side lateness can only be measured in business days. That is the same
+  conclusion the session-layer reading reached by an unrelated route. The confirmation pair makes both
+  mandatory, so that side can be measured to the second, and the two scenarios must not share a
+  threshold.
+- [x] Freeze the late-confirmation scenario, the first one crossing both contracts. Because
+  ready-to-settle hangs on the affirmation, an affirmation arriving after the settlement date forces a
+  choice; the branch that settles without waiting leaves no trace in the data and is excluded on the
+  grounds that it cannot be verified, and the other lands on the already-frozen failed-then-late
+  settlement scenario. That gives the six-segment chain its first cross-contract causal link rather
+  than a mere join. It also introduces a third shape of check: dwell time in a half-finished state,
+  which is neither an equation nor a reachability question, and which looks normal in every single
+  batch taken alone.
+- [ ] Build the chain-traversal check that the reference-identifier chains need. It is the first
+  assertion in the catalogue that is not an equation, and the cost is not in the assertion but in the
+  validation layer having no such shape. Two scenarios are waiting on it, the two-hop allocation
+  correction and its confirmation-side twin, and they should be unlocked together since they share it.
+- [ ] Decide whether to build the combination scenarios where a late message is also rejected. Both are
+  registered and both are deferred for the same reason: the restatement path and the correction path
+  look alike from downstream, so each can mask the other's failure. They are only worth building once
+  the two component checks pass on their own.
