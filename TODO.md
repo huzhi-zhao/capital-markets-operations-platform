@@ -122,9 +122,15 @@ handles keyed rewrites of historical partitions.
 - [x] Read the specification's own example flows and rejection scenarios for allocation, Volume 5
   pages 33 to 38. This reversed A-1's step count: every one of the six flows lists the interim
   received acknowledgement as its own row, so A-1 goes from two steps to three.
-- [ ] Add a confirmation-layer assertion to the validation spec: at least one confirmation per allocated
-  account, exactly one within C-1's narrow conditions. The applicability condition has to ship with it,
-  or it starts producing false alarms as soon as C-2 lands.
+- [x] Add a confirmation-layer assertion to the validation spec. Done as a section covering the whole
+  allocation and confirmation segment, not just that one assertion, since the same discipline applies
+  across it. Every assertion now carries three things: whether it comes from the specification, from
+  this project, or is inferred from two others; the condition under which it holds; and the scenario
+  that will retire it. The inferred one turned out to matter most. Total confirmed quantity equalling
+  instructed quantity is composed from two assertions, so it dies together with the narrow one, and
+  nothing in its own wording reveals that. The R1 and R2 comparisons were extended to the allocation
+  layer at the same time, where both sides share a date basis because allocation does not cross the
+  settlement date, unlike the trade-to-cash comparison one section earlier.
 - [x] Settle the five L-1 distribution parameters. Adopted, with the scalars marked openly as arbitrary:
   what is justified is the constraints and the shape of each distribution, not the specific numbers,
   which are placeholders to be revisited once Phase 1 measures row width. Order size and fill count
