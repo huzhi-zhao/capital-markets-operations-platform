@@ -58,14 +58,25 @@ OCI 实例，上面跑着 26 个容器，是兄弟项目 UOIP 与若干个人服
 | **Java 11 下必须设 `-Dio.netty.tryReflectionSetAccessible=true`**，否则 Arrow 走 Netty 时抛 `UnsupportedOperationException` | 同上 |
 | **Trino 451 要求 Java 22，且只要 22**：Java 8、11、17、21 均不工作，Java 23 未测试 | Trino 451 Deploying |
 
-### 由此提前得到一个结论：不存在一个 JDK 同时服务两端
+### 由此提前得到一个证据：运行时分裂不只是被允许，而是被强制
 
 **Spark 3.5.1 的上限是 Java 17，Trino 451 的下限是 Java 22。** 两个区间不相交。
 
-这直接落在 [ADR 0004](../adr/0004-language-and-runtime-boundaries.md) 上：
-**"选定一个受支持的 LTS JDK"这个目标在全平台范围内无法成立**，
-而且 **Java 22 本身不是 LTS**。可行的表述只能是按运行时分别固定版本，
-批计算一条线、交互查询另一条线，**并把这个分裂写成显式约束而不是遗漏**。
+**这不推翻任何已有决策。** [ADR 0004](../adr/0004-language-and-runtime-boundaries.md)
+Java runtime policy 第 4 条已经写明"不强求所有第三方数据组件运行在与自研 Java 服务相同的
+JDK"，Consequences 里也写了"不强制统一第三方组件 JDK"。
+**该 ADR 从一开始就没有假设存在统一的平台 JDK。**
+
+**新增的是把"允许"变成"必需"的实测级证据，以及一个此前没有记录的具体数字：**
+Trino 451 要求的 Java 22 **不是 LTS**，而 ADR 0004 第 1 条要求正式 Java 模块只用 LTS。
+两条并不冲突——第 1 条约束的是自研模块，Trino 是第三方组件——
+**但这说明第三方组件那一侧可能被迫长期停在非 LTS 上**，
+这个代价 ADR 0004 的 Negative and risks 里只写了"独立 JDK 运行时可能增加镜像与漏洞修复工作"，
+没有写"其中一个运行时可能根本没有 LTS 可选"。
+
+[ADR 0003 的 2026-09-09 修订](../adr/0003-hybrid-deployment-topology-and-component-placement.md)
+已记录 Spark 侧是 JDK 11，并要求"兼容性证据必须针对这些具体版本收集"。
+**本文补上的是 Trino 那一侧的同类证据。**
 
 **这一条不需要停机窗口就能确定**，是本轮的意外收获。
 
@@ -215,9 +226,10 @@ OCI 实例，上面跑着 26 个容器，是兄弟项目 UOIP 与若干个人服
 
 按价值排：
 
-1. **把运行时分裂写进 [ADR 0004](../adr/0004-language-and-runtime-boundaries.md)。**
+1. **把两侧的具体 JDK 证据补进 [ADR 0004](../adr/0004-language-and-runtime-boundaries.md)。**
    证据已在本文"已核实的版本事实"里，不需要碰主机。
-   **当前的决策记录暗示存在一个统一的平台 JDK，而那件事不成立。**
+   **这是补证据不是纠错**：该 ADR 已经允许按组件分别固定 JDK。
+   值得补的是它没写到的那一条风险——**第三方组件那一侧可能没有 LTS 可选**。
 2. **写表属性与 catalog 的准入检查。** 两条规则失败方式相同：
    禁 filesystem 与 Hadoop catalog；DuckDB 要写的表必须显式设 merge-on-read。
    **都是配置错误，发作的地方离犯错的地方很远。** 见 §2.4 与 §2.5。

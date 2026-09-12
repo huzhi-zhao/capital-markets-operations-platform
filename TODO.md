@@ -241,13 +241,14 @@ handles keyed rewrites of historical partitions.
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
 - [ ] Finalize the component-to-language map, then define the minimum Java, Python, SQL and Spark
-  templates needed by Phase 1. The single-LTS part of this item is already answered and the answer is
-  no: the batch engine tops out at Java 17 and the query engine requires exactly Java 22, so the two
-  ranges do not overlap and the one they force is not even a long-term release. The map has to fix a
-  runtime per component and say so explicitly.
-- [ ] Amend the runtime boundaries decision record to state the split rather than imply a single
-  platform JDK. The evidence is public and needs no host access; only the running versions still have
-  to be confirmed on the machine.
+  templates needed by Phase 1. The runtime-boundaries record already scopes its long-term-release rule
+  to self-written Java modules and already allows third-party components their own runtimes, so that
+  part needs no revision. What the map must now fix is a concrete runtime per component, using the
+  measured versions rather than the newest releases.
+- [ ] Add the measured Java evidence for both engines to the runtime boundaries record, and with it a
+  risk it does not currently carry: the query engine requires exactly Java 22 and refuses Java 21 and
+  below, so that component may be stuck on a non-long-term release indefinitely. The record notes the
+  cost of separate runtimes only as image and patching work. Public evidence, no host access needed.
 - [ ] Accept or supersede ADRs only when their open risks no longer threaten the first vertical slice.
 
 ## Later: Formal Implementation
