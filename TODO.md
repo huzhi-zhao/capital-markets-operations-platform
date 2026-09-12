@@ -272,11 +272,19 @@ handles keyed rewrites of historical partitions.
   element at all, an even weaker guarantee than the settlement leg's. And the end-to-end identifier
   is the only mandatory identifier in the payment identification block, which makes it the single
   anchor that ties the cash leg back to the securities leg.
-- [ ] Obtain the External Code Sets. The cash families declare their status, balance-type and bank
-  transaction code types as plain four-character strings with no enumeration in the schema, unlike
-  the securities family where the equivalents are inline. Twenty-three such types in the status
-  report alone, thirty-two in the statement. Until the code sets are in hand the cash leg has a
-  verified structure and no legal values, and no status code may be invented.
+- [x] Obtain the External Code Sets. Version 2Q2026, one hundred sixty-three types and three thousand
+  three hundred forty-seven codes, read in the browser and not saved. The cash leg's vocabulary gap is
+  closed. Two things came out of it that the schema alone would never have shown. Thirty-three codes
+  are marked obsolete in an annotation while remaining ordinary enumerations, so a generator that
+  treats the enumeration list as its value pool will emit withdrawn codes and no validator will catch
+  it; the annotation has to be read alongside the values. And the bank transaction codes are not in
+  the code sets either, only a second pointer to a separate spreadsheet published a quarter earlier,
+  whose domain, family and subfamily form a table of about fifteen hundred valid combinations rather
+  than three independent enumerations.
+- [ ] Snapshot the code sets and the bank transaction combination table as one versioned artifact that
+  the generator and the validation layer both read. They must not fetch independently: different
+  versions on the two sides produce data that is legal and a validator that says it is not, with
+  neither side wrong.
 - [ ] Read the Message Definition Reports for both cash message sets. Business flows, roles and
   worked examples are there, the same position they occupied for the settlement leg.
 - [ ] Decide how the batch-oriented payment messages land in Bronze. The group header and the

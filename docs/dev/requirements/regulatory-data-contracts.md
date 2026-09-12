@@ -25,7 +25,7 @@ Bronze 用真实的行业与监管报文标准装合成事实。本文记录这�
 | 第一批 | FIX 订单生命周期：新建、撤改、成交回报、状态机 | 五种报文的字段矩阵已核对；L-1 已填实 |
 | 第二批 | FIX 分配指令与确认 | 七种报文的字段矩阵与规范自带流程已核对；A-1 与 C-1 已冻结 |
 | 第三批 | ISO 20022 结算报文族 | 三种核心报文已从规范 XSD 与 MDR 核对；S-1 已冻结；状态转移已取得 |
-| 第四批 | ISO 20022 资金报文族 | 十二种报文已从规范 XSD 核对；发现状态词表不在 schema 内，见 §4A.5 |
+| 第四批 | ISO 20022 资金报文族 | 十二种报文已从规范 XSD 核对；External Code Sets 与银行交易码表已取得，词表缺口闭合 |
 | 第五批 | FINTRAC，仅取规则版本化所需语义 | 未开始，已降级 |
 | 不做 | CIRO 深入报送规格、SEC EDGAR XBRL | 排除 |
 
@@ -1218,8 +1218,8 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 
 对 CMOP 的直接后果：
 
-1. **资金段的枚举必须另取一份出处**，External Code Sets 未读，列入 §4A.8。
-2. 在拿到词表之前，**不得编造状态码**。第四批只能定结构，定不了取值。
+1. **资金段的枚举必须另取一份出处**。**已于 2026-09-12 取得**，见 §4A.9。
+2. 在拿到词表之前，**不得编造状态码**。这一条已解除。
 3. Bronze 解析层对 `External*` 字段**不能建枚举约束**，只能存字符串，
    合法性校验推到业务校验层，且该层依赖外部词表的版本。
 
@@ -1254,13 +1254,90 @@ CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
 
 ### 4A.8 第四批还欠什么
 
-- **External Code Sets 未取。** 这是本批的主要缺口，资金段的状态、余额类型、
-  银行交易码全部悬空。取到之前，资金段只能定结构不能定取值。
+- ~~External Code Sets 未取。~~ **已于 2026-09-12 取得**，见 §4A.9。银行交易码需再走一层，
+  同样已取得。
 - **两个消息集的 MDR 未读。** 业务流程、角色、报文流与样例都在里面，
   与第三批同样的位置。
 - **`pacs` 批量结构的 Bronze 落地方案未定**，组层与交易层两张表的主键与分区键待定。
 - `camt.060` 只取了根结构，请求侧未展开。
 - `seev` 公司行为族仍未开始，优先级低。
+
+### 4A.9 External Code Sets 已取得，词表缺口闭合
+
+**取得日期 2026-09-12，版本 `2Q2026_externalcodesets_v3`。** 出处是注册机构 Catalogue 下
+External Code Sets 页面发布的 XSD 压缩包，**与前四批一样全程在浏览器内存中读取，未落盘**。
+同页说明：外部词表按季度更新，二月、五月、八月、十一月末由注册机构在 SEG 批准后发布，
+**使用者必须以站点上的最新版为准**。
+
+整份词表 **163 个 simpleType、3347 条码值**。
+
+#### 资金段用得上的词表，逐个点清
+
+| 类型 | 码值数 | 用在哪 |
+|---|---|---|
+| `ExternalPaymentTransactionStatus1Code` | 25 | `pacs.002` 交易层状态 |
+| `ExternalPaymentGroupStatus1Code` | 13 | `pacs.002` 组层状态 |
+| `ExternalStatusReason1Code` | **315** | `pacs.002` 状态原因 |
+| `ExternalEntryStatus1Code` | **4** | `camt.052/053/054` 明细项状态 |
+| `ExternalBalanceType1Code` | 10 | `camt.052/053` 余额类型 |
+| `ExternalBalanceSubType1Code` | 22 | 同上 |
+| `ExternalCashAccountType1Code` | 28 | 现金账户类型 |
+| `ExternalReportingSource1Code` | 11 | 报表来源 |
+| `ExternalCategoryPurpose1Code` | 49 | 业务类别 |
+| `ExternalPurpose1Code` | 366 | 汇款用途 |
+| `ExternalReturnReason1Code` | 104 | `pacs.004` 退汇原因 |
+| `ExternalReversalReason1Code` | 11 | `pacs.007` 冲正原因 |
+| `ExternalChargeType1Code` | 14 | 费用类型 |
+| `ExternalLocalInstrument1Code` | 115 | 本地清算工具 |
+
+**明细项状态只有四个值**，这与之前的悲观预期正相反：`BOOK` 已入账、`PDNG` 挂起、
+`FUTR` 未来、`INFO` 仅供参考。**资金段最关键的那个词表反而是全份里最小的之一。**
+
+余额类型十个值成对出现：`OPBD`/`OPAV` 期初已入账与可用、`CLBD`/`CLAV` 期末、
+`ITBD`/`ITAV` 期间、`PRCD` 上期期末、`FWAV` 远期可用、`XPCD` 预期、`INFO` 参考。
+**已入账与可用是两个不同的量**，`camt.053` 的余额对账要说清对的是哪一个。
+
+支付交易状态二十五个值里，与 CMOP 相关的是 `RCVD` 已收、`ACTC` 技术校验通过、
+`ACSP` 结算处理中、`ACSC` 借方账户结算完成、`ACCC` 贷方账户结算完成、`PDNG` 挂起、
+`RJCT` 拒绝。**其余十八个是支票、现金提取、收款人核验等分支，不在本项目范围内。**
+
+#### 两处必须记下来的坑
+
+**第一，词表里有 33 条已废止码值，但它们仍然是 schema 合法的。** 全份 3347 条中
+`RegistrationStatus` 为 `Obsolete` 的有 33 条，集中在 `ExternalLocalInstrument1Code`（25 条）、
+`ExternalClearingSystemIdentification1Code`（4 条）、`ExternalUndertakingDocumentType2Code`（3 条）
+与 `ExternalCashClearingSystem1Code`（1 条）。
+
+**这些码在 XSD 里就是普通的 enumeration，没有任何形式上的区别**，废止只写在注解的
+`RegistrationStatus` 里。**生成器若直接把 enumeration 列表当取值池，就会生成已废止的码，
+而且校验不出来。** 取用口径：**解析 XSD 时必须同时读注解，只取 `Registered` 的码值。**
+
+**第二，银行交易码根本不在这份词表里。** `ExternalBankTransactionDomain1Code`、
+`ExternalBankTransactionFamily1Code`、`ExternalBankTransactionSubFamily1Code` 三个类型
+在词表 XSD 里**存在但零枚举**，注解原文说它们发布在"外部银行交易码清单"里。
+
+**这是第二层间接。** schema 指向 External Code Sets，External Code Sets 又指向另一份文件：
+同页单独发布的 `BTC_Codification_30Nov2025.xlsx`，**发布日期 2025-11-30，比词表本身还旧**。
+该表两张工作表，主表约 **1569 行组合**，11 个域：`PMNT` 支付、`CAMT` 资金管理、
+`DERV` 衍生品、`FORX` 外汇、`LDAS` 贷款存款与银团、`CMDT` 大宗商品、`PMET` 贵金属、
+`TRAD` 贸易服务、`SECU` 证券、`ACMT` 账户管理、`XTND` 扩展域。
+
+**域、族、子族是有效组合表，不是三个独立枚举的笛卡尔积。** `ReportEntry16/BkTxCd` 必填，
+所以 `camt` 的每一条明细都要给一个合法组合，**不能三层各自随机采样**。CMOP 取用口径：
+从这 1569 行里取组合，**且只取 `PMNT` 与 `SECU` 两个域**，其余与本项目无关。
+
+#### 版本化的后果
+
+**外部词表按季度走自己的版本，与报文版本无关。** 这与项目在 FINTRAC 段落里已经提出的
+问题是同一个（见 §5）：**结果必须声明它是在哪个词表版本下产生的。**
+
+因此 Bronze 的资金段落地口径定为三条：
+
+1. **`External*` 字段一律存字符串，不建枚举约束。** 理由已写在 §4A.5，此处不变。
+2. **合法性校验放在业务校验层**，该层显式携带词表版本标识，本项目当前为 `2Q2026_v3`，
+   银行交易码组合表为 `30Nov2025`。
+3. **生成器的取值池与校验层共用同一份词表快照**，不各自去取。两边版本不同会产生
+   一种极难查的差错：数据合法，校验说不合法，而两边都没错。
 
 
 ## 5. FINTRAC
@@ -1284,7 +1361,8 @@ CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
 | FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)，Vol. 1–7 加勘误单，7.5 MB；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，**Volume 5 分配与确认**，Volume 6 字段枚举 | 2026-09-09 初次，2026-09-10 重新取得 |
 | ISO 20022 证券 | Settlement and Reconciliation 消息集，维护周期 2025–2026，证券 SEG 于 2026-01-27 批准，最后更新 2026-03-17 | [ISO 20022 报文定义目录](https://www.iso20022.org/iso-20022-message-definitions)，`sese` 族规范 XSD 与 **MDR Part 1** 逐条取得；**Part 2 与 Part 3 尚未读** | 2026-09-10 |
 | ISO 20022 资金 | Bank-to-Customer Cash Management（消息集 1246）与 Payments Clearing and Settlement（消息集 1249），均于 2026-03-19 最后更新 | 同上目录，`camt` 与 `pacs` 共十二种报文的规范 XSD；**两个消息集的 MDR 均未读** | 2026-09-10 |
-| ISO 20022 外部词表 | External Code Sets | **尚未取得**，见 §4A.5；资金段的状态、余额类型与银行交易码取值全部依赖它 | — |
+| ISO 20022 外部词表 | `2Q2026_externalcodesets_v3`，季度更新 | [External Code Sets 页面](https://www.iso20022.org/catalogue/additional-content-messages/external-code-sets) 发布的 XSD 压缩包；163 个类型、3347 条码值，其中 33 条已废止 | 2026-09-12 |
+| ISO 20022 银行交易码 | `BTC_Codification_30Nov2025` | 同页单独发布的 XLSX；11 个域、约 1569 行有效组合 | 2026-09-12 |
 | FINTRAC | | | |
 
 **FIX 本地副本**：`~/Downloads/fix-4-4-spec/`，文件名形如 `fix-44_VOL-5_w_Errata_20030618.pdf`。
