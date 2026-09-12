@@ -128,7 +128,8 @@ XML 校验器都会执行；另一种是 MDR Part 2 的**具名约束**，形如
 | V1-023-6 | `SttlmQty/Qty/Unit` 非空且为正 | 规范必填，正数是 **CMOP** | 全部 |
 | V1-023-7 | `SfkpgAcct/Id` 非空 | **CMOP** | 全部。schema 上可选，不填就说不清这笔结算属于哪个账户 |
 | V1-023-8 | `SttlmAmt` 存在，且 `CdtDbtInd` 与 `SctiesMvmntTp` 方向相容 | **`SttlmAmt` 存在是规范**，具名约束 `SettlementAmountRule`，见契约 §4C.1；`CdtDbtInd` 在 `AmountAndDirection94` 里是规范必填；**只有相容性是 CMOP** | `Pmt=APMT` 时 |
-| V1-023-9 | `TradDt` 与 `SttlmDt` 均填，且 `SttlmDt` 严格晚于 `TradDt` | `SttlmDt` 规范必填，其余 **CMOP** | 全部 |
+| V1-023-9 | `TradDt` 与 `SttlmDt` 均填，且 `SttlmDt` 严格晚于 `TradDt` | `SttlmDt` 规范必填；`TradDt` 是 SMPG 推荐而非规范必填，见契约 §4C；严格晚于是 **CMOP** | 全部 |
+| V1-023-10 | 各参与方走 `PrtryId`，**不得出现任何 `AnyBIC` 值** | **规范**。`AnyBIC` 的取值必须是 ISO 9362 注册机构发布的真实 BIC，**合成机构没有注册过** | 全部。**XSD 只检查形状不检查注册，所以这条过得了 schema**，见[生成规范](data-generation-specification.md) §3B.5 |
 
 **V1-023-8 是最值得单列的一条。** 借贷方向随收付方向翻转，
 **这与 `AllocNetMoney` 的符号随 `Side` 翻转是同一类坑**，见契约 §3A.7。
@@ -391,6 +392,7 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 | C2-6 | 各 `UndrlygAllcn/Amt` 之和等于本行 `IntrBkSttlmAmt` | **CMOP**。契约 P1-3，**schema 完全不要求** | **仅在 `UndrlygAllcn` 出现时** |
 | C2-7 | 每条 `UndrlygAllcn` 带 `RltdRefs/SctiesSttlmTxId` | **CMOP**。规范为回连备了这个字段，但它可选 | 仅 DVP 场景 |
 | C2-8 | `UndrlygAllcn/CdtDbtInd` 与证券段同笔的 `SttlmAmt/CdtDbtInd` 相反 | **CMOP**。契约 P1-5 | 仅 DVP，且证券段已落地——**否则推到 C4** |
+| C2-8a | `Dbtr` 与 `Cdtr` 走专有标识，**不得填 `BICFI`** | **规范**，理由同 V1-023-10 | 全部。合成机构未注册 BIC |
 
 #### `pacs.002` 交易行
 

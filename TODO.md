@@ -346,8 +346,21 @@ handles keyed rewrites of historical partitions.
   can batch twenty payments, so counting rows to reconcile is wrong on the specification's own
   terms. Four tiers, one orthogonal versioned dimension, and three injections, two of them paired to
   prove the tier split itself rather than any single check.
-- [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
-  introduces both and the two-level client and account structure has neither.
+- [x] Decide where the account servicer and account owner roles live in the generation spec.
+  Neither of the two options on the table, and the settlement pair is handled together with the two
+  agent roles the cash leg adds, rather than one segment at a time. Written as section 3B. Roles are
+  where a fact points, not a kind of entity: the same custodian is a servicing party in one message
+  and an agent in another, so building a table per role would store one institution four times with
+  nothing keeping the copies consistent. The account owner needs nothing new at all, because it
+  follows from the account, which the two-level structure already pins to exactly one client; that
+  only works because the earlier decision refused to flatten those two levels, and the payoff lands
+  here two months later. What genuinely has no source is which institution holds an account, so that
+  becomes one small dimension shared by three roles. One simplification is taken and priced: all of a
+  client's accounts sit at one institution, because otherwise a single allocation splits into several
+  batches of instructions aimed at different servicers, which changes the chain's shape rather than
+  adding a column. Identifiers must not be business identifier codes, and this time it is the
+  specification saying so rather than us: those codes are issued by a registration authority and
+  synthetic institutions have none, while the schema checks only their shape.
 
 - [x] Verify the ISO 20022 cash families from their schemas. Twelve messages across the two cash
   message sets, identifiers, roots and cardinality all taken from the registration authority's own

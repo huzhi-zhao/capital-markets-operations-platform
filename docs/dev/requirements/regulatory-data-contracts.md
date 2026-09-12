@@ -1142,9 +1142,10 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 - ~~结算段的业务校验层未写。~~ **已于 2026-09-12 写成**，见
   [验证与对账规范](validation-and-reconciliation-specification.md) §2A：三级划分、逐条检查、
   规范要求与 CMOP 决定分列、每条带适用条件。
-- **S-1 引入了 Instructing Party 与 Executing/Servicing Party 两个角色**，
-  [合成数据生成规范](data-generation-specification.md) §3A 的两层结构里没有它们。是复用客户层
-  还是新增一层，未决。
+- ~~S-1 引入了 Instructing Party 与 Executing/Servicing Party 两个角色，两层结构里没有它们。~~
+  **已于 2026-09-12 定案**，见[合成数据生成规范](data-generation-specification.md) §3B：
+  **两条路都不走**。账户持有方从账户函数式地推出，不新增层级；账务服务方与两个代理行合并成
+  一个机构维度，**因为角色是事实侧的引用位置，不是维度侧的分类**。
 ## 4A. 第四批：资金报文族
 
 **第四批于 2026-09-10 开工。** 与第三批同样的读法：先读规范 XSD 取标识符、基数与枚举，
