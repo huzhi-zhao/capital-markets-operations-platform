@@ -584,8 +584,11 @@ J 的顶层字段，而在组内 `<CommissionData>` 组件块中，骨架写错�
 3. **状态播报**，`ConfirmType = 1`，用 `ConfirmStatus` 报 Mismatched account、
    Missing SSI 之类的卡点。
 
-**三种用法的成功终态都是 `AffirmStatus = 3`（Affirmed）**，规范原文说这可以理解为该笔已可
-进入结算。**这句话就是 C-1 与结算段之间的接口**，第三批的 ISO 20022 结算报文接在这里。
+~~**三种用法的成功终态都是 `AffirmStatus = 3`（Affirmed）**~~
+**这句话是错的，已于冻结 C-2 时推翻，见 §3A.11。** 规范的总述句确实这么写，
+**但同一页的 Model 2 与 Model 3 流程图都只画到 `AffirmStatus = 1`（Received）**。
+**只有 Model 1 到得了 Affirmed**，而"该笔已可进入结算"这个判据挂在 Affirmed 上，
+**所以 C-1 与结算段之间的那个接口只对 Model 1 成立**，第三批的 ISO 20022 结算报文接在这里。
 
 **被拒之后的恢复路径也是规范给的**（V5-CF pp. 55–56），与分配侧同构但不同名：
 
@@ -744,7 +747,11 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
 | A-4 | 分配数量与成交总量对不上 | 制造 R1 必须捕获的差异，属注入而非正常路径 | 待解锁 |
 | A-5 | 卖方主动发起分配回报（AS/AT） | 覆盖规范流程 3，方向与 A-1 相反，检验交易对手字段没写反 | 待解锁，优先级低 |
 | C-1 | 逐账户确认并被接受 | 链条第四段 | **已冻结**，见 §3A.6 |
-| C-2 | 确认被拒后重发 | 与 A-2 同理，作用在确认层 | 待解锁 |
+| C-2 | 确认被拒后以 Replace 更正 | 与 A-2 同形，作用在确认层，**且打掉 VC-2** | **已冻结**，见 §3A.11 |
+| C-2a | 抄送确认，含技术层面拒绝 | 终态只到 Received，**与 C-2 的拒绝含义不同** | 待解锁 |
+| C-2b | 状态播报（`ConfirmType = 1`） | 用 `ConfirmStatus` 报卡点，终态同样只到 Received | 待解锁 |
+| C-2c | Cancel 再 New 的两跳更正 | 与 A-2b 共用链式回溯校验 | 待解锁，**与 A-2b 同时** |
+| C-4 | 确认请求与应答（BH/AK） | `ConfirmType = 3` 的唯一出场场合 | 待解锁，优先级低 |
 | C-3 | 确认迟到，跨越结算日 | 与 T+1 结算周期交互，最难的一类 | 待解锁 |
 
 **A-3 与 C-3 是这批里价值最高的两个**，因为 T+1 早晨的异常处理流是本项目唯一必须端到端跑通
@@ -754,8 +761,9 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
 **A-5 的优先级明确定为低。** 它对应的是卖方主动发起的分配流程，报文已核对但 CMOP 的业务
 设定里没有这条流。**列出来是为了防止 AS 与 AT 被硬塞进 A-1**，不是为了排期。
 
-**C-2 的范围比字面更宽。** 除了被拒后重发，规范给出的抄送确认（`CopyMsgIndicator = Y`）与
-状态播报（`ConfirmType = 1`）也归在 C-2，因为三者共用同一套 Cancel/Replace 恢复路径。
+~~**C-2 的范围比字面更宽。**~~ **原先把抄送确认与状态播报并进 C-2，理由是三者共用同一套
+Cancel/Replace 恢复路径。恢复路径确实共用，终态却不同**（见 §3A.11），
+把终态不同的三条流程压在一个编号下会使终态断言无法书写，故已拆为 C-2、C-2a、C-2b。
 
 ### 3A.9 现在就要回头改的地方
 
@@ -910,6 +918,142 @@ Replace 必须携带替换后的**全部**数据，并把"识别哪些项发生�
 **VA-11 是本场景引入的唯一新形状：它不是等式，是图上的可达性。**
 R1 与 R2 都是按键聚合后比数值，**链式回溯不属于这一类**，校验层要为它另立一种检查形状。
 写在这里是因为它的成本不在断言本身，而在于校验层此前没有这种形状。
+
+### 3A.11 C-2：确认被拒后以 Replace 更正，已冻结，且它推翻了 §3A.5 的一句话
+
+#### 先说被推翻的那一句
+
+§3A.5 写的是"三种用法的成功终态都是 `AffirmStatus = 3`（Affirmed）"。
+**这句话抄自规范，而规范这一句与它自己画的流程图矛盾。**
+
+V5-CF p.54 的开头一句确实写着三种用法的成功终态都是 Affirmed。**但同一页往下**：
+
+- **Model 2（抄送确认）的流程图只画到 `AffirmStatus = Received` 就结束**，
+  正文并明说抄送件的收件方**无权因业务原因 affirm 或 reject**。
+- **Model 3（状态播报）的流程图同样只画到 `Received`。**
+
+**因此那句总述是错的，只有 Model 1 到得了 Affirmed。**
+§3A.5 的写法一并更正：**Affirmed 是 Model 1 的终态，不是三种用法的共同终态。**
+
+**这一条的后果不止于措辞。** "该笔已可进入结算"这个判据挂在 Affirmed 上，
+若把它当成三种用法通用，**抄送件与状态播报会被当成结算前置条件已满足**，
+而它们本来就到不了那一步。**这是 C-1 与结算段那个接口的精确边界**：
+接口只对 Model 1 成立。
+
+**顺带把 C-2 的范围拆开。** §3A.8 原来把抄送与状态播报都并进 C-2，
+理由是三者共用同一套 Cancel/Replace 恢复路径。**恢复路径确实共用，终态却不同**，
+把终态不同的三条流程压在一个场景编号下，**终态断言就没法写**。
+抄送拆为 C-2a，状态播报拆为 C-2b。
+
+#### 抄送件上的 `AffirmStatus = 2` 与主确认上的不是一回事
+
+规范原文在 Model 2 里补了一句：收件方不得因业务原因拒绝，
+**但技术层面的拒绝仍然可能**，例如系统故障，且这种拒绝"应读作报文传输或处理失败，
+而不是对内容的拒绝"（V5-CF p.55）。
+
+**于是同一个 `AffirmStatus = 2` 在两种流程下含义完全不同**，
+而**报文里唯一能把两者分开的字段是 `CopyMsgIndicator`(797)**。
+
+**后果要写死**：任何按 `AffirmStatus` 统计拒绝率的口径，**必须先按 `CopyMsgIndicator` 分层**。
+不分层的拒绝率把传输故障和业务分歧加在一起，**数越大越没有意义**。
+
+#### `ConfirmRejReason` 只有三个取值，这一段没法做原因分析
+
+`ConfirmRejReason`(774)：1 = Mismatched account、2 = Missing settlement instructions、
+99 = Other（V6 p.266）。**对照 `AllocRejCode` 的十四个取值（见 §3A.10）。**
+
+**分配侧的拒绝原因是可分析的，确认侧的不是。** 确认被拒的真实原因绝大多数是净额、
+毛额或费用算不平，**而这三样在词表里一个都没有**，只能落到 99 = Other 加自由文本。
+
+**CMOP 的口径**：确认侧不建原因码分布，**只建"是否被拒"的二值口径**。
+**这不是数据量不够，是词表本身不支持**，再多的样本也分不出细类。
+**这一条要显式写下来**，否则下游会以为是采样问题而去加量。
+
+#### AU 报文上的三处笔误，全部是从分配侧粘过来的
+
+V5-CFA p.52 的字段表，Confirmation Ack 一共只有七个业务字段，其中三个的注释是错的：
+
+| 字段 | 规范注释原文 | 错在哪 | CMOP 口径 |
+|---|---|---|---|
+| `ConfirmRejReason`(774) | Required for `ConfirmStatus` = 1 (rejected) | **AU 上根本没有 `ConfirmStatus`**，而且 `ConfirmStatus=1` 是 Received 不是 rejected | `AffirmStatus = 2` 时必填，已记于 §3A.4 |
+| `Text`(58) | Can include explanation for `AllocRejCode` = 7 (other) | **`AllocRejCode` 是分配侧字段，AU 上没有** | `ConfirmRejReason = 99` 时用于说明 |
+| `TransactTime`(60) | Date/Time **Allocation Instruction Ack** generated | 同上，粘错了报文名 | 本条 AU 的生成时刻 |
+
+**三处笔误指向同一个来源**：Confirmation Ack 的字段表是照 Allocation Instruction Ack
+改出来的，改漏了三行。**这不影响 XSD 校验，只影响读的人**，
+所以它必须写在文档里而不是靠实现时"看着办"。
+
+**errata 没有修这三处。** 本项目用的就是 with-Errata-20030618 版本，
+**这些是该版本的现状，不是过期信息**。
+
+#### FIXML 的严格程度在同类型字段之间并不一致
+
+§3A.10 记了一条：`AllocRejCode`(88) 在 FIXML 里带枚举，
+`IndividualAllocRejCode`(776) 是 `(#PCDATA)`，同一个取值域两种严格程度。
+**确认侧又有一条同形的**：`LegalConfirm`(650) 是 Boolean 且带 `Value (Y|N) #REQUIRED`，
+`CopyMsgIndicator`(797) 同样是 Boolean，**却声明为 `(#PCDATA)`，不带取值约束**（V6 pp. 205、267）。
+
+**两条合起来是一个可以推广的结论**：**FIXML 的严格程度是逐字段决定的，不是由数据类型决定的。**
+"这是 Boolean，schema 会挡住"这句话在 FIX 4.4 上不成立。
+**校验层不能按类型推断哪些字段已被 schema 覆盖，只能逐字段查。**
+
+**而 `CopyMsgIndicator` 恰好是上面拒绝率分层所依赖的那个字段。**
+分层键本身不受 schema 保护，**这两件事必须一起看**。
+
+#### 逐步取值
+
+输入是 C-1 第 1 步与第 2 步，即某账户的一条 AK 与一条 `AffirmStatus=1` 的 AU。
+**C-2 从 C-1 的第 3 步分叉**：那一步不是 Affirmed，而是买方拒绝。
+拒绝理由取"净额算不平"，落到 99 = Other。
+
+| 步 | 报文 | 方向 | 关键取值 | 之后状态 |
+|---|---|---|---|---|
+| 1 | AK | 卖方 → 买方 | 与 C-1 第 1 步完全相同，`ConfirmID = K1`、`ConfirmTransType=0`（New）、`ConfirmStatus=4` | 待应答 |
+| 2 | AU | 买方 → 卖方 | `ConfirmID = K1`、`AffirmStatus=1`（Received） | 已收到 |
+| 3 | AU | 买方 → 卖方 | `ConfirmID = K1`、`AffirmStatus=2`（Confirm rejected）、`ConfirmRejReason=99`、`Text` 说明净额差异、`MatchStatus=1`（uncompared/unaffirmed） | 已被拒 |
+| 4 | AK | 卖方 → 买方 | `ConfirmID = K2`（新号）、`ConfirmTransType=1`（Replace）、`ConfirmRefID = K1`、`ConfirmStatus=4`、**其余全部字段照第 1 步重发**，净额三件套改为正确值 | 待应答 |
+| 5 | AU | 买方 → 卖方 | `ConfirmID = K2`、`AffirmStatus=1` | 已收到 |
+| 6 | AU | 买方 → 卖方 | `ConfirmID = K2`、`AffirmStatus=3`（Affirmed） | 该账户可进结算，C-2 结束 |
+
+**`ConfirmID` 换号这件事，确认侧比分配侧干净。** 分配侧要靠 CMOP 定口径（§3A.10），
+**确认侧规范直接写了 `ConfirmID` 是"本条报文的唯一 ID"**（V5-CF p.47），
+每条报文各有各的号是字面要求。`ConfirmRefID`(772) 在 Replace 与 Cancel 上必填，
+承担版本链，与分配侧的 `RefAllocID` 同形。
+
+**第 3 步的 `MatchStatus` 是可选的，但要填。** 它在 AU 上标 N，
+**填 1 才使"拒绝"这件事在字段层面自洽**；只有 `AffirmStatus=2` 而 `MatchStatus` 缺失，
+下游无法从单条报文判断比对结果。**这是 CMOP 决定，不是规范要求。**
+
+**C-2 只作用在一个账户上。** C-1 对 N 个账户各跑三步，
+**C-2 让其中一个账户走六步，其余 N−1 个仍走三步**。
+**这一点直接打掉 VC-2**：该账户会有两条确认，且都不是抄送。
+
+#### C-2 明确不做的三件事
+
+1. **Cancel 再 New 的两跳路径**，与 A-2b 同形，登记为 C-2c，**与 A-2b 一同解锁**：
+   两者共用同一条链式回溯校验，分开做没有意义。
+2. **技术层面拒绝的抄送件**，属 C-2a。它要的是 `CopyMsgIndicator=Y` 的报文流，
+   而 C-2 全程 `CopyMsgIndicator` 不填。
+3. **`ConfirmType = 3`（Confirmation Request Rejected）。**
+   它只出现在应答一条 Confirmation Request 的场合，**而 CMOP 至今没有生成过 BH**。
+   登记在 C-4：确认请求与应答，优先级低。
+
+#### C-2 带出的断言
+
+| 编号 | 断言 | 性质 |
+|---|---|---|
+| VC-7 | `ConfirmTransType` 为 Replace 或 Cancel 的确认必带 `ConfirmRefID`(772) | FIX 明确 |
+| VC-8 | `AffirmStatus = 2` 的应答必带 `ConfirmRejReason`(774) | **CMOP 口径**，规范原文的条件写错了字段 |
+| VC-9 | Replace 型确认携带的字段集合与被替换的那条相同 | FIX 明确 |
+| VC-10 | 沿 `ConfirmRefID` 回溯终止于一条 `ConfirmTransType=New` 的确认，且链上无环 | **CMOP 决定**，与 VA-11 同形 |
+| VC-11 | 只有 Model 1 能到达 `AffirmStatus = 3`；抄送与状态播报的终态是 `1` | FIX 明确，**且规范的总述句与此矛盾** |
+| VC-12 | 按 `AffirmStatus` 统计拒绝必须先按 `CopyMsgIndicator`(797) 分层 | **CMOP 口径** |
+| VC-13 | **不得**为确认侧的拒绝原因建立分布口径 | **词表明确不支持** |
+
+**VC-11 是清单里第一条与规范原文直接冲突的断言。**
+此前登记过的规范内部不一致（§4.8、§3A.3）都是两处规定互相矛盾，由 CMOP 选一边；
+**这一条是一句总述与同一页的流程图矛盾，而流程图更具体**，所以按流程图写。
+**选择的理由要留着**，因为下一个读那句总述的人会重新提出同样的问题。
 
 ## 4. ISO 20022
 
