@@ -977,3 +977,29 @@ handles keyed rewrites of historical partitions.
 - [ ] Decide whether the should-level code guidance found inside a code definition needs its own
   treatment. It is the first one read; it cannot be checked as a violation and cannot be certified as
   compliant, and the current answer is simply not to generate the code it concerns.
+- [x] Freeze the future-value-date payment scenario. The entry sits on the books from day one and its
+  value reaches the account owner two days later, which makes it the first scenario where a
+  previously unconditional balance equation needs a condition rather than a patch. Keep the original
+  equation for days with no such entries, so the stronger reading still gets tested.
+- [x] Correct the earlier pairing of the pending and future entry statuses. They are not two points
+  on one axis. Pending means not yet on the books, future means on the books with value applied
+  later. The real split is on-the-books versus not, and it puts future on the same side as booked.
+- [x] Record that the end-of-day statement's scope wording and the future status's own definition
+  contradict each other, one saying booked entries only and the other saying the entry is on the
+  books. Nothing adjudicates. This project allows it, and that choice has to be stated externally
+  because it was picked between two sentences rather than derived.
+- [x] Count the external code sets in the end-of-day statement schema. All thirty-two are declared as
+  length-bounded strings with no enumeration, so schema validation checks none of them, and every
+  relevant code happens to be four characters, which makes the length check vacuous. This is what
+  makes the vocabulary layer a layer rather than a detail.
+- [x] Upgrade two checks from house rule to specification. The pending status definition carries a
+  conditional obligation that is exactly the check derived independently from the status report, with
+  exactly the condition derived independently. The pending and booked definitions each separately
+  deny that a non-booked entry can be reversed.
+- [x] Adopt the rule that follows: before marking any check as this project's own, read the relevant
+  code values' definitions in the external code sets. Those definitions carry business rules and they
+  appear in neither the message schema nor the message definition report. Every check currently
+  marked as a house rule needs this pass.
+- [ ] Re-check every house-rule check against the external code set definitions, per the rule just
+  adopted. Two of the first ones looked at turned out to have specification backing, so the rate is
+  not negligible.
