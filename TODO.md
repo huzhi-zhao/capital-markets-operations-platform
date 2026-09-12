@@ -343,8 +343,18 @@ handles keyed rewrites of historical partitions.
   securities leg. It is the only mandatory one. The related-references choice on each underlying
   allocation opens with a securities settlement transaction identifier, a field the standard provided
   for precisely this join. All three levels are now written rather than only the mandatory one.
-- [ ] Read the Message Definition Reports for both cash message sets. Business flows, roles and
-  worked examples are there, the same position they occupied for the settlement leg.
+- [x] Read the Message Definition Reports for both cash message sets, and Parts 2 and 3 of the
+  settlement one. Recorded as section 4C of the regulatory data contracts. The payoff is in Part 2's
+  named constraints, which state cross-element conditions the schema cannot express and which no XML
+  validator executes, so the business validation layer is their only enforcer. Two checks recorded as
+  CMOP decisions are in fact specification requirements: a security identification must carry at
+  least one of its three children, and a status advice must carry at least one of its four status
+  axes. The pending-to-failing moment that S-2 rests on is now a numbered constraint rather than only
+  a transcribed diagram, and it names the two status codes. Part 3 turns partial settlement into a
+  per-instruction flag, so the "exactly one confirmation" condition hangs on a field rather than on a
+  scenario. On the payments side the status report is optional in every described flow, which narrows
+  invariant P1-8 to a generator-side convention; on the cash management side one statement entry can
+  batch twenty payments, which rules out a one-to-one reconciliation for P-4.
 - [x] Decide how the batch-oriented payment messages land in Bronze. Settled in the design doc dated
   2026-09-12. Five tables rather than two, because the repeating structure goes deeper than the
   transaction list: the underlying allocations carry the link back to the securities leg, and the

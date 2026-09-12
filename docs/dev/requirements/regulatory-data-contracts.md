@@ -6,6 +6,9 @@
 > FIX 4.4 with 20030618 Errata 核对（§3.2 至 §3.3.1）；第一条最小订单生命周期 L-1
 > 已填实（§3.4 至 §3.6）。本批次未扩展到撤单、改单和拒绝场景的完整状态机。
 >
+> **2026-09-12 追加**：三份 MDR 的 Part 1 至 Part 3 已读完（§4C）。Part 2 的具名约束把
+> 两条此前记为 CMOP 决定的校验改判为规范要求，并为 S-2 的时点判定补上第二处独立出处。
+>
 > **Related**: [业务目标](business-objectives.md)、[原始数据源清单](raw-data-source-inventory.md)
 
 ## 1. 本文的作用与边界
@@ -794,7 +797,7 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
 |---|---|---|
 | 规范 XSD | 报文标识符、版本号、元素基数、枚举取值 | **规范性，无解释空间** |
 | MDR Part 1 | 业务角色、业务流程、报文流、每种报文的完整实例样例 | **规范性说明文本** |
-| MDR Part 2 与 Part 3 | 逐元素定义与用法规则 | **尚未读**，见 §4.9 |
+| MDR Part 2 与 Part 3 | 逐元素定义、**具名约束**与业务模型摘录 | **规范性，2026-09-12 已读完**，见 §4C |
 
 **MDR Part 1 §5.7 的状态转移写在一张图里，不在文本里。** 该图由 SMPG 商定，**已逐块读完并
 转录为 §4.4.1**。图中另有一处指向 SMPG 自己的市场实践文档，未跟进。
@@ -844,12 +847,15 @@ Settlement and Reconciliation Variant 002，最后更新 2022-05-05），供 T2S
 
 **`FinInstrmId` 是最能说明问题的一个。** 它必填，但它的三个子元素 `ISIN`、`OthrId`、`Desc`
 **全是可选的**（`SecurityIdentification19`）。也就是说，**一条只带空 `<FinInstrmId/>` 的结算
-指令是 schema 合法的**——一条不说明结算什么证券的结算指令。
+指令是 schema 合法的**——一条不说明结算什么证券的结算指令。**但它并不因此合规**：
+MDR Part 2 有三条互补的具名约束把这条路堵死，**约束不在 XSD 里，标准校验器不会执行它们**。
+见 §4C.1。
 
 **结论要写死在这里：ISO 20022 的 schema 校验通过，几乎不说明任何业务正确性。** 一条近乎
 空白的 `sese.023` 能过 XSD。**FIX 的必填列至少还挡得住一部分，ISO 20022 挡不住。**
 [验证与对账规范](validation-and-reconciliation-specification.md) 因此必须为结算段单写一层
 业务校验，**不能以"schema 校验通过"结案**。**该层已于 2026-09-12 写成，见该文 §2A。**
+**同日读完 MDR Part 2 后，该层的一部分检查由 CMOP 决定改判为规范要求**，见 §4C.1。
 
 ### 4.4 状态不是一个字段，是三个正交的轴
 
@@ -864,7 +870,8 @@ Settlement and Reconciliation Variant 002，最后更新 2022-05-05），供 T2S
 | 市场撮合状态 | `MtchgSts` | 同上三选一 |
 | 结算状态 | `SttlmSts` | 三选一：挂起、失败、专有 |
 
-**四个轴可以同时有值，也可以一个都没有。** 一条不带任何状态的 `sese.024` 是 schema 合法的。
+**四个轴可以同时有值。四轴全空过得了 XSD，但违反规范**：Part 2 有四条互补的具名约束
+要求至少一个轴有值，见 §4C.1。
 **"状态机"这个词在这里要谨慎使用**，它不是一张状态转移图。
 
 **两个撮合轴不是重复，区别在于谁给的**（MDR Part 1 §5.7 决策图注记）：市场撮合状态是 CSD
@@ -895,7 +902,8 @@ Settlement and Reconciliation Variant 002，最后更新 2022-05-05），供 T2S
    **Ready for settlement**。
 3. **After** 分支进入"Failing?"判定，为是则给出 **Failing reason**，随后转入 **Recycled**。
 4. 图注原文：**"In the Settlement process, the change from PENDING to FAILING occurs at END of
-   Settlement Date."**
+   Settlement Date."** **同一规则在 Part 2 里是带编号的具名约束 `PendingToFailingRule`**，
+   并精确到日终报告过程与 `PEND`/`PENF` 两个代码，见 §4C.2。
 
 **§4.5 那条"判定用的是结算日，不是原因本身"的推断，至此由规范原文证实**，并且精确到了时点：
 **结算日结束时**，不是结算日开始时，也不是次日。
@@ -1079,6 +1087,11 @@ custodian）发出结算指令；后者"may"回送处理状态与结算状态；
 **S2-6 的适用条件是本节特意标出的。** `AdditionalParameters29` 带 `PrtlSttlm`（部分结算）
 与 `PrvsPrtlConfId`（前一条部分确认的标识），**schema 明说一笔指令可以有多条部分结算确认**。
 S-1 与 S-2 都不产生部分结算，所以"恰好一条"在这两个场景下成立，**但它不是普遍规律**。
+
+**2026-09-12 补：这个条件可以从场景挂到字段上。** Part 3 把 `PartialSettlementIndicator`
+定义为"whether partial settlement is allowed"，**是逐笔指令上的开关**。S2-6 的适用条件因此
+可改写为**"该指令未开启部分结算时"**，比"S-1 与 S-2 场景下"更准，也不必等场景扩展时重写。
+用法见 §4C.3。
 这是第四次遇到同一类问题，处理方式已固定：**先写普遍形式，再标窄条件**。
 
 #### S-2 没有用到、且特意不用的东西
@@ -1121,8 +1134,8 @@ Part 1 §5 与 §6 的流程图与角色表，那才是规范给的流程。
 - ~~状态转移次序未知。~~ **已于 2026-09-10 补上**，见 §4.4.1。决策图是图片，已逐块读完。
   遗留一处外部指针：判定框注的 "(See chapter 7)" 指向 SMPG 市场实践文档，未跟进，
   **只影响边界细节，不影响 S-2 的主判定**。
-- **MDR Part 2 与 Part 3 未读。** 逐元素定义与用法规则在这两份里。S-1 已冻结不依赖它们，
-  **但 S-2 至 S-4 依赖**。
+- ~~MDR Part 2 与 Part 3 未读。~~ **已于 2026-09-12 读完**，见 §4C。具名约束改判了两条
+  检查的归属，并为 S-2 的时点判定提供了第二处独立出处。
 - `camt` 与 `pacs` 属第四批，尚未开始。
 - ~~结算段的业务校验层未写。~~ **已于 2026-09-12 写成**，见
   [验证与对账规范](validation-and-reconciliation-specification.md) §2A：三级划分、逐条检查、
@@ -1265,8 +1278,8 @@ CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
 
 - ~~External Code Sets 未取。~~ **已于 2026-09-12 取得**，见 §4A.9。银行交易码需再走一层，
   同样已取得。
-- **两个消息集的 MDR 未读。** 业务流程、角色、报文流与样例都在里面，
-  与第三批同样的位置。
+- ~~两个消息集的 MDR 未读。~~ **已于 2026-09-12 读完**，见 §4C.4 与 §4C.5。
+  支付侧改述了 P1-8 的适用条件，资金管理侧给出"一条明细可覆盖二十笔支付"这一 P-4 前提。
 - ~~`pacs` 批量结构的 Bronze 落地方案未定。~~ **已于 2026-09-12 定案**，见
   [批量支付报文的 Bronze 落地](../design/2026-09-12-bronze-landing-for-batch-payment-messages.md)。
   **不是两张表而是五张**：`UndrlygAllcn` 与 `pacs.002` 的两个层级都是 unbounded，
@@ -1459,6 +1472,10 @@ P-1 与 S-1 是同一笔交易的券侧与款侧，**日期必须一致**，这�
 一条状态回报可以什么都不带，也可以一次带多笔状态，**"恰好两条"只在 P-1 的窄条件下成立**。
 这是第五次标注这类条件，处理方式已固定。
 
+**2026-09-12 补注：P1-8 的适用条件要再收窄一层。** 支付 MDR Part 1 明说状态回报是可选的
+（§4C.4），**真实世界里一条 `pacs.002` 都不发也是合规的**。P1-8 因此是**生成侧的自我约定**——
+CMOP 一律产生状态回报，故在 CMOP 数据内恒成立——**不是可以拿去校验外部报文的规范不变量**。
+
 ### 4B.5 六段链条至此闭合
 
 | 段 | 场景 | 关联键交给下一段 |
@@ -1489,6 +1506,128 @@ P-1 与 S-1 是同一笔交易的券侧与款侧，**日期必须一致**，这�
 - **银行交易码组合表 P-1 用不上**，它只在 `camt` 明细项上必填，因此推到 P-4。
 
 
+## 4C. 第五批：三份 MDR 的 Part 1 至 Part 3 已读
+
+**2026-09-12 读完三份 Message Definition Report**：Settlement and Reconciliation、
+Payments Clearing and Settlement、Bank-to-Customer Cash Management。
+**读法与前四批相同，全程在浏览器内存中读取，未落盘。** Part 1 是业务角色、流程与实例样例，
+Part 2 是逐元素定义与**具名约束**，Part 3 是业务模型的 Excel 摘录。
+
+**本批的价值集中在 Part 2 的具名约束上。** XSD 只表达基数与枚举，**表达不了"若 A 缺失则
+B 必须存在"这类跨元素条件**，而这类条件恰好是 §4.3 与 §4.4 判定为"schema 挡不住"的那一部分。
+Part 2 把它们写成了带编号的规范约束。**结论是：这些约束把此前记为 CMOP 决定的两条检查
+改判为规范要求，但 §4.3 的总判断不变。**
+
+### 4C.1 具名约束推翻了两处"schema 合法"的说法
+
+**§4.3 说一条只带空 `<FinInstrmId/>` 的 `sese.023` 是 schema 合法的。这句话仍然成立，
+但结论要收窄。** `sese.023`、`sese.024`、`sese.025` 三张报文各自带三条互补的具名约束：
+
+| 约束名 | 原文 |
+|---|---|
+| `ISINPresenceRule` | If ISIN is not present then either Description or at least one occurrence of OtherIdentification must be present. |
+| `DescriptionPresenceRule` | If Description is not present then either ISIN or at least one occurrence of OtherIdentification must be present. |
+| `OtherIdentificationPresenceRule` | If OtherIdentification is not present then either ISIN or Description must be present. |
+
+**三条合起来等价于"三个子元素至少有一个"。** 空 `<FinInstrmId/>` 因此**过 XSD 但违反规范
+具名约束**——它不是规范允许的，只是 XSD 表达不了。**同理，§4.4 说"一条不带任何状态的
+`sese.024` 是 schema 合法的"，`sese.024` 有四条互补约束把这条路堵死：**
+
+| 约束名 | 原文 |
+|---|---|
+| `InferredMatchingStatusStatusPresenceRule` | If ProcessingStatus, MatchingStatus and SettlementStatus are absent, then InferredMatchingStatus must be present. |
+| `MatchingStatusPresenceRule` | If ProcessingStatus, InferredMatchingStatus and SettlementStatus are absent, then MatchingStatus must be present. |
+| `ProcessingStatusPresenceRule` | If InferredMatchingStatus, MatchingStatus and SettlementStatus are absent, then ProcessingStatus must be present. |
+| `SettlementStatusPresenceRule` | If ProcessingStatus, InferredMatchingStatus and MatchingStatus are absent, then SettlementStatus must be present. |
+
+**四条合起来等价于"四个状态轴至少有一个"。** 四轴全空同样是过 XSD 而违反规范。
+
+**这不改变 §4.3 的总结论，只改变它的措辞。** 业务校验层仍然必须写，因为**具名约束不在
+XSD 里，任何标准 XML 校验器都不会执行它们**；CMOP 的校验层是这些约束的唯一执行者。
+改变的是归属：[验证与对账规范](validation-and-reconciliation-specification.md) §2A.3 的
+V1-023-2 与 V1-024-2 此前记为 **CMOP** 决定，**现改判为规范要求**，已在该文改标。
+
+**第三条改判是金额。** `sese.023` 带 `SettlementAmountRule`：
+"If the instruction is against payment, then SettlementAmount must be present."，
+条件路径为 `/SettlementTypeAndAdditionalParameters/Payment` 等于 `AgainstPaymentSettlement`。
+V1-023-8 里"`SttlmAmt` 存在"这半句因此也是规范要求，**只有借贷方向相容那半句仍是 CMOP**。
+
+**特意核对了一处没有改判的：`sese.025` 不带 `SettlementAmountRule`。** 该约束在
+`sese.023` 与 `sese.028` 上有，在 `sese.025` 上没有，且 `sese.025` 的 `SttldAmt` 与 `SttlmAmt`
+是两个不同元素。**S-1 在确认上填 `SttldAmt` 不填 `SttlmAmt`，不违反任何具名约束**，
+V1-025-4 保持 CMOP。
+
+### 4C.2 `PendingToFailingRule` 把 §4.4.1 的时点写成了规范条文
+
+`sese.024` 的具名约束 `PendingToFailingRule` 原文：
+**"A pending transaction (PEND) becomes a failing transaction (PENF) on the settlement date
+instructed in the message, during the end of day reporting."**
+
+**§4.4.1 此前只能引 SMPG 决策图的图注**（"the change from PENDING to FAILING occurs at END
+of Settlement Date"）。**现在同一条规则在 Part 2 里是带编号的规范约束**，而且多给了两件事：
+挂起与失败的代码是 `PEND` 与 `PENF`，翻转发生在**日终报告过程中**而非结算日任意时点。
+S-2 的时点判定至此有两处独立出处，**不再依赖对一张图片的转录**。
+
+### 4C.3 Part 3 给出 S-3 的入口，并把部分结算变成逐笔开关
+
+Settlement and Reconciliation 的 Part 3 是业务模型的 Excel 摘录，逐条给业务元素定义。
+两条对后续场景有直接影响：
+
+- **`PartialSettlementIndicator :: Specifies whether partial settlement is allowed`。**
+  部分结算是**逐笔指令上的开关**，不是市场层面的固定属性。`sese.025` 的
+  `PartialSettlementGuideline` 补齐了用法：首条（可能多条）确认填 `PAIN`，
+  **最后一条填 `PARC`**。**这让"一条指令恰好一条结算确认"这个条件可以挂在字段上**，
+  而不是只挂在场景选择上——S-1 的这条前提因此可写成"`PrtlSttlmInd` 未开启时成立"。
+- **`CancellationRequestIdentification`。** 撤销请求有自己的标识元素，
+  S-3（撤销）场景的关联键不必另设。
+
+**另有一条口径澄清**：Part 3 的 SettlementDate 定义同时覆盖实际结算日与预定结算日，
+**§4.6.2 用 `FctvSttlmDt` 与 `SttlmDt` 两个元素区分二者的做法与规范口径一致**。
+
+### 4C.4 支付 MDR：状态回报在每个场景里都是可选的
+
+Payments Clearing and Settlement 的 Part 1 有一句直接影响 P1-8：
+**"The creditor agent optionally confirms the processability ... by sending a positive
+FIToFIPaymentStatusReport message."** **`pacs.002` 在规范描述的每个场景里都是可选的**，
+不是流程的必经步骤；`pacs.028`（状态请求）就是为"迟迟收不到终态"这一情形设的催办报文。
+
+**这对 §4B.4 的 P1-8 是加强而不是推翻。** P1-8 写的是"同一 `EndToEndId` 下 `pacs.002`
+至少一条"，适用条件是"所有资金场景"。**按 Part 1，真实世界里零条也是合规的**，
+所以 P1-8 的适用条件应改述为**"CMOP 一律产生状态回报，因此在 CMOP 数据内恒成立"**，
+它是生成侧的自我约定，不是可以拿去校验外部报文的规范不变量。已在该表下补注。
+
+**三处 P-1 取值在 Part 1 里没有样例背书，登记在此。** `ACCC`、`ACSC`、`ACTC`、`DVPM`
+以及 `UndrlygAllcn` **在 Part 1 全文中一次都没出现**。它们的合法性来自 XSD 与外部词表
+（§4A.9），不来自实例样例。**这不是缺陷，是出处等级的差别**：枚举取值的规范性出处是词表，
+样例只证明用法习惯。**但它意味着 §4B.3 的三处取值决定没有"规范样例这么写"这一层支持**，
+复核时不要去 Part 1 里找。
+
+**样例本身也与 CMOP 的用法有出入。** Part 1 的 worked example 把 `SttlmMtd=CLRG` 与
+`ClrSys/Prtry` 配对使用，**CMOP 的 P-1 只填 `SttlmMtd`，不填 `ClrSys`**。
+Lynx 是否需要在 `ClrSys` 上给出系统标识未决，**登记为待验证项，不改 P-1**。
+
+**`pacs.002` 的样例填得很满**：`StsId`、`OrgnlEndToEndId`、`OrgnlTxId`、`TxSts`，
+外加一整段 `OrgnlTxRef` 回显。**这些字段没有一个是必填的**（§4A.4 已记录交易层零必填），
+**样例却全都填了**——与 §4.6 里 `sese.023` 的情形完全一样，是"schema 可选、实践必填"的
+又一例。P-1 的填法与样例一致，无需改动。
+
+### 4C.5 资金管理 MDR：一条明细可以覆盖二十笔支付
+
+Bank-to-Customer Cash Management 的 Part 1 对 P-4 有三处直接影响：
+
+- **一条明细有三种状态**：pending、future、booked。`camt.053` 样例上是 `Sts=BOOK`。
+  §4A.9 取到的 `ExternalEntryStatus1Code` 至此有了业务语义对应。
+- **`BookgDt` 与 `ValDt` 在样例里是不同的日期**，样例还给出 `OPBD`/`CLBD` 期初期末余额与
+  `BkTxCd` 的 `PMNT`/`RCDT`/`DMCT` 组合。**这三层结构 P-4 都要用上。**
+- **最要紧的一条：样例里有一条明细是 `Btch`，`NbOfTxs=20`。**
+  **一条对账单明细可以对应二十笔支付**，不是一对一。P-4 的对账因此**不能假定明细与
+  `pacs.009` 一一对应**，回连要走 `TxDtls` 层的 `EndToEndId`——样例正是在这一层回显它，
+  与 §4A.6 认定的锚点一致。
+
+**该 MDR 自身也有一处不一致，按 §4.8 的办法登记而不改写。** 它的 scope 明说不覆盖
+金融中介之间的对账单，流程描述却又说报告适用于代理行往来账户（nostro）报告。
+**两处出自同一份文档，取用时以 scope 为准**，CMOP 的 P-4 是银行对客户方向，不受影响。
+
 ## 5. FINTRAC
 
 已降级为业务语义与审计依据，不形成报送契约。本阶段只需回答一个问题：
@@ -1508,8 +1647,8 @@ P-1 与 S-1 是同一笔交易的券侧与款侧，**日期必须一致**，这�
 | 标准 | 版本 | 出处 | 获取日期 |
 |---|---|---|---|
 | FIX | 4.4 with 20030618 Errata | [FIX Trading Community 完整规范包](https://fixtrading.org/packages/fix-4-4-specification-with-20030618-errata/)，Vol. 1–7 加勘误单，7.5 MB；Volume 1 Instrument/OrderQtyData，Volume 4 订单报文与 Order State Change Matrices，**Volume 5 分配与确认**，Volume 6 字段枚举 | 2026-09-09 初次，2026-09-10 重新取得 |
-| ISO 20022 证券 | Settlement and Reconciliation 消息集，维护周期 2025–2026，证券 SEG 于 2026-01-27 批准，最后更新 2026-03-17 | [ISO 20022 报文定义目录](https://www.iso20022.org/iso-20022-message-definitions)，`sese` 族规范 XSD 与 **MDR Part 1** 逐条取得；**Part 2 与 Part 3 尚未读** | 2026-09-10 |
-| ISO 20022 资金 | Bank-to-Customer Cash Management（消息集 1246）与 Payments Clearing and Settlement（消息集 1249），均于 2026-03-19 最后更新 | 同上目录，`camt` 与 `pacs` 共十二种报文的规范 XSD；**两个消息集的 MDR 均未读** | 2026-09-10 |
+| ISO 20022 证券 | Settlement and Reconciliation 消息集，维护周期 2025–2026，证券 SEG 于 2026-01-27 批准，最后更新 2026-03-17 | [ISO 20022 报文定义目录](https://www.iso20022.org/iso-20022-message-definitions)，`sese` 族规范 XSD 与 **MDR Part 1、Part 2、Part 3** 逐条取得 | 2026-09-10 初次，**Part 2 与 Part 3 于 2026-09-12 读完** |
+| ISO 20022 资金 | Bank-to-Customer Cash Management（消息集 1246）与 Payments Clearing and Settlement（消息集 1249），均于 2026-03-19 最后更新 | 同上目录，`camt` 与 `pacs` 共十二种报文的规范 XSD 与**两个消息集的 MDR** | 2026-09-10 初次，**MDR 于 2026-09-12 读完** |
 | ISO 20022 外部词表 | `2Q2026_externalcodesets_v3`，季度更新 | [External Code Sets 页面](https://www.iso20022.org/catalogue/additional-content-messages/external-code-sets) 发布的 XSD 压缩包；163 个类型、3347 条码值，其中 33 条已废止 | 2026-09-12 |
 | ISO 20022 银行交易码 | `BTC_Codification_30Nov2025` | 同页单独发布的 XLSX；11 个域、约 1569 行有效组合 | 2026-09-12 |
 | FINTRAC | | | |
