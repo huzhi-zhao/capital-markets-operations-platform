@@ -455,3 +455,21 @@ handles keyed rewrites of historical partitions.
   content of the primary business objective. Five invariants follow, of which exactly one is
   decidable from the statement alone; that one is run as its own batch, matching the real operational
   window where the bank's statement arrives before the internal ledger does.
+- [x] Read the named constraints of the reversal advice, the cancellation-request status advice and
+  the transaction notification, which was the last outstanding item from the report reading. The
+  method used in the previous batch turns out to be unsound and one of its conclusions is now
+  overturned. That batch searched the three settlement messages for a constraint by name, found it
+  absent from the confirmation, and concluded the confirmation carries no such rule, leaving the
+  matching check recorded as a CMOP decision. The confirmation does carry it, under a different name:
+  the constraint tracks the element name, and the element is called settled amount rather than
+  settlement amount. The rule text is otherwise identical. Names cannot be used to probe for absence;
+  the whole list has to be taken and read. Every earlier "verified this message does not carry that
+  rule" conclusion is now suspect and flagged as such.
+- [x] Record the three constraints that turn out to apply to every securities message rather than to
+  one. The settlement parties are a chain, not five independent slots: each one present requires its
+  predecessor present, which means the generator must choose the depth first and then fill from the
+  first slot, and the party-dimension section was written on the opposite assumption. An account
+  owner reference that is unavailable is written as a sentinel string rather than left absent, which
+  never affects generation because CMOP always has a reference, but which forbids writing the
+  join-back check as an unconditional assertion and forbids joining on that field at all. And a
+  linkage number, if given at all, must carry the linked message's own identifier.

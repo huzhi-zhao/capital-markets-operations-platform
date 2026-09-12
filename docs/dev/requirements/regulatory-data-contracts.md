@@ -1687,10 +1687,10 @@ V1-023-2 与 V1-024-2 此前记为 **CMOP** 决定，**现改判为规范要求*
 条件路径为 `/SettlementTypeAndAdditionalParameters/Payment` 等于 `AgainstPaymentSettlement`。
 V1-023-8 里"`SttlmAmt` 存在"这半句因此也是规范要求，**只有借贷方向相容那半句仍是 CMOP**。
 
-**特意核对了一处没有改判的：`sese.025` 不带 `SettlementAmountRule`。** 该约束在
-`sese.023` 与 `sese.028` 上有，在 `sese.025` 上没有，且 `sese.025` 的 `SttldAmt` 与 `SttlmAmt`
-是两个不同元素。**S-1 在确认上填 `SttldAmt` 不填 `SttlmAmt`，不违反任何具名约束**，
-V1-025-4 保持 CMOP。
+**~~特意核对了一处没有改判的：`sese.025` 不带 `SettlementAmountRule`。~~
+这条核对本身是错的，2026-09-12 在第六批里推翻，见 §4C.6.1。**
+按名字检索约束是错的方法：`sese.025` 上的同一条约束叫 `SettledAmountRule`，
+不叫 `SettlementAmountRule`。**V1-025-4 因此是规范要求，不是 CMOP 决定。**
 
 ### 4C.2 `PendingToFailingRule` 把 §4.4.1 的时点写成了规范条文
 
@@ -1874,6 +1874,119 @@ MDR 样例里有一条明细是 `Btch`、`NbOfTxs=20`（§4C.5）。
   与本场景要测的"定位到笔"无关。
 - **不生成 `PDNG` 或 `FUTR` 状态的明细。** 四个入账状态里 P-4 只用 `BOOK`。
   **未入账明细与内部账的对账是另一个场景**，登记为 P-5。
+
+## 4C.6 第六批：撤销与冲正三张报文的具名约束，并推翻第五批的一处核对
+
+**本批读的是 `sese.026`（冲正通知）、`sese.027`（撤销请求状态通知）与 `sese.028`
+（交易通知）的 Part 2 具名约束清单**，起因是 §7 未决项里那句
+"`sese.026` 至 `sese.028` 在 S-3 解锁时同样要先看 Part 2 再写检查"。
+S-3 与 S-4 已于本日冻结，这笔账现在还上。
+
+### 4C.6.1 推翻：`sese.025` 带的是 `SettledAmountRule`
+
+§4C.1 末尾写过一句"特意核对了一处没有改判的：`sese.025` 不带 `SettlementAmountRule`"，
+并据此让 V1-025-4 留在 CMOP。**这条核对是错的，本批推翻。**
+
+`sese.025` 上有 `C56SettledAmountRule`，原文：
+
+> "If the instruction is against payment, then SettledAmount must be present."
+> On Condition `/TransactionIdentificationDetails/Payment` is equal to value
+> `'AgainstPaymentSettlement'` Following Must be True `/SettledAmount` Must be present
+
+**与 `sese.023` 的 `SettlementAmountRule` 是同一条规则的同构版本**：元素名随报文语义
+从"结算金额"变成"已结算金额"，条件路径随该报文的结构从
+`/SettlementTypeAndAdditionalParameters/Payment` 变成 `/TransactionIdentificationDetails/Payment`，
+**规则本身一字未改**。`sese.026` 上的 `C54SettledAmountRule` 与 `sese.025` 完全相同。
+
+**因此 V1-025-4 是规范要求，不是 CMOP 决定**，已在[校验规范](validation-and-reconciliation-specification.md)
+§2A.3 改标。
+
+**这次错误的根因值得单独记下来，因为它会再犯。** 上一批是**按约束名检索**的：
+拿 `SettlementAmountRule` 这个字符串去三张报文里找，找不到就判定"没有这条约束"。
+**ISO 20022 的约束名跟着元素名走，元素名跟着报文语义走**，同一条业务规则在不同报文上
+叫不同的名字。**正确的方法是先列出该报文的全部具名约束，再逐条读，不能拿名字去命中。**
+本批因此改成"取整张清单再逐条读"，§4C.1 至 §4C.5 里凡是"核对了某报文没有某约束"
+的结论**都应当按这个方法重验**，本轮只重验了金额这一条。
+
+### 4C.6.2 `Party2PresenceRule` 一族：结算方链条不得有洞
+
+**四条约束，出现在本项目用到的每一张证券报文上**，包括已冻结的
+`sese.023`、`sese.024`、`sese.025`：
+
+> `Party2PresenceRule` If Party2 is present, then Party1 must be present.
+> `Party3PresenceRule` If Party3 is present, then Party2 must be present.
+> `Party4PresenceRule` If Party4 is present, then Party3 must be present.
+> `Party5PresenceRule` If Party5 is present, then Party4 must be present.
+
+**这四条合起来说的是一件事：结算方是一条从 1 到 5 的有序链，只能从头填，不能跳号。**
+`Party3` 填了而 `Party2` 空着是违规，**哪怕两者各自都是合法的方标识**。
+
+**这对 §3B 的方维度是一条直接约束，而 §3B 当时不知道它。**
+[数据生成规范](data-generation-specification.md) §3B.1 说"角色不是实体"，
+按角色槽位取方；**槽位之间原本被当作彼此独立**，现在它们不是。
+生成器必须**先决定这一笔用几层结算方，再从 `Party1` 起连续填**。
+
+**同一位置还有一条指引，说明这条链通常填到第几层：**
+
+> `SettlementChainGuideline` SMPG recommends that at least three settlement parties
+> be instructed ...; the depository, the participant of the depository (Party1) and
+> the client of Party1 (Party2).
+
+**它是 Guideline 不是 Rule，不进校验层。** 但它给了一个可用的默认值：
+**存管机构加两层**，与 §3B.4"一个客户对一家机构"的简化正好相容。
+
+### 4C.6.3 `NoAccountOwnerTransactionIdentificationRule`：缺失用哨兵值表示，不用空
+
+> If no reference is available for the AccountOwnerTransactionIdentification, for example,
+> the transaction was sent by fax, then the AccountOwnerTransactionIdentification must be `NONREF`.
+
+**出现在 `sese.020`、`024`、`025`、`026`、`027` 等多张报文上**，包括两张已冻结的。
+
+**这是本项目第一次遇到规范级的哨兵值。** 它的后果不在生成侧——CMOP 每一笔都有账户方引用，
+**永远不会需要填 `NONREF`**——而在**读取侧与对账侧**：
+
+- **`NONREF` 是一个合法取值，不是脏数据。** 任何"引用字段必须能连回上游"的检查
+  **都必须把 `NONREF` 排除在外**，否则在外部数据上会把合规报文判成违规。
+- **`NONREF` 不能参与去重与连接。** 多笔互不相关的交易可以同时填 `NONREF`，
+  **按该字段连接会做出笛卡尔积**。这与 SQL 的 NULL 行为相反，容易错。
+- **CMOP 自己不产生 `NONREF`，因此这条检查永远沉默。** 按 §6.2 的口径，
+  **一条没有注入的断言等于没验证过**，所以它需要一条专门的注入，见校验规范 §6.4。
+
+**这条规则同时说明了一件更一般的事**：ISO 20022 用哨兵值表达"无",
+**而 CMOP 的 Silver 层用 NULL 表达"无"**。两者之间必须有一次显式转换，
+**且转换必须是双向可逆的**，否则重放出去的报文与收进来的不是同一份。
+登记为 Phase 1 的一项映射要求。
+
+### 4C.6.4 `ShortLongNumberRule`：链接引用里的两个号码各有所指
+
+> `ShortNumber` must contain the FIN message type number of the linked message.
+> `LongNumber` must contain the XML message identifier of the linked message.
+
+**出现在 `sese.020`、`021`、`022`、`023`、`027` 等报文的链接结构上。**
+
+**它对 S-3 的撤销链有直接影响。** §4.6.3 记了撤销链的两个锚点
+（`sese.020` 指向原指令、`CxlReqRef` 指向撤销请求），**但没有记链接结构里的号码字段**。
+按本条：如果 CMOP 在链接里填了号码，**`LongNumber` 必须填被链报文的 XML 报文标识符**，
+例如 `sese.023.001.13`，**不能填自定义编号，也不能填 FIN 报文类型号**。
+`ShortNumber` 填的是 FIN 世界的报文类型号（MT 54x 一类），**CMOP 不产生 FIN 报文，
+因此一律不填 `ShortNumber`**——这是 CMOP 决定，规范并不禁止两个都填。
+
+### 4C.6.5 `AdditionalReasonInforrmationRule`：非结构化理由不得复述结构化字段
+
+原文（**拼写错误在规范原文里，`Inforrmation` 双 r，照录不改**）：
+
+> `AdditionalReasonInforrmationRule` The AdditionalReasonInformation element must not
+> contain information that can be provided in a structured field unless bilaterally agreed.
+
+**出现在 `sese.022`、`024`、`027` 等带理由码的报文上**，即 S-2 与 S-3 都会碰到。
+
+**它是一条对生成器的约束，而且方向与直觉相反。** 直觉是"自由文本里多写点更真实"，
+**规范说的恰好是反面**：理由码已经表达的内容，**自由文本里不得重复**。
+CMOP 目前在 `StsRsnInf` 上只填码不填文本，**本条因此自动满足**；
+它真正的价值是**挡住一类后续改动**——"给理由加一段人话好看些"这种改动，
+如果那段人话复述了理由码，**就是违规的**。
+
+登记为生成规范的一条否定性约束，与 §4.9"不生成自由文本"是同一条线。
 
 ## 5. FINTRAC
 
