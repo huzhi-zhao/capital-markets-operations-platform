@@ -54,6 +54,11 @@ CMOP 在相当长一段时间内会以 BO、选型和架构讨论为主。ADR �
 | [0002](0002-transaction-centric-lakehouse-layering.md) | 为什么以交易流水为核心，以及 Bronze/Silver/Gold 各自承担什么契约 | Proposed | 2026-09-02 |
 | [0003](0003-hybrid-deployment-topology-and-component-placement.md) | NAS、临时 Mac 算力与 OCI 节点如何分工，组件按什么原则落位 | Proposed | 2026-09-02 |
 | [0004](0004-language-and-runtime-boundaries.md) | 实现语言和运行时按什么原则准入、分配职责并在何时冻结 | Proposed | 2026-09-07 |
+| [0005](0005-compute-engine-division-of-labour.md) | 谁跑回填、compaction 与历史重述，谁跑日增量改写，以及维护责任归谁 | Proposed | 2026-09-12 |
+
+0005 是第一篇由选型证据直接催生的 ADR，**它只固定不依赖性能测量的那部分结论**；
+常驻还是按需、交互查询用什么，都留在
+[技术选型评估](../requirements/technology-selection-evaluation.md) §2.7 等实测。
 
 具体对象存储实现如果能够独立替换，就不强塞进 0003；当其兼容性、迁移成本或治理约束
 使它成为独立且难撤销的决定时，再建立新的 ADR。

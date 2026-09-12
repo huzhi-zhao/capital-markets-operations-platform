@@ -202,8 +202,26 @@ handles keyed rewrites of historical partitions.
 - [x] Run probe P-1b. No deployment was needed: the host already runs the entire stack CMOP planned to
   install, so the figures come from real running instances. The default combination occupies about
   7.6 GB, comfortably inside 24 GB.
-- [ ] Re-rank the candidates so the lighter combinations are evaluated alongside the heavy ones rather
-  than after them. The default stack is no longer the assumed starting point.
+- [x] Re-rank the candidates so the lighter combinations are evaluated alongside the heavy ones rather
+  than after them. Recorded as section 2.7 of the technology selection evaluation. Three findings had
+  each removed one leg of the old ordering: the measured residency leaves the memory budget with room
+  to spare, so it stops being a screen; single-node engines can write but cannot maintain, so a light
+  combination can only redivide the work rather than replace the engine; and the query engine's exact
+  Java requirement is not a long-term release, so the heaviest component now carries a cost that shows
+  up in no performance number. Candidates are now six whole combinations rather than nine rows of
+  single decisions, each of which must cover the full workload set on its own. Test order goes by how
+  much a failure would eliminate, which puts the default stack last and demotes its numbers to a
+  reference baseline. Six binary elimination criteria, and the residency threshold is kept as a guard
+  rail rather than a screen.
+- [x] Settle how evaluation results map onto proposed records. Five records for five questions that
+  can each be overturned on their own, not one per combination and not one per decision row. The
+  combination labels are scaffolding for the evaluation and stay out of the record titles.
+- [x] Draft the compute division-of-labour record, which is the one unit whose conclusion needs no
+  performance measurement. It rules out a single-node engine owning a set of tables outright, because
+  compaction and snapshot expiry are the two columns those engines leave empty and the deferred
+  deletes only accumulate. It pairs that with the two configuration constraints that make shared
+  writing safe, both already expressed as admission checks. It deliberately leaves resident-versus
+  on-demand open, and it records that the light combinations rest on one untested premise.
 - [x] Verify whether an independent REST catalog removes the conditional-write requirement on object
   storage. It does. The table specification requires only in-place write, seekable reads and deletes,
   and states outright that tables do not require rename except where rename itself implements the

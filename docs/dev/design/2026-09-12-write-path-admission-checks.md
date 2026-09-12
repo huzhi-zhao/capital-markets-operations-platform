@@ -6,13 +6,19 @@
 > §2.5 跨引擎陷阱与结论段
 >
 > **关联 ADR**：[ADR 0002 事务中心的湖仓分层](../adr/0002-transaction-centric-lakehouse-layering.md)、
-> [ADR 0003 混合部署拓扑](../adr/0003-hybrid-deployment-topology-and-component-placement.md)
+> [ADR 0003 混合部署拓扑](../adr/0003-hybrid-deployment-topology-and-component-placement.md)、
+> [ADR 0005 计算引擎分工](../adr/0005-compute-engine-division-of-labour.md)
 >
 > **执行状态**：未实现。本文是实现计划。
 
 ## Problem
 
 有两条配置约束已经由规范核实定案，但**目前只存在于评估文档的正文里，没有任何机制保证它们成立**。
+
+**2026-09-12 补：其中两条已由 [ADR 0005](../adr/0005-compute-engine-division-of-labour.md)
+升格为决策。** 该 ADR 的决定二与决定三分别对应本文的 merge-on-read 表属性与
+`spark.sql.extensions` 两项，**本文因此从"把评估结论做成门禁"变成"把 ADR 决定做成门禁"**，
+检查内容一条未改。
 
 | 约束 | 出处 | 违反后的表现 |
 |---|---|---|
