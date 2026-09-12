@@ -542,7 +542,8 @@ J 的顶层字段，而在组内 `<CommissionData>` 组件块中，骨架写错�
 
 #### 分配侧：AllocStatus
 
-`AllocStatus`(87) 的四个取值与语义，逐条抄自 V5-AIA p.21：
+`AllocStatus`(87) 在 V5-AIA p.21 的报文页上列了四个取值，逐条抄录如下。
+**但报文页不全，字段字典给的是六个**，缺的两个见 §3A.10。
 
 | 取值 | 含义 | 规范原文要点 |
 |---|---|---|
@@ -736,7 +737,9 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
 | 编号 | 场景 | 为什么要它 | 状态 |
 |---|---|---|---|
 | A-1 | L-1 的已成交订单分配到 N 个账户，一次通过 | 打通链条第三段，最小可证 | **已冻结**，见 §3A.6 |
-| A-2 | 分配被拒后更正重发 | 制造同一 `AllocID` 的多版本，检验维度与事实的版本对齐 | 待解锁 |
+| A-2 | 账户层拒绝后以 Replace 更正 | 制造一条 `RefAllocID` 版本链，检验维度与事实的版本对齐 | **已冻结**，见 §3A.10 |
+| A-2a | 块层拒绝后重发新 New | 覆盖另一条恢复路径，**两条 J 之间无字段级引用** | 待解锁，优先级低 |
+| A-2b | Cancel 再 New 的两跳更正 | 把版本链从一跳拉到两跳，是链式校验的第二个用例 | 待解锁，见 §3A.10 |
 | A-3 | 分配迟到，T+1 早晨才到达 | **直接对应主业务流**，见[业务目标](business-objectives.md) §3.1 | 待解锁 |
 | A-4 | 分配数量与成交总量对不上 | 制造 R1 必须捕获的差异，属注入而非正常路径 | 待解锁 |
 | A-5 | 卖方主动发起分配回报（AS/AT） | 覆盖规范流程 3，方向与 A-1 相反，检验交易对手字段没写反 | 待解锁，优先级低 |
@@ -775,6 +778,138 @@ Cancel/Replace 流程挡下。**这已经不是偶发失误，是骨架阶段的
   **附带发现一条推论型断言 VC-4**：各账户确认数量之和等于分配指令数量，
   它由"总分配数量等于 `Quantity`"与"每账户恰好一条确认"合成，
   **因此随 VC-2 一起在 C-2 失效，而这从它自己的形式上看不出来**。
+
+### 3A.10 A-2：账户层拒绝后以 Replace 更正，已冻结
+
+#### 先更正 §3A.8 原来的写法
+
+原写法是"制造同一 `AllocID` 的多版本，检验维度与事实的版本对齐"。**规范不允许这个做法。**
+
+V5-AI p.12 原文：`AllocID` 对所有 `AllocTransType=New` 的分配报文必须唯一。由此：
+
+- **块层拒绝之后不可能出现同一 `AllocID` 的第二版。** 规范给出的唯一正确响应是一条全新的
+  Allocation Instruction，`AllocTransType=New`，而这条报文正落在唯一性约束之内，必须换号。
+- **Cancel 与 Replace 不在唯一性约束的文面之内**，规范只约束了 `New`。但 `AllocLinkID`(196)
+  的字段说明写的是"链接两条各自 `AllocID` 唯一的分配报文"（V5-AI p.14），
+  可见规范默认每条 J 各有各的号。
+
+**CMOP 口径（决定，非 FIX 明确）：每条 J 各带一个新的 `AllocID`，版本关系全部由
+`RefAllocID`(72) 承载。** 于是 A-2 要检验的"版本对齐"不是同键多版本的对齐，
+**而是沿 `RefAllocID` 链回溯的对齐**。
+
+**场景目标保留，机制更正。** 沿链回溯比同键分组更难写，也更贴近真实：链可以有一跳
+（Replace），也可以有两跳（Cancel 再 New），**而下游只拿到一串各不相同的 `AllocID`**。
+
+#### `AllocStatus` 实际有六个取值，§3A.5 那张表少了两个
+
+§3A.5 的四值表抄自 V5-AIA p.21 的报文页。**Volume 6 的字段字典给的是六个**（V6 p.36）：
+
+| 取值 | 含义 | §3A.5 是否已登记 |
+|---|---|---|
+| 0 | accepted | 是 |
+| 1 | block level reject | 是 |
+| 2 | account level reject | 是 |
+| 3 | received, not yet processed | 是 |
+| 4 | incomplete | **否** |
+| 5 | rejected by intermediary | **否** |
+
+**这是"按名字搜索不足以证明不存在"在 FIX 侧的同一课。** ISO 20022 那边的教训是约束名随
+元素名走，必须取整表（见 §4C.6）；**这里的教训是报文页与字段字典是两份材料，报文页可以不全**。
+
+`4 = incomplete` 对应分片：接收方收齐 `TotNoAllocs` 之前，整批尚不完整。
+`5 = rejected by intermediary` 对应 `AllocIntermedReqType`(808) 那条经清算所转发的流程。
+**两者 CMOP 都不生成**，但**校验层不得把 `AllocStatus` 的合法域写成四值**，
+否则将来接入分片或中介流程时，合法数据会被自己的校验拒掉。
+
+#### `AllocRejCode` 的十四个取值
+
+V6 p.37，枚举从 0 起，共 0 至 13。**errata 把原先的 0 至 7 扩到了 13**，
+Volume 6 的修订标记里还留着旧的七值声明。
+
+| 取值 | 含义 | 取值 | 含义 |
+|---|---|---|---|
+| 0 | unknown account(s) | 7 | other，须在 `Text`(58) 中说明 |
+| 1 | incorrect quantity | 8 | incorrect allocated quantity |
+| 2 | incorrect average price | 9 | calculation difference |
+| 3 | unknown executing broker mnemonic | 10 | unknown or stale `ExecID`(17) |
+| 4 | commission difference | 11 | mismatched data value，须在 `Text`(58) 中说明 |
+| 5 | unknown `OrderID`(37) | 12 | unknown `ClOrdID`(11) |
+| 6 | unknown `ListID`(66) | 13 | warehouse request rejected |
+
+`IndividualAllocRejCode`(776) 的取值集合与 88 完全相同，规范原文就是这么写的（V6 p.266）。
+**但两者在 FIXML 里的严格程度不同**：88 声明为带 `Value (0|…|13) #REQUIRED` 的枚举，
+776 声明为 `(#PCDATA)`，**不带任何取值约束**。
+
+**后果要写死**：账户层的原因码填错，FIXML schema 不会报错，块层的会。
+CMOP 的校验层必须自己对 776 做域检查，**不能指望 schema**。
+
+#### 账户层拒绝的原因载体是"至少一个"，不是二选一
+
+两处规定合起来读（V5-AIA pp. 21–22）：
+
+- `AllocRejCode`(88)：`AllocStatus=1` 时必填；`AllocStatus=2` 且本报文未逐账户给出原因时必填。
+- `NoAllocs`(78) 组：`AllocStatus=2` 时可选可用，**其他取值下不得填充**；填了则组内
+  `IndividualAllocRejCode` 必填。
+
+**因此 `AllocStatus=2` 的 Ack 上，两个载体至少有一个在，两个同时在并不违规。**
+写成"二选一"会把合法报文判死。**这与 §4C.8 记录的银行间结算日两层元素不是同一个形状**：
+那边是真正的互斥，这边只是"不得两者皆空"。
+
+#### 逐步取值
+
+输入是 A-1 的第 1 步与第 2 步，即一条已发出的 J 与一条 `AllocStatus=3` 的 Ack。
+**A-2 从 A-1 的第 3 步分叉**：那一步不是 Accepted，而是账户层拒绝。
+设 A-1 分配到 N 个账户，其中第 k 个账户号不存在。
+
+| 步 | 报文 | 关键取值 | 之后状态 |
+|---|---|---|---|
+| 1 | J | 与 A-1 第 1 步完全相同，`AllocID = A1`、`AllocTransType=0`（New） | 待受理 |
+| 2 | P | `AllocID = A1`、`AllocStatus=3` | 已收到 |
+| 3 | P | `AllocID = A1`、`AllocStatus=2`、`NoAllocs=1`、组内 `AllocAccount` 为第 k 个账户、`IndividualAllocRejCode=0`（unknown account）、`AllocText` 给出说明；`AllocRejCode` 不填 | 账户层被拒 |
+| 4 | J | `AllocID = A2`（新号）、`AllocTransType=1`（Replace）、`RefAllocID = A1`、`AllocCancReplaceReason=1`（Original details incorrect）、**其余全部字段照第 1 步重发**，仅第 k 个账户改为有效账户号 | 待受理 |
+| 5 | P | `AllocID = A2`、`AllocStatus=3` | 已收到 |
+| 6 | P | `AllocID = A2`、`AllocStatus=0` | 已接受，A-2 结束，C-1 接在 A2 之后 |
+
+**第 4 步"照第 1 步重发全部字段"不是省事的写法，是规范要求。** V5-AI p.13 原文强调
+Replace 必须携带替换后的**全部**数据，并把"识别哪些项发生了变化"的责任交给接收方。
+**生成器若只发变更项，报文在 FIX 上就是错的**，而单看这条报文本身挑不出毛病。
+
+`AllocCancReplaceReason`(796) 只有三个取值：1 = Original details incorrect、
+2 = Change in underlying order details、99 = Other（V6 p.266）。
+**A-2 取 1**，因为账户号本身填错，与上游订单无关。
+**取 2 属于另一条场景**，即订单在分配之后又发生了 Cancel/Replace，那要先有 L-2。
+
+#### A-2 明确不做的四件事，其中三件是规范里真实存在的分支
+
+1. **块层拒绝（`AllocStatus=1`）后重发新 New。** 它比 Replace 简单，但它测不到版本链：
+   两条 J 之间除了业务内容没有任何字段级引用，**`RefAllocID` 在 New 上不填**。
+   登记为 A-2a，优先级低。
+2. **Cancel 再 New 的两跳路径。** 与第 4 步的 Replace 等效，规范并列给出。
+   **两跳会多产生一条 `AllocTransType=2` 的 J 和它自己的一对 Ack**，链长从一跳变两跳。
+   登记为 A-2b，**在版本链回溯的校验写好之后再解锁**，它是那条校验的第二个用例。
+3. **Respondent 在已发出 Accepted 之后拒绝 Cancel 或 Replace。** 规范明说这是允许的
+   （V5-AI p.13），并说明此后需要人工介入。**CMOP 不生成它，但断言不得排除它**：
+   任何"Replace 之后必然到达 Accepted"的写法都是错的。
+4. **分片。** `TotNoAllocs`/`LastFragment` 那一套只在报文超长时出现，A-2 的 N 很小。
+   **但第 4 条分片规则要记住**：接收方必须应答每一个分片且**不得拒绝非末片**，
+   整批的接受或拒绝只发生在末片的应答上（V5-AI p.11）。
+   **这意味着分片一旦引入，`AllocStatus` 的取值与分片序号之间产生约束**，
+   而 A-2 这套三步式拒绝流程在分片下不成立。
+
+#### A-2 带出的断言
+
+| 编号 | 断言 | 性质 |
+|---|---|---|
+| VA-7 | `AllocTransType` 为 Replace 或 Cancel 的 J 必带 `RefAllocID` 与 `AllocCancReplaceReason` | FIX 明确 |
+| VA-8 | `AllocStatus=2` 的 Ack 上，`AllocRejCode` 与 `NoAllocs` 组不得两者皆空 | FIX 明确 |
+| VA-9 | `AllocStatus` 不为 2 的 Ack 上不得出现 `NoAllocs` 组 | FIX 明确，**方向为禁止** |
+| VA-10 | Replace 型 J 携带的字段集合与被替换的 J 相同 | FIX 明确 |
+| VA-11 | 沿 `RefAllocID` 回溯必须终止于一条 `AllocTransType=New` 的 J，且链上无环 | **CMOP 决定** |
+| VA-12 | 不得断言 Replace 之后必然到达 `AllocStatus=0` | **规范明确否定** |
+
+**VA-11 是本场景引入的唯一新形状：它不是等式，是图上的可达性。**
+R1 与 R2 都是按键聚合后比数值，**链式回溯不属于这一类**，校验层要为它另立一种检查形状。
+写在这里是因为它的成本不在断言本身，而在于校验层此前没有这种形状。
 
 ## 4. ISO 20022
 
