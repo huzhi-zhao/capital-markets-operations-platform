@@ -869,3 +869,12 @@ handles keyed rewrites of historical partitions.
   the main business objective through the same acceptance criterion the late-allocation scenario uses:
   published results are restated with both versions kept. Two unrelated paths demanding the same
   criterion is stronger evidence for it than one.
+- [x] Add a corporate-action segment to the validation layer, the fourth segment. It differs from the
+  other three in that almost every check is this project's own rather than the specification's, and
+  that ratio has to be stated in any outward claim: saying the segment passes validation means it
+  passes checks written here, not ISO 20022's.
+- [x] Pair the two reversal checks deliberately. The movement reversal and the event withdrawal are
+  named alike and look alike, and their consequences are opposite: one rewinds every adjustment the
+  event produced, the other corrects a single posting. Writing only the first lets a generator treat
+  a bookkeeping correction as a full restatement across every account, which is the most expensive
+  error available in this segment.
