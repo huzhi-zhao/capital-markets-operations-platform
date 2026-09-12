@@ -817,3 +817,34 @@ handles keyed rewrites of historical partitions.
 - [ ] Follow up the split-and-partial-settlement code found alongside the corporate-action one. It
   names the mechanism by which a transaction is cancelled and replaced to permit partial settlement,
   which is the interface the deferred partial-settlement ordering check needs.
+- [x] Open the corporate actions family, an item that had sat unstarted for several batches, reading
+  only the part the reversal scenario needs rather than trying to cover thirteen messages.
+- [x] Record that the corporate-action event identifier is mandatory, the first strong anchor found
+  anywhere in this project. The market-wide official reference is the optional one, and the only
+  constraint on it points at an external market-practice document. Since this project has a single
+  account servicer, the mandatory servicer-assigned identifier is enough and the official one is not
+  generated.
+- [x] Record that the specification's own definitions of the two split event types confirm the
+  business invariant this project derived independently from accounting consistency: quantity changes,
+  unit price moves the other way, aggregate value unchanged. Worth noting because it is a genuine
+  independent check rather than two documents copying one source.
+- [x] Record the second and worse case of prose disagreeing with formalisation. The prose names an
+  element that does not exist anywhere in that message's structure, while the formalisation names one
+  that does, and the prose carries a trailing reference to the equivalent rule in the older telex
+  standard, which is where the wrong name came from. The reading rule already adopted is strengthened:
+  element names appearing in prose must be checked against the structure table.
+- [x] Discover that the reversal scenario was registered as one thing when it is three. The
+  corporate-action movement reversal has nine reason codes and every one of them is a detail of the
+  posting being wrong, not the event being withdrawn, so that message reverses a posting rather than
+  an event. Withdrawing an event is a different message entirely, and cancelling-and-replacing a
+  settlement instruction is a third path. Only the middle one actually depends on the restatement
+  path. The old scenario number is retired and three replace it.
+- [x] Record a third same-letters-different-meaning collision in one session, which promotes the
+  vocabulary check from three rules to five: results must carry the code set name, not just the code
+  value, exactly as they must carry the vocabulary version. Also record that the vocabulary check is
+  no longer unique to the payment segment.
+- [ ] Take the constraint lists for the remaining twelve corporate-action messages and compare them
+  the way the cash family was compared. Only the movement reversal's twenty-four were taken.
+- [ ] Decide whether option-bearing events are in scope. The notification and instruction messages
+  were left unopened because the only corporate actions generated so far are splits and reverse
+  splits, neither of which offers the holder a choice.

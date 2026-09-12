@@ -1981,7 +1981,10 @@ sese.027 /PrcgSts/Canc  →  CancellationStatus15Choice
 | S-4 | 撤销请求被拒办，因为已结算 | **直接落在主业务流上**：操作员对异常做的第一个动作就是"能不能撤"，规范用 `DSET` 给了答案 | **已冻结**，见 §4.6.4 |
 | S-5 | 冲正（`sese.026`） | 宣告一条已结算确认作废。**聚合口径必须扣除它，否则同一笔算两次** | **已冻结**，见 §4.6.5。**原记的"依赖重述路径"是记错的，已更正** |
 | S-6 | 双边撤销（`sese.024` 的 `CxlReqd` 分支） | 已撮合指令的撤销需要对手方同意 | 待解锁，**先要加市场对手方角色**，见 §4.6.3 末段 |
-| S-7 | 冲正与公司行为重述交互 | 两条反向事实叠加，**顺序不同结论不同** | 待解锁，**依赖已缩小为"公司行为事件标识可用"**，落点见 §4.6.6 |
+| ~~S-7~~ | ~~冲正与公司行为重述交互~~ | **登记时把三条不同的路径混成了一条** | **已拆分为 S-7a／S-7b／S-7c，编号退役**，见 §4D.4 |
+| S-7a | `seev.037` 过账冲正 | 九个原因码全是过账细节填错，**与事件无关** | 待冻结，**依赖最少**，见 §4D.4 |
+| S-7b | `seev.039` 事件撤销与调整因子回退 | **这一条才真的依赖重述路径** | 待冻结，见 §4D.4 |
+| S-7c | `sese.020` 带 `CxlRsn/Cd=CANT` 再发新指令 | **撤销并替换，不是重述** | 待冻结，见 §4.6.6 |
 
 ### 4.8 MDR 自身的两处不一致，登记而不改写
 
@@ -2158,7 +2161,8 @@ CMOP 的取用口径：把 S 段的关联标识写进 `EndToEndId`，
 - ~~资金段的业务校验层未写。~~ **已于 2026-09-12 写成**，见
   [验证与对账规范](validation-and-reconciliation-specification.md) §2C。
 - ~~`camt.060` 只取了根结构，请求侧未展开。~~ **已于 2026-09-12 展开**，见 §4C.10。
-- `seev` 公司行为族仍未开始，优先级低。
+- ~~`seev` 公司行为族仍未开始，优先级低。~~ **已于 2026-09-12 开始**，见 §4D。
+  **只读了 S-7 需要的部分**，十二张报文的约束整表仍欠。
 
 ### 4A.9 External Code Sets 已取得，词表缺口闭合
 
@@ -3559,6 +3563,145 @@ MDR §3.4.2.15.4 `RvslInd` 的 Usage：
 
 **C4-24 挡的是自由文本字段。** 规范把要请求的报文名做成 `Max35Text`，
 **于是拼错一个字符在规范眼里完全合法**，而回执方无从判断该回什么。
+
+## 4D. 第十二批：公司行为族，S-7 的落点由此定死
+
+**日期 2026-09-12。** §4A.8 挂了很久的"`seev` 公司行为族仍未开始"在此开始。
+读的是消息集 1241 Corporate Actions（2025–2026 维护版）的 MDR Part 2 与规范 XSD，
+**全程浏览器内存，未落盘**。**这一批只读 S-7 需要的部分，不求覆盖全族。**
+
+族内十三张报文：`seev.031` 通知、`seev.032` 事件处理状态、`seev.033` 指令、
+`seev.034` 指令状态、`seev.035` 预告、`seev.036` 过账确认、**`seev.037` 过账冲正**、
+`seev.038` 叙述、**`seev.039` 事件撤销通告**、`seev.040` 指令撤销请求、
+`seev.041` 指令撤销请求状态、`seev.042` 指令结单、`seev.044` 预告撤销。
+
+### 4D.1 公司行为事件标识是必填的，这是本项目至今唯一一个强锚点
+
+`CorporateActionGeneralInformation` 在每张报文上都是 1..1，其内：
+
+| 元素 | 基数 | 说明 |
+|---|---|---|
+| `CorpActnEvtId` | **1..1**，`Max35Text` | **账务服务方指派**，"unambiguously identify a corporate action event" |
+| `OffclCorpActnEvtId`（COAF） | **0..1** | 官方中央机构指派的全市场唯一号 |
+| `EvtTp` | **1..1** | 事件类型 |
+
+**必填的那个只在本账务服务方内部唯一，全市场唯一的那个可选。**
+**这是本轮第四次遇到同一形状**（§4B.12 明细锚点、§4C.10.4 请求配对、§4.6.6 的 `NONREF`），
+**但这一次强的那一头是必填的**，所以公司行为侧比资金侧和撤销侧都好办。
+
+**规范对 COAF 的唯一约束是 C16，内容是"SMPG 发布了市场实践建议"**——
+**一条只给出外部指针的约束**，与 §4C.1 记的 SMPG 决策图同源。
+
+**CMOP 的取用：`CorpActnEvtId` 用作公司行为回放的主键，COAF 不生成。**
+理由是本项目只有一个账务服务方，**全市场唯一性没有对手可比**。
+
+### 4D.2 规范自己确认了 CMOP 独立写下的那条业务不变量
+
+`CorporateActionEventType40Code` 里两个拆股码的定义原文：
+
+> **SPLF** StockSplit — Increase in a corporation's number of outstanding equities
+> **without any change in the shareholder's equity or the aggregate market value**
+> at the time of the split. Equity price and nominal value are reduced accordingly.
+>
+> **SPLR** ReverseStockSplit — Decrease in a company's number of outstanding equities
+> **without any change in the shareholder's equity or the aggregate market value**
+> at the time of the split. Equity price and nominal value are increased accordingly.
+
+[数据生成规范](data-generation-specification.md) §7 第 3 条写的是"数量乘 F、
+成本基础除以 F，且账户层面的总成本基础不变"。**这条当初是从会计一致性推出来的，
+不是从规范抄的。** 规范的定义与它逐字对应：数量变、单价反向变、总额不变。
+
+**记为一次独立验证。** 这类验证很少，值得单独写：**项目自己推出的不变量与规范的定义相符，
+说明推导的前提没错**，而不是两边抄同一个来源。
+
+### 4D.3 C12 的散文点了一个这张报文里根本不存在的元素
+
+`seev.037` 的 C12 `IntermediateSecuritiesDistribution1Rule`，散文：
+
+> If CorporateActionGeneralInformation/EventType/Code is RHDI, then
+> CorporateActionDetails/**IntermediateSecuritiesDistributionType** must be present. (MT 566 NVR C5)
+
+形式化：
+
+> On Condition /CorporateActionGeneralInformation/EventType/Code is equal to value
+> 'IntermediateSecuritiesDistribution'
+> Following Must be True /CorporateActionDetails Must be present
+> And /CorporateActionDetails/**FollowingEventTypeIndicator** Must be present
+
+**两个名字不一样，而且散文点的那个元素在 `seev.037` 的结构表里搜不到。**
+结构表里有的是 `CorporateActionDetails/FollowingEventTypeIndicator`（0..1）。
+
+**这是散文与形式化不一致的第二次，且比第一次严重。** 第一次是 `pacs.004` 的 C17，
+形式化多了一个条件（§4B.11）；**这一次是散文点错了元素**。
+散文末尾带 `(MT 566 NVR C5)`，**说明它是从 ISO 15022 的 MT 报文规则搬过来的，搬的时候没改名**。
+
+**§4B.11 定下的读法在此再次生效并可以加强：**
+**引用 MDR 约束一律以形式化为准，散文只作导航；散文里出现的元素名要回结构表核对。**
+
+### 4D.4 决定性发现：过账冲正不是事件撤销，S-7 原来的设想是错的
+
+`seev.037` 的 `RvslRsn/Rsn/Cd` 用 `CorporateActionReversalReason3Code`，**九个值**：
+
+| 码 | 含义 |
+|---|---|
+| `DCBD` | 计息基准差异 |
+| `FNRC` | 资金未收到 |
+| `IRED` | 权益登记日不正确 |
+| `IETR` | 事件级税率不正确 |
+| `IPCU` | 支付币种不正确 |
+| `IPRI` | 价格不正确 |
+| `IVAD` | 起息日不正确 |
+| `UPAY` | 不应支付 |
+| `OTHR` | 其他 |
+
+**九个全部是"这笔过账的某个细节填错了"，没有一个是"事件本身被取消或重述"。**
+
+**因此 `seev.037` 冲正的是一笔过账，不是一个事件。** 事件级的撤销另有其人：
+`seev.039` CorporateActionCancellationAdvice，其 scope 原文是
+"to cancel a previously announced corporate action event **in case of error from the
+account servicer or in case of withdrawal by the issuer**"。
+
+**S-7 原先登记为"冲正与公司行为重述交互"，落点默认在 `sese.026` 与重述路径。**
+**现在可以说清楚它其实是三条不同的路径，而且此前把它们混成了一条：**
+
+| 路径 | 报文 | 撤的是什么 | 与 CMOP 重述模型的关系 |
+|---|---|---|---|
+| 一 | `seev.037` | **一笔过账** | 无关。过账细节填错，重发一笔 |
+| 二 | `seev.039` | **一个已公告的事件** | **这才是重述**：事件不成立，依赖它的调整全部回退 |
+| 三 | `sese.020` + `CxlRsn/Cd=CANT` + 新 `sese.023` | **一条结算指令** | **不是重述，是两条不同的交易**（§4.6.6） |
+
+**三条路径的下游后果完全不同**：路径一只动一笔现金或证券过账；
+**路径二要把该事件在所有账户上的调整因子回退，正是 §7 第 3 条的反向**；
+路径三根本不产生调整因子。
+
+**S-7 因此拆成三个场景，原编号退役：**
+
+| 编号 | 内容 | 状态 |
+|---|---|---|
+| ~~S-7~~ | ~~冲正与公司行为重述交互~~ | **已拆分，编号退役** |
+| S-7a | `seev.037` 过账冲正 | 待冻结，**依赖最少** |
+| S-7b | `seev.039` 事件撤销与调整因子回退 | 待冻结，**这一条才依赖重述路径** |
+| S-7c | `CANT` 撤销并替换 | 待冻结，见 §4.6.6 |
+
+**S-5（`sese.026` 结算冲正）与三条都不同，它已冻结，不受影响。**
+
+### 4D.5 又一次同名不同物：`UPAY`
+
+`CorporateActionReversalReason3Code` 的 `UPAY` 是 UnduePayment，"Payment is not due"。
+**P-6 里整组退汇用的 `UPAY` 是 `ExternalReturnReason1Code` 的成员**（§4B.11），
+**两者码字母相同、所属码集不同、语义相近但不等价。**
+
+**这是本轮第三次遇到同名不同物**（前两次是 `BOOK` 在 §4B.12、
+`DeniedReason` 四个变体在 §4.6.6）。**登记为词表检查必须带码集名的又一条理由**，
+见[验证与对账规范](validation-and-reconciliation-specification.md) §2C.7。
+
+### 4D.6 本批特意没做的三件事
+
+1. **没有取十三张报文的约束整表。** 只取了 `seev.037` 的 24 条。
+   **其余十二张欠账，登记在此**，与 §4C.10 对资金族做的那样横向比对留待下一批。
+2. **没有展开 `seev.031` 通知与 `seev.033` 指令。** 它们是选择权事件（要约、供股）的入口，
+   **而 CMOP 的公司行为目前只做拆股与合股，两者都没有选择权**。
+3. **没有生成 COAF。** 理由见 §4D.1。
 
 ## 5. FINTRAC
 
