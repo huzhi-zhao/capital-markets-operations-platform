@@ -1558,13 +1558,48 @@ External Code Sets 页面发布的 XSD 压缩包，**与前四批一样全程在
 
 **这是第二层间接。** schema 指向 External Code Sets，External Code Sets 又指向另一份文件：
 同页单独发布的 `BTC_Codification_30Nov2025.xlsx`，**发布日期 2025-11-30，比词表本身还旧**。
-该表两张工作表，主表约 **1569 行组合**，11 个域：`PMNT` 支付、`CAMT` 资金管理、
+该表两张工作表，主表 **1567 行组合**（2026-09-12 逐行数过，此前记的"约 1569 行"是目测），11 个域：`PMNT` 支付、`CAMT` 资金管理、
 `DERV` 衍生品、`FORX` 外汇、`LDAS` 贷款存款与银团、`CMDT` 大宗商品、`PMET` 贵金属、
 `TRAD` 贸易服务、`SECU` 证券、`ACMT` 账户管理、`XTND` 扩展域。
 
 **域、族、子族是有效组合表，不是三个独立枚举的笛卡尔积。** `ReportEntry16/BkTxCd` 必填，
-所以 `camt` 的每一条明细都要给一个合法组合，**不能三层各自随机采样**。CMOP 取用口径：
-从这 1569 行里取组合，**且只取 `PMNT` 与 `SECU` 两个域**，其余与本项目无关。
+所以 `camt` 的每一条明细都要给一个合法组合，**不能三层各自随机采样**。
+
+**逐域计数（2026-09-12）：**
+
+| 域 | 组合数 | 域 | 组合数 |
+|---|---|---|---|
+| `PMNT` 支付 | **433** | `SECU` 证券 | **396** |
+| `LDAS` 贷款存款 | 136 | `DERV` 衍生品 | 135 |
+| `TRAD` 贸易服务 | 106 | `FORX` 外汇 | 91 |
+| `CMDT` 大宗商品 | 78 | `PMET` 贵金属 | 78 |
+| `CAMT` 资金管理 | 59 | `ACMT` 账户管理 | 54 |
+| `XTND` 扩展 | 1 | | |
+
+**CMOP 只取 `PMNT` 与 `SECU` 两个域，共 829 行**，其余九个域与本项目无关。
+
+#### 取用口径从"从表里取"收窄为三个具体组合
+
+**"从合法组合里取"这句话在生成器里没法执行，本轮定死到码级：**
+
+| 用在哪 | 组合 | 含义 |
+|---|---|---|
+| 付方对账单的借方明细 | **`PMNT` / `ICDT` / `FICT`** | Issued Credit Transfer / Financial Institution Credit Transfer |
+| 收方对账单的贷方明细 | **`PMNT` / `RCDT` / `FICT`** | Received Credit Transfer，同一子族码 |
+| 证券侧明细（将来用） | **`SECU` / `SETT` / `TRAD`** | Settlement / Trade |
+
+**三个组合都在 1567 行里逐行核对过，不是推出来的。**
+`FICT` 这个子族码在四个族下都存在——`ICDT`、`IRCT`、`RCDT`、`RRCT`——
+**其中带 R 的两个是实时清算**，CMOP 不做实时，故只用 `ICDT` 与 `RCDT` 两个。
+
+**收付两侧用不同的族码，这一点容易漏。** 同一笔划拨在付方账上是 `ICDT`、
+在收方账上是 `RCDT`，**子族码相同**。**两边都填 `ICDT` 是能通过组合表校验的**，
+因为那也是一个合法组合——**这类错误只有靠"方向与族码相容"这条额外检查才能发现**，
+组合表本身管不到。
+
+**表里还有一列 `Status`**，取值 `New` 1528、`Corrected` 35、`Updated` 4。
+**它与词表的 `Registered`/`Obsolete` 不是一回事**，这里没有废止态，
+**所以组合表不需要 §2C.7 那样的状态过滤**，只需要版本。
 
 #### 版本化的后果
 
@@ -1836,7 +1871,9 @@ Bank-to-Customer Cash Management 的 Part 1 对 P-4 有三处直接影响：
 - **一条明细有三种状态**：pending、future、booked。`camt.053` 样例上是 `Sts=BOOK`。
   §4A.9 取到的 `ExternalEntryStatus1Code` 至此有了业务语义对应。
 - **`BookgDt` 与 `ValDt` 在样例里是不同的日期**，样例还给出 `OPBD`/`CLBD` 期初期末余额与
-  `BkTxCd` 的 `PMNT`/`RCDT`/`DMCT` 组合。**这三层结构 P-4 都要用上。**
+  `BkTxCd` 的 `PMNT`/`RCDT`/`DMCT` 组合。**这三层结构 P-4 都要用上**，
+  但 CMOP 取的子族是 `FICT` 不是 `DMCT`：**样例描述的是境内客户划拨，CMOP 是金融机构划拨**，
+  见 §4A.9 定死的三个组合。
 - **最要紧的一条：样例里有一条明细是 `Btch`，`NbOfTxs=20`。**
   **一条对账单明细可以对应二十笔支付**，不是一对一。P-4 的对账因此**不能假定明细与
   `pacs.009` 一一对应**，回连要走 `TxDtls` 层的 `EndToEndId`——样例正是在这一层回显它，
@@ -1924,7 +1961,7 @@ MDR 样例里有一条明细是 `Btch`、`NbOfTxs=20`（§4C.5）。
 |---|---|---|
 | `Amt`、`CdtDbtInd` | 该批合计金额与方向 | 规范必填 |
 | `Sts/Cd` | **`BOOK`** | 规范必填；四个值里只有它表示已入账 |
-| `BkTxCd` | 从银行交易码组合表取 `PMNT` 域下的合法组合 | 规范必填，**且三层必须是有效组合**，见 §4A.9 |
+| `BkTxCd` | **借方 `PMNT/ICDT/FICT`，贷方 `PMNT/RCDT/FICT`** | 规范必填，**且三层必须是有效组合**；组合已定死到码级，见 §4A.9 |
 | `BookgDt` | 入账日，等于该批的 `FctvIntrBkSttlmDt` | **CMOP**。schema 可选 |
 | `ValDt` | 起息日，**与 `BookgDt` 可以不同** | **CMOP**。P-4 一律取相同，延迟起息留给后续场景 |
 | `NtryDtls/Btch/NbOfTxs` | 该批笔数 | **CMOP**。合并成批时必填，单笔时不填 |

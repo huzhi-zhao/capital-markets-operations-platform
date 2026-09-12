@@ -608,3 +608,14 @@ handles keyed rewrites of historical partitions.
   shifts every affected row left. It happened on the first parse here and produced a status column
   full of dates, which looks exactly like dirty source data and is not. The failure mode is the
   dangerous kind: every field is individually well-formed, so nothing downstream can catch it.
+- [x] Turn the bank transaction code requirement from "take a valid combination from the table" into
+  three named codes, because the former cannot be executed by a generator. The table has one thousand
+  five hundred and sixty-seven combinations, counted rather than estimated, across eleven domains; the
+  two the project uses account for eight hundred and twenty-nine of them. The payment side resolves
+  to issued and received financial institution credit transfer, differing only in the family level,
+  and the securities side to settlement trade. All three were checked row by row in the published
+  table.
+- [x] Add a check the combination table cannot make. Since issued and received are both valid
+  combinations, putting the issued code on a credit entry passes the table lookup while being wrong,
+  so direction against family is now its own check with its own injection, and the table lookup is
+  expected to stay silent on it.
