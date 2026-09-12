@@ -512,3 +512,24 @@ handles keyed rewrites of historical partitions.
   a specific clearing system. CMOP's values are compliant, and the same passage yields a prohibition
   CMOP must now honour, since all four of those elements are optional in the schema and no validator
   would catch them.
+- [x] Sweep the cash management messages the same way. The three report messages carry nearly
+  identical constraint lists, which confirms from the specification side what had only been inferred
+  from the schemas, that they share one entry structure. The most consequential find is not in these
+  messages at all but in the payment message, stated identically in both: the underlying allocation
+  list may only be present where the two parties have agreed bilaterally to carry it. That element is
+  the sole structural reason the whole cash leg was built on the financial-institution credit
+  transfer, and five separate checks rest on it. Nothing about the generated values changes, but an
+  unstated premise is now stated: CMOP declares the agreement to hold, and any outward claim that the
+  cash leg reconciles back to the securities leg has to carry that condition, because in a market
+  without the agreement the transfer message simply does not carry the list. It also explains why the
+  real-world problem is hard, which is the thing the primary objective exists to show.
+- [x] Split the bank transaction code check in two. The specification does constrain those three
+  levels, but only by generality: a non-generic sub-family is not allowed under a generic family. It
+  says nothing about whether a given combination exists in the roughly sixteen-hundred-row table.
+  Those are different claims with different overturn conditions, so they are now different checks.
+- [x] Record three constraints whose wording invites a damaging misreading. Each says one of two
+  elements "must be absent", which reads as a prohibition until the following sentence, that both may
+  be absent, makes clear it means not-both. Misreading one turns an optional element into a forbidden
+  one, and the symptom is a field that is silently always empty, which no check would ever flag. They
+  are also a different shape from the settlement-date rule, which is a true exclusive or requiring
+  exactly one, so the two shapes are written up separately rather than under one name.

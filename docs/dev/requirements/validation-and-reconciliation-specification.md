@@ -450,7 +450,7 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 | C2-11 | `TxSts` 落在 `ExternalPaymentTransactionStatus1Code` 的 `Registered` 码内 | **CMOP**，见 §2C.7 | 全部 |
 | C2-12 | `TxSts` 取 CMOP 使用的七个值之一 | **CMOP** | 全部。二十五个值里其余十八个属支票、现金提取等分支 |
 | C2-13 | `TxSts` 为 `RJCT` 时 `StsRsnInf` 存在 | **CMOP**。schema 不要求 | 拒绝分支；**P-1 不产生，登记备用** |
-| C2-13a | `Rsn/Cd` 不得取 `NARR` | **CMOP**。取 `NARR` 则 `StatusReasonRule` 要求必须写自由文本，与不生成自由文本的口径冲突，见契约 §4C.8.4 | 全部 |
+| C2-13a | `Rsn/Cd` 不得取 `NARR` | **CMOP**。取 `NARR` 则 `StatusReasonRule` 要求必须写自由文本，与不生成自由文本的口径冲突，见契约 §4C.8.4。**`camt` 侧的 `ReturnReasonRule` 一字不差，故本条对资金段全部报文成立** | 全部 |
 | C2-13b | 组状态缺席时，`StsRsnInf/AddtlInf` 一律缺席 | **规范**。`StatusReasonInformationRule` 的适用条件是组状态存在；**CMOP 不填组状态，故本条实为 CMOP 的自我约定** | 全部。**依据一列此处特意写两句，因为它看着像规范而实际不是** |
 | C2-14 | `FctvIntrBkSttlmDt` 存在 | **CMOP** | **仅 `TxSts=ACCC` 时**。其余状态下它没有意义 |
 
@@ -465,10 +465,14 @@ FIX 明确的不能改；CMOP 决定的可以改但要改口径文档；
 |---|---|---|---|
 | C2-15 | `Amt`、`CdtDbtInd`、`Sts`、`BkTxCd` 四项非空 | **规范**，`ReportEntry16` 必填四项 | 全部 |
 | C2-16 | `Sts` 落在 `ExternalEntryStatus1Code` 的四个值内 | **CMOP**，见 §2C.7 | 全部 |
-| C2-17 | `BkTxCd` 的域、族、子族构成**有效组合** | **CMOP**。见契约 §4A.9：三者是组合表，**不是三个独立枚举** | 全部 |
+| C2-17 | 族不具体时，子族**不得**具体 | **规范**。`FamilyAndSubFamilyRule`，见契约 §4C.9.2 | 全部 |
+| C2-17a | `BkTxCd` 的域、族、子族构成**存在于组合表中的组合** | **CMOP**。见契约 §4A.9：三者是组合表，**不是三个独立枚举**。**规范只管层级关系，不管组合存在性** | 全部 |
+| C2-17b | `BkTxCd` 内部至少有域或专有码之一 | **规范**。`DomainOrProprietaryRule` | 全部。**内部全空的 `BkTxCd` 在 schema 上合法** |
 | C2-18 | `BkTxCd` 的域取 `PMNT` 或 `SECU` | **CMOP** | 全部 |
 | C2-19 | `BookgDt` 与 `ValDt` 均存在 | **CMOP**。schema 上可选 | **仅 `Sts=BOOK` 时**。挂起明细还没有入账日 |
 | C2-20 | 至少一条 `Bal`，且含 `OPBD` 与 `CLBD` 各一 | `Bal` 1..unbounded 是**规范**；两个类型各一是 **CMOP** | 仅 `camt.053`。`camt.052` 可以不带余额，`camt.054` 没有这个元素 |
+| C2-21 | 消息分页与对账单分页**不得同时出现** | **规范**。`MessageOrStatementPaginationRule`，见契约 §4C.9.4 | 全部 `camt.053`。**两者都缺席是允许的**，CMOP 两者都不填 |
+| C2-22 | `PmtTpInf` 与 `LclInstrm` **不得同时出现** | **规范**。`PaymentTypeOrLocalInstrumentRule` | 全部明细。**同上，都缺席允许** |
 
 **C2-17 是本节唯一一条需要查外部表才能判定的检查**，其余的词表检查都是集合成员判定。
 **组合表约 1569 行，三层各自采样会生成大量形式合法但组合不存在的交易码**，
