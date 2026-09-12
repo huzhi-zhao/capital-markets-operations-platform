@@ -946,3 +946,34 @@ handles keyed rewrites of historical partitions.
   negative assertion with no injection behaves identically to a correctly implemented one.
 - [x] Record where the four baseline tables divide. The anchor table answers whether two records can
   be joined at all; the three new ones answer how a check gets written once they can.
+- [x] Freeze the cancel-and-replace scenario driven by a corporate action, the third piece the
+  original reversal scenario split into. Its messages are all in the settlement family while its
+  cause is in the corporate-action family, which makes it the only frozen scenario whose sampling
+  unit sits in one segment and whose trigger sits in another.
+- [x] Separate the two corporate-action cancellation codes. One means cancelled and replaced, the
+  other means cancelled, and nothing in the specification ties either to whether a successor
+  instruction exists. The reconciliation reading is opposite in the two cases, so both must be
+  generated, in a fixed ratio, or one of the two wrong house rules stays invisible.
+- [x] Re-derive every cancellation-reason code set from the schemas rather than the report text. Two
+  of the four counts taken from the report were wrong, because in the extracted text one code set
+  runs straight into the next and a pattern match on the code letters walks past the boundary. Code
+  set membership now comes from the schema, and the report is used only for the definition wording.
+- [x] Record that the reason a cancellation happened is unreadable from the message that says it
+  happened. The request carries eleven reasons, the executed-cancellation branch carries two, and
+  the corporate-action reason is not one of the two. Reading the reason back from the terminal
+  message is correct practice everywhere else in this project, which is what makes it dangerous here.
+- [x] Record that the replacement cannot be pointed at from the cancellation. The status message has
+  no element that could carry it, which is a second way of being structurally impossible, distinct
+  from the earlier case where a constraint forbids the carrier. The check is written the same way and
+  the repairability is not.
+- [x] Add direction as an axis on the anchor-strength table. The same relationship is structurally
+  impossible one way and merely optional the other, and filing it under one grade alone makes the
+  traversal start from the wrong end.
+- [x] Record the specification-compliant write that breaks the trade. Linking the replacement to the
+  original under the most natural-looking processing-position code binds them so they must execute
+  together, and the original never will, so the replacement stays pending forever. Only the
+  information-only code is safe, and that field is optional. First check in the project that catches
+  a write which is compliant and still wrong.
+- [ ] Decide whether the should-level code guidance found inside a code definition needs its own
+  treatment. It is the first one read; it cannot be checked as a violation and cannot be certified as
+  compliant, and the current answer is simply not to generate the code it concerns.
