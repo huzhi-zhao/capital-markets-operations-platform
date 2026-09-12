@@ -554,3 +554,23 @@ handles keyed rewrites of historical partitions.
   digital ledger identifier, a bank identifier code and a legal entity identifier. Elsewhere the
   project's answer to a registered identifier is to use a proprietary one and record the deviation;
   here there is no such option, so the element is left out entirely.
+- [x] Freeze the payment return, paired with the securities reversal. The first question was which of
+  two undo messages to use, and the deciding evidence was not the messages' definitions but their
+  reason code lists. The reversal message's eleven reasons are all payment-side operational faults,
+  wrong account number, duplication, missed cut-off, and not one of them can say that the securities
+  delivery was undone; using it would force the not-specified code and throw away the only
+  informative field in the scenario. The return message's list has a code meaning the payment is no
+  longer justified, which is exactly the situation. Verified against the current external code sets
+  rather than assumed.
+- [x] Record the asymmetry the pairing exposes. The securities reversal carries no reason at all,
+  while the cash return is required to carry one, so CMOP has to state on the cash side a reason the
+  securities side never gave it. That is forced by the two message families' designs, not chosen. The
+  handling is to use the single most non-committal valid code, add no free text, and say plainly in
+  any outward description that the reason is supplied by CMOP rather than inherited, so that nobody
+  reads the chain as evidence that causes can be traced.
+- [x] Note the one trap avoided only by reading. The return message may carry an underlying credit
+  transfer, but a rule allows it only when the original transaction carried one, and CMOP's original
+  carries the allocation list instead. Filling it because the schema permits it would be a violation
+  no validator would catch. This is a conditional prohibition on an element that is perfectly
+  legitimate elsewhere, which is the shape a generator built on "fill what you can" walks straight
+  into.
