@@ -285,6 +285,15 @@ handles keyed rewrites of historical partitions.
   the generator and the validation layer both read. They must not fetch independently: different
   versions on the two sides produce data that is legal and a validator that says it is not, with
   neither side wrong.
+- [x] Freeze P-1, the minimal cash-leg lifecycle, and with it close the six-segment chain. The
+  financial-institution credit transfer is chosen over the customer one for a single structural
+  reason: only it carries an underlying-allocation list, whose five fields are all mandatory and are
+  exactly the allocation table the chain already produces. One message carries the block and splits
+  it internally, the same shape as every earlier segment.
+- [x] Correct the claim that the end-to-end identifier is the only key tying the cash leg back to the
+  securities leg. It is the only mandatory one. The related-references choice on each underlying
+  allocation opens with a securities settlement transaction identifier, a field the standard provided
+  for precisely this join. All three levels are now written rather than only the mandatory one.
 - [ ] Read the Message Definition Reports for both cash message sets. Business flows, roles and
   worked examples are there, the same position they occupied for the settlement leg.
 - [ ] Decide how the batch-oriented payment messages land in Bronze. The group header and the
