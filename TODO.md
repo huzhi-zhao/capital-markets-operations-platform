@@ -714,10 +714,15 @@ handles keyed rewrites of historical partitions.
   than a mere join. It also introduces a third shape of check: dwell time in a half-finished state,
   which is neither an equation nor a reachability question, and which looks normal in every single
   batch taken alone.
-- [ ] Build the chain-traversal check that the reference-identifier chains need. It is the first
+- [x] Build the chain-traversal check that the reference-identifier chains need. It is the first
   assertion in the catalogue that is not an equation, and the cost is not in the assertion but in the
   validation layer having no such shape. Two scenarios are waiting on it, the two-hop allocation
   correction and its confirmation-side twin, and they should be unlocked together since they share it.
+  Built 2026-09-13 as pointer doubling, so it translates to a bounded number of self-joins without
+  recursive queries and cannot loop on a cycle. Rereading the volume while building it overturned the
+  premise: cancel-then-new is not a two-hop chain. The reinstating message is a plain New and the
+  reference field is defined only for replace and cancel, so the chain is one hop and the link to the
+  reinstatement exists only in generator records. Both scenarios are unblocked on that corrected basis.
 - [ ] Decide whether to build the combination scenarios where a late message is also rejected. Both are
   registered and both are deferred for the same reason: the restatement path and the correction path
   look alike from downstream, so each can mask the other's failure. They are only worth building once
