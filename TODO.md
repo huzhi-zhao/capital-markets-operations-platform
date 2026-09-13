@@ -144,7 +144,7 @@ handles keyed rewrites of historical partitions.
   because clustering produces short version intervals and same-day changes, exactly where the
   no-overlap-no-gap invariant breaks, and because it puts restatement and dimension change in the same
   batch, which is the hardest case to reconcile.
-- [ ] Choose the anchor window width and the share of name changes that anchor rather than falling back
+- [x] Choose the anchor window width and the share of name changes that anchor rather than falling back
   to uniform sampling. These set the difficulty of the test, not its correctness.
 - [x] Freeze the BO baseline. The one blocking criterion was the chain evidence, and all six segments
   now have a frozen minimal lifecycle sourced to a page or a schema element. Reconciliation and
@@ -334,7 +334,7 @@ handles keyed rewrites of historical partitions.
 - [ ] Follow the diagram's one external pointer, a chapter reference that is not in this report and
   points at the market practice group's own document. It affects boundary detail on the
   before-or-after judgement, not the main rule.
-- [ ] Read Parts 2 and 3 of the same report for the per-element definitions and usage rules. S-1 does
+- [x] Read Parts 2 and 3 of the same report for the per-element definitions and usage rules. S-1 does
   not depend on them; S-3 and S-4 do. S-2 turned out not to need them: its rule came from the
   decision diagram and its value ranges from the schema.
 - [x] Freeze S-2, the failed-then-late settlement scenario. It reuses S-1's instruction rather than
@@ -748,11 +748,11 @@ handles keyed rewrites of historical partitions.
 - [x] Record the reversal direction, which will be needed for the reversal scenario later. The credit
   or debit indicator on a reversing entry describes that entry, not the one being reversed, so signed
   summation over entries is correct and counting entries as payments double-counts.
-- [ ] Build the pending-then-rejected variant. It needs the intraday report to be driven by the
+- [x] Build the pending-then-rejected variant. It needs the intraday report to be driven by the
   payment status report, so that a payment rejected after being reported as pending disappears from
   the statement rather than appearing as booked. It is the negative twin of the frozen scenario and
   shares its anchor.
-- [ ] Build the future-dated variant together with the case where the value date differs from the
+- [x] Build the future-dated variant together with the case where the value date differs from the
   booking date. Both pull the scenario across a day boundary, which is why the frozen version uses
   only the pending status and keeps the two dates equal.
 - [x] Take the complete constraint list for all four messages in the cash management family and
@@ -814,9 +814,15 @@ handles keyed rewrites of historical partitions.
 - [x] Record the second instance this session of the inverse optional-block pattern, in the
   cancellation request's transaction detail block, which makes three of its children mandatory the
   moment the optional parent appears.
-- [ ] Follow up the split-and-partial-settlement code found alongside the corporate-action one. It
+- [x] Follow up the split-and-partial-settlement code found alongside the corporate-action one. It
   names the mechanism by which a transaction is cancelled and replaced to permit partial settlement,
-  which is the interface the deferred partial-settlement ordering check needs.
+  which is the interface the deferred partial-settlement ordering check needs. Done 2026-09-13 as a
+  new frozen scenario with two branches: native partial settlement (one instruction, several
+  confirmations) and cancel-and-split (one cancelled instruction, several new ones linked the same
+  way as the corporate-action resend). Found that the settlement confirmation carries the same
+  four-letter code in two elements with unrelated meanings, the strongest letter collision so far.
+  The once-only confirmation check now has its condition on the instruction's flag instead of a
+  scenario list.
 - [x] Open the corporate actions family, an item that had sat unstarted for several batches, reading
   only the part the reversal scenario needs rather than trying to cover thirteen messages.
 - [x] Record that the corporate-action event identifier is mandatory, the first strong anchor found
@@ -843,11 +849,19 @@ handles keyed rewrites of historical partitions.
   vocabulary check from three rules to five: results must carry the code set name, not just the code
   value, exactly as they must carry the vocabulary version. Also record that the vocabulary check is
   no longer unique to the payment segment.
-- [ ] Take the constraint lists for the remaining twelve corporate-action messages and compare them
+- [x] Take the constraint lists for the remaining twelve corporate-action messages and compare them
   the way the cash family was compared. Only the movement reversal's twenty-four were taken.
-- [ ] Decide whether option-bearing events are in scope. The notification and instruction messages
+- [x] Decide whether option-bearing events are in scope. The notification and instruction messages
   were left unopened because the only corporate actions generated so far are splits and reverse
   splits, neither of which offers the holder a choice.
+  Decided in scope by the user on 2026-09-13 and frozen as an elective event with a default option,
+  three accounts: one instructs in time, one stays silent, one instructs late and is rejected. The
+  option type vocabulary differs across notification, instruction and confirmation, so the option
+  number is the anchor and comparing types across messages is a negative assertion. Nothing in the
+  specification limits how many default options an event has; exactly one is a project rule.
+- [ ] Freeze the change-and-withdraw instruction follow-on for elective events. It needs the
+  instruction cancellation request and its status read to the same depth as the settlement
+  cancellation family, because the change guideline's condition sits on the earlier notification.
 - [x] Take the constraint lists for all thirteen corporate-action messages, closing the item opened
   an hour earlier. Four hundred and ninety-six constraints across the family, of which fifty-one are
   formalised, and the notification alone accounts for more than half the formalisations.
@@ -1000,7 +1014,7 @@ handles keyed rewrites of historical partitions.
   code values' definitions in the external code sets. Those definitions carry business rules and they
   appear in neither the message schema nor the message definition report. Every check currently
   marked as a house rule needs this pass.
-- [ ] Re-check every house-rule check against the external code set definitions, per the rule just
+- [x] Re-check every house-rule check against the external code set definitions, per the rule just
   adopted. Two of the first ones looked at turned out to have specification backing, so the rate is
   not negligible.
 - [x] Run the new rule once across every four-letter code value the requirements docs mention, 103 in
@@ -1033,3 +1047,8 @@ handles keyed rewrites of historical partitions.
 - [x] Record the negative result. External code set definitions carry business rules, while inline
   code set definitions mostly just expand the name. The sweep therefore pays off in the cash segment,
   and the settlement segment only needs a lookup when a new code value is introduced.
+- [x] Tick six items that were already done but still open. The anchor window and ratio were settled
+  in generation spec section 6A.1 (70% anchored, discrete business-day window, same-day weight 25%);
+  parts 2 and 3 of the settlement report were read in full; the pending-then-rejected and
+  future-dated variants were frozen; the corporate-action constraint lists were all taken; and the
+  code definition recheck was run across every code value in use.
