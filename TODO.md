@@ -316,7 +316,11 @@ handles keyed rewrites of historical partitions.
 
 ## Later: Formal Implementation
 
-- [ ] Build the reproducible one-million-row generator prototype.
+- [x] Build the reproducible one-million-row generator prototype. Done 2026-09-13 for the frozen
+  order lifecycle only: one million FIX messages in about three seconds, identical content hash on
+  rerun, every lifecycle invariant asserted on the output. Seven known simplifications are listed in
+  the generator README, the largest being that listing start dates are not in the pinned reference
+  data and that the business-day calendar ignores holidays.
 - [ ] Implement the minimum Bronze to Silver to Gold vertical slice.
 - [ ] Validate one late confirmation and one correction or cancellation end to end.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,

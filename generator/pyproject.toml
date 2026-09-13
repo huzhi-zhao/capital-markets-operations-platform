@@ -1,0 +1,22 @@
+[project]
+name = "cmop-generator"
+version = "0.1.0"
+description = "CMOP synthetic data generator prototype: reproducible L-1 FIX order lifecycles"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.0", "pyarrow>=16"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+cmop-generate-l1 = "cmop_generator.l1:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
