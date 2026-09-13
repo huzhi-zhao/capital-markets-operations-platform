@@ -278,7 +278,9 @@ handles keyed rewrites of historical partitions.
   documentation.
 - [ ] Feed measured results into the capacity baseline, requirements, and Proposed ADRs.
 - [ ] Finalize the component-to-language map, then define the minimum Java, Python, SQL and Spark
-  templates needed by Phase 1. The runtime-boundaries record already scopes its long-term-release rule
+  templates needed by Phase 1. Map drafted 2026-09-13 as a Proposed amendment to the runtime
+  boundaries record: Python for the generator and admission checks, Java for message ingestion and
+  schema validation, Spark SQL with a Python driver for the layers. Templates still wait on probes. The runtime-boundaries record already scopes its long-term-release rule
   to self-written Java modules and already allows third-party components their own runtimes, so that
   part needs no revision. What the map must now fix is a concrete runtime per component, using the
   measured versions rather than the newest releases.
@@ -988,9 +990,12 @@ handles keyed rewrites of historical partitions.
   together, and the original never will, so the replacement stays pending forever. Only the
   information-only code is safe, and that field is optional. First check in the project that catches
   a write which is compliant and still wrong.
-- [ ] Decide whether the should-level code guidance found inside a code definition needs its own
+- [x] Decide whether the should-level code guidance found inside a code definition needs its own
   treatment. It is the first one read; it cannot be checked as a violation and cannot be certified as
-  compliant, and the current answer is simply not to generate the code it concerns.
+  compliant, and the current answer is simply not to generate the code it concerns. Settled
+  2026-09-13 as a fourth classification table: every check result carries a basis strength of rule,
+  definition, guideline or project rule. Guidance gets exactly one of two treatments, comply and check
+  or never generate and do not check. Generating the guided case and checking it is ruled out.
 - [x] Freeze the future-value-date payment scenario. The entry sits on the books from day one and its
   value reaches the account owner two days later, which makes it the first scenario where a
   previously unconditional balance equation needs a condition rather than a patch. Keep the original

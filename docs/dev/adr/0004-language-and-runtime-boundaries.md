@@ -202,6 +202,42 @@ JDK 21 与 25 仍是那一侧的候选。Trino 是第三方组件，不在第 1 
 但**范围收窄了**：Spark 那一侧的上限已确认是 17，因此 21 与 25 的评估只对自研 Java 模块
 和 Spring Boot 有意义，**不能顺带假设 Spark 也能跟上**。
 
+## Amendment 2026-09-13: 组件到语言的映射，Proposed
+
+**本修订补第 3 节第 2 条要求的"候选组件到语言映射"。** 前提已成立：主 BO、代表性场景
+（S-1 至 S-9、A、C、P 系列）、source class 与 workload envelope 均已成文，
+计算分工已由 [ADR 0005](0005-compute-engine-division-of-labour.md) 定下三条约束。
+**本修订仍是 Proposed**，精确版本与模板最低能力按第 3 节第 4 条等 Phase 0B probe。
+
+### 映射
+
+| 组件 | 语言 | 理由 | 被否的替代 |
+|---|---|---|---|
+| 合成数据生成器 | **Python** | 第 1 节第 4 条的候选职责原文；分布调参与种子控制在 NumPy／Polars 生态最直接；产出是 Parquet 与报文文件，**不经过 Iceberg**（ADR 0005 本 ADR 不决定的事第三条） | Java：分布库薄，调参回路慢 |
+| 报文摄取与结构校验（ISO 20022 XML、FIX tag=value） | **Java** | **这是 Java 的业务关键职责候选**，满足第 1 节第 2 条且不造假需求：XSD 校验、按报文类型分路径取关联键（验证规范 §2A.4）、FIX 会话无关的解析，JAXB／StAX 与 QuickFIX/J 是金融机构的现行做法；**失败即拒收，属于 Bronze 准入门** | Python：`lxml` 可做 XSD，但 26 张报文、多个版本并存时的类型化绑定与性能不如 JVM 侧成熟 |
+| Bronze → Silver → Gold 转换 | **Spark SQL**，driver 用 **PySpark** | 第 1 节第 5、6 条；转换以 SQL 表达，driver 只做编排与参数，**没有需要 typed Dataset 的任务**：所有校验按表比较，不在行对象上写业务逻辑 | Java driver：只为 typed Dataset 付出构建与镜像成本，而本项目用不上 |
+| V1／V2／C 系列业务校验与对账 | **SQL**，结果表由 PySpark 作业写 | 验证规范 §5 要求门禁结果结构化可查询；五种检查形态（§1A.1）全部可用 SQL 表达 | 专用 DQ 框架：仍待评估，不阻塞映射 |
+| 写入路径准入检查第一、二层 | **Python** | 纯键值匹配与交叉引用，进 CI，不连服务（设计文 Constraints 第 4 条） | Shell：交叉引用与失败报告格式难维护 |
+| 异常解释表的对外读取接口 | **Java**（候选，未定） | [ADR 0007](0007-external-interactive-scope-reads-gold-only.md) 已限定只读 Gold；是否需要 API 仍取决于 Open questions 第 1 条 | — |
+| 编排 DAG | **Python** | Airflow 原生 | — |
+| 生成器与准入检查的测试 | **pytest** | 与被测语言一致 | — |
+
+### 由此解除与仍然阻塞的
+
+- **解除**：生成器原型与准入检查脚本可以开工，第 3 节第 1 条对这两者不再阻塞。
+  **二者都不是模板**，是具体组件，模板仍按第 3 节第 4 条等 probe。
+- **仍阻塞**：Java 摄取模块的 JDK（21 或 25）、构建工具与框架主版本。
+  **它不依赖 Spark 的 JDK 上限**：摄取模块写 Bronze 文件，不嵌在 Spark 进程里。
+- **Python 版本暂定 3.12**：生成器依赖的 Polars 与 PyArrow 均有该版本的正式 wheel；
+  锁定工具待定，候选 `uv`。
+
+### 对 Open questions 的影响
+
+- "Spark driver 使用 Python 还是 Java"：**本修订给出 PySpark 的 Proposed 答案**，
+  推翻条件是出现一个必须在行对象上表达业务规则的转换。
+- "主 BO 最终需要哪一种可独立部署的业务服务"：**摄取与结构校验是第一个候选**，
+  它有真实的拒收语义与审计要求，不是 health check。
+
 ## Consequences
 
 ### Positive
