@@ -14,7 +14,8 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from . import reference
+from . import accounts, allocation, reference
+from .calendar import business_days
 
 WINDOW_START = date(2016, 1, 4)
 WINDOW_END = date(2025, 12, 31)
@@ -33,17 +34,15 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # 子生成器顺序即派生顺序。只能在末尾追加，否则同种子下既有子流会整体改变（生成规范 §2）。
 STREAMS = ("rank", "zero", "fills", "alloc", "day", "qty", "split", "price_series",
-           "px_walk", "time", "side")
-
-
-def business_days(start, end):
-    days = np.arange(np.datetime64(start), np.datetime64(end) + np.timedelta64(1, "D"), dtype="datetime64[D]")
-    return days[np.is_busday(days)]
+           "px_walk", "time", "side", "accounts", "alloc_client", "alloc_n", "alloc_pick",
+           "alloc_split", "alloc_time")
 
 
 def rngs(seed):
     children = np.random.SeedSequence(seed).spawn(len(STREAMS))
-    return {name: np.random.Generator(np.random.PCG64(ss)) for name, ss in zip(STREAMS, children)}
+    out = {name: np.random.Generator(np.random.PCG64(ss)) for name, ss in zip(STREAMS, children)}
+    out["price_series_seq"] = children[STREAMS.index("price_series")]
+    return out
 
 
 def id_prefix(seed):
@@ -116,13 +115,32 @@ def split_quantities(rng, qty, unit, n_fills):
     return out
 
 
-def price_series(inst, rng):
-    """每个标的一条日度对数随机游走，以美分计。成交价与估值取自同一序列（生成规范 §6.2）。"""
-    n, t = len(inst["cik"]), len(inst["days"])
-    base = np.log(PRICE_MEDIAN_CENTS) + PRICE_SIGMA * rng.standard_normal(n)
-    steps = rng.standard_normal((n, t), dtype=np.float32) * np.float32(PRICE_DAILY_VOL)
-    steps[:, 0] = 0
-    return np.maximum(np.rint(np.exp(base[:, None] + np.cumsum(steps, axis=1))), 1).astype(np.int64)
+def arrival_prices(inst, seed_seq, order_inst, day_idx):
+    """每个标的一条日度对数随机游走，以美分计，逐标的按需计算。
+
+    成交价与估值取自同一序列（生成规范 §6.2）。每个标的的子流由其下标派生，
+    所以一条序列不受其他标的是否被计算影响；峰值内存是一条序列而不是整张矩阵。
+    返回每单的到达价，以及用到的 (标的, 营业日) 价格点。
+    """
+    out = np.empty(len(order_inst), dtype=np.int64)
+    by_inst = np.argsort(order_inst, kind="stable")
+    uniq, first = np.unique(order_inst[by_inst], return_index=True)
+    pts_i, pts_d, pts_p = [], [], []
+    children = seed_seq.spawn(len(inst["cik"]))
+    for i, lo, hi in zip(uniq, first, np.r_[first[1:], len(by_inst)]):
+        g = np.random.Generator(np.random.PCG64(children[i]))
+        orders = by_inst[lo:hi]
+        last = int(day_idx[orders].max())
+        base = np.log(PRICE_MEDIAN_CENTS) + PRICE_SIGMA * g.standard_normal()
+        steps = g.standard_normal(last + 1) * PRICE_DAILY_VOL
+        steps[0] = 0
+        series = np.maximum(np.rint(np.exp(base + np.cumsum(steps))), 1).astype(np.int64)
+        out[orders] = series[day_idx[orders]]
+        used = np.unique(day_idx[orders])
+        pts_i.append(np.full(len(used), i, dtype=np.int32))
+        pts_d.append(used)
+        pts_p.append(series[used])
+    return out, (np.concatenate(pts_i), np.concatenate(pts_d), np.concatenate(pts_p))
 
 
 def generate(seed, target_rows, sec_dir):
@@ -144,8 +162,7 @@ def generate(seed, target_rows, sec_dir):
     fill_qty = split_quantities(r["split"], qty, unit, n_fills)
     width = fill_qty.shape[1]
 
-    series = price_series(inst, r["price_series"])
-    arrival = series[order_inst, day_idx]
+    arrival, price_points = arrival_prices(inst, r["price_series_seq"], order_inst, day_idx)
     walk = r["px_walk"].integers(-PX_STEP_BP, PX_STEP_BP + 1, (n_orders, width))
     fill_px = np.maximum(np.rint(arrival[:, None] * (1 + np.cumsum(walk, axis=1) / 10_000)), 1).astype(np.int64)
     live = np.arange(width)[None, :] < n_fills[:, None]
@@ -159,7 +176,26 @@ def generate(seed, target_rows, sec_dir):
     start = SESSION_OPEN_MS + np.floor(r["time"].random(n_orders) * (latest_start - SESSION_OPEN_MS + 1)).astype(np.int64)
     side = np.where(r["side"].random(n_orders) < 0.5, "1", "2")
 
-    return assemble(seed, inst, order_inst, day_idx, n_fills, qty, fill_qty, fill_px, start, ack, gaps, side)
+    table, inst = assemble(seed, inst, order_inst, day_idx, n_fills, qty, fill_qty, fill_px, start, ack, gaps, side)
+    notional = (fill_qty * fill_px).sum(axis=1)
+    last_fill_ms = start + ack + gaps.sum(axis=1)
+    prefix = id_prefix(seed)
+    seq = np.arange(n_orders).astype(str)
+    days = inst["days"]
+    calendar_ext = business_days(WINDOW_START, date(WINDOW_END.year + 1, 1, 31))
+    orders = {"qty": qty, "unit": unit, "day_idx": day_idx, "notional": notional, "side": side,
+              "last_fill_ms": last_fill_ms, "calendar_ext": calendar_ext,
+              "cl_ord_id": np.char.add(f"C{prefix}-", np.char.zfill(seq, 9)),
+              "order_id": np.char.add(f"O{prefix}-", np.char.zfill(seq, 9)),
+              "symbol": np.char.add("SYN", np.char.zfill(order_inst.astype(str), 5))}
+    acc = accounts.build(r["accounts"], days, prefix)
+    alloc_msgs, alloc_groups, alloc_ctx = allocation.generate(r, orders, acc, days, prefix)
+    pi, pd_, pp = price_points
+    prices = pa.table({"instrument_index": pa.array(pi), "trade_date": pa.array(days[pd_]),
+                       "close_px_cents": pa.array(pp)})
+    inst.update(orders=orders, accounts=acc, alloc_ctx=alloc_ctx, alloc_messages=alloc_msgs,
+                alloc_groups=alloc_groups, prices=prices)
+    return table, inst
 
 
 def assemble(seed, inst, order_inst, day_idx, n_fills, qty, fill_qty, fill_px, start, ack, gaps, side):
@@ -250,7 +286,11 @@ def main(argv=None):
 
     table, inst = generate(args.seed, args.rows, args.sec_dir)
     args.out.mkdir(parents=True, exist_ok=True)
-    pq.write_table(table, args.out / "fix_l1_messages.parquet")
+    outputs = {"fix_l1_messages": table, "fix_alloc_messages": inst["alloc_messages"],
+               "fix_alloc_groups": inst["alloc_groups"], "dim_account": inst["accounts"]["table"],
+               "instrument_daily_price": inst["prices"]}
+    for name, t in outputs.items():
+        pq.write_table(t, args.out / f"{name}.parquet")
     manifest = {
         "seed": args.seed,
         "generator_commit": git_commit(),
@@ -259,7 +299,7 @@ def main(argv=None):
         "orders": int((np.asarray(table.column("msg_type")) == "D").sum()),
         "instruments": int(len(inst["cik"])),
         "zero_fact_instruments": int(inst["zero"].sum()),
-        "content_sha256": content_hash(table),
+        "content_sha256": {name: content_hash(t) for name, t in outputs.items()},
     }
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest, indent=2))

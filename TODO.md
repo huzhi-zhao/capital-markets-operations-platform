@@ -284,10 +284,11 @@ handles keyed rewrites of historical partitions.
 - [ ] Finalize the component-to-language map, then define the minimum Java, Python, SQL and Spark
   templates needed by Phase 1. Map drafted 2026-09-13 as a Proposed amendment to the runtime
   boundaries record: Python for the generator and admission checks, Java for message ingestion and
-  schema validation, Spark SQL with a Python driver for the layers. Templates still wait on probes. The runtime-boundaries record already scopes its long-term-release rule
-  to self-written Java modules and already allows third-party components their own runtimes, so that
-  part needs no revision. What the map must now fix is a concrete runtime per component, using the
-  measured versions rather than the newest releases.
+  schema validation, Spark SQL with a Python driver for the layers. Templates still wait on probes.
+  The runtime-boundaries record already scopes its long-term-release rule to self-written Java modules
+  and already allows third-party components their own runtimes, so that part needs no revision. What
+  the map must now fix is a concrete runtime per component, using the measured versions rather than
+  the newest releases.
 - [x] Add the measured Java evidence for both engines to the runtime boundaries record. Done as an
   amendment dated 2026-09-12. The two supported ranges do not overlap, which turns that record's
   permission to run components on their own runtimes into a necessity without changing the principle.
@@ -321,6 +322,11 @@ handles keyed rewrites of historical partitions.
   rerun, every lifecycle invariant asserted on the output. Seven known simplifications are listed in
   the generator README, the largest being that listing start dates are not in the pinned reference
   data and that the business-day calendar ignores holidays.
+  Extended 2026-09-13: exchange holiday calendar with real settlement-cycle lag, per-instrument price
+  series computed on demand, a client and account dimension with close, rename and merge, and the
+  first allocation scenario attached to every order. Peak memory barely moved, so the real cost is
+  string identifiers, not prices. The realised accounts-per-allocation distribution is skewed towards
+  two because clients rarely have enough live accounts; that is left open in the README.
 - [ ] Implement the minimum Bronze to Silver to Gold vertical slice.
 - [ ] Validate one late confirmation and one correction or cancellation end to end.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
