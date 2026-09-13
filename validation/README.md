@@ -28,6 +28,26 @@ FROM edges_k a JOIN edges_k b ON a.nxt = b.id
 
 轮数由表行数的上界决定，**不需要递归 CTE**（Spark 3.5 没有）。
 
+## SQL 版本：`sql/chain_traversal/` 与 `chain_sql.py`，2026-09-13
+
+三份 SQL，**语法限定在 DuckDB 与 Spark SQL 3.5 的交集内**，驱动只替换表名：
+
+| 文件 | 做什么 |
+|---|---|
+| `01_base.sql` | 左连接解析引用，得出 `has_parent`、`dangling_self`、初始 `nxt` 与 `dist` |
+| `02_round.sql` | 倍增一轮，驱动重复执行 `ceil(log2 n) + 1` 次 |
+| `03_verdict.sql` | 按终点属性判定，结论取值与 `chain.py` 相同 |
+
+**每一轮必须物化成表，不能写成一条嵌套 CTE。** 每轮引用上一轮两次，
+优化器一旦内联，计划规模随轮数按 2 的幂增长；100 万行需要 21 轮。
+PySpark 驱动照同一顺序执行，逐轮 checkpoint 或写临时表。
+
+`chain_sql.py` 是 DuckDB 驱动，**执行前检查 `id` 唯一**，与参考实现同一前提。
+`tests/test_chain_sql.py` 在八个具名用例与 200 组随机图上**逐行比对 SQL 与参考实现的结论、根与跳数**。
+
+**规模实测**：100 万条、链长 1 至 4 的 Replace 链，DuckDB 1.5 上 21 轮共约 1.2 秒，
+参考实现约 0.8 秒，**逐行零差异**。
+
 **Cancel 再 New 不是两跳。** 重新下达的 New 不带引用，回溯零跳即终止，见契约 §3A.10 第 2 条的
 2026-09-13 更正。它与被更正报文之间的对应只能靠生成侧对照表核。
 
@@ -35,4 +55,4 @@ FROM edges_k a JOIN edges_k b ON a.nxt = b.id
 python3 -m pytest validation/tests
 ```
 
-测试含 200 组随机图与朴素逐跳回溯的对照。
+测试含 200 组随机图与朴素逐跳回溯的对照；SQL 版测试需要 `duckdb`，未安装时跳过。

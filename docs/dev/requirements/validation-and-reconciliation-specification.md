@@ -546,6 +546,7 @@ Replace 链的末端就是有效版本，**Cancel 链的末端却是撤销件本
 [`validation/`](../../../validation/README.md) 的 `chain.py`。实现形状是**指针倍增**：
 每轮把"父指针"替换为"父的父"，轮数是链长的对数，**不依赖递归 CTE**，
 因此能照搬成 Spark 3.5 SQL 的有限轮自连接。环在固定轮数后仍未到达根即判出，**不会死循环**。
+**SQL 版本同日落地**（`validation/sql/chain_traversal/`），在 DuckDB 上与参考实现逐行比对一致；**每轮必须物化**，嵌套 CTE 会让计划规模随轮数指数增长。
 
 **VA-14 记的是一处 schema 管不到的地方。**
 块层原因码在 FIXML 里是带枚举的，账户层原因码是 `(#PCDATA)`。
