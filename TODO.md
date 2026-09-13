@@ -228,9 +228,10 @@ handles keyed rewrites of historical partitions.
   commit. The REST catalog performs the compare-and-swap server-side through its requirement
   assertions. The candidate set widens, and the leading compatibility question becomes multipart
   upload, which no vendor statement covers for third-party stores.
-- [ ] Decide the configuration gate that forbids filesystem and Hadoop catalogs. The specification's own
+- [x] Decide the configuration gate that forbids filesystem and Hadoop catalogs. The specification's own
   exception is exactly this case, and a single job configured that way silently reintroduces the rename
-  requirement, failing by dropping commits under concurrency rather than by erroring.
+  requirement, failing by dropping commits under concurrency rather than by erroring. Implemented
+  2026-09-13 as rules A1 and A2 of the admission checker.
 - [x] Establish whether the REST catalog backing store can be rebuilt from the metadata files in object
   storage. A registration procedure exists that adopts an existing metadata file into a catalog, so
   per-table recovery is real. Three gaps make it not yet a recovery method. The list of which tables
@@ -251,11 +252,14 @@ handles keyed rewrites of historical partitions.
   which has an upsert but likewise no data-file compaction. Spark with the table format's own
   procedures covers all seven workloads. Spark is therefore the evidence-backed choice, which is the
   distinction the evaluation asked to be written into the decision record.
-- [ ] Implement the write-path admission checks. The plan is written up in the design doc dated
+- [x] Implement the write-path admission checks. The plan is written up in the design doc dated
   2026-09-12; only the implementation is left. Three layers: static configuration rules in CI, a
   property assertion on the create-table path, and an online sweep of actual table properties. The
   first two need nothing that does not already exist. The third reads the catalog and therefore waits
   for the enablement window. Acceptance is stated as seven negative and positive CI cases.
+  First two layers done 2026-09-13: a standard-library checker, CMOP's own Spark and Trino catalog
+  configuration, an empty dual-write list in TOML, fourteen tests and a CI workflow. The online sweep
+  stays with the enablement window.
 - [ ] Schedule the delete-file cleanup that mixed-engine writing implies. If DuckDB writes these
   tables, Spark has to run the position-delete rewrite and the data-file rewrite on a cadence,
   because the engine producing the delete files cannot consume them. The admission-check design makes
