@@ -1025,3 +1025,11 @@ handles keyed rewrites of historical partitions.
 - [x] Make the pending-payment reconciliation genuinely three-way by also generating the projected
   balance. Projected minus interim booked equals the pending amount from the report alone, giving a
   second route that does not touch the internal ledger.
+- [x] Run the same definition sweep over the settlement and corporate-action code sets, which are
+  defined inside each family's message report rather than in the external code sets. Of 47 code
+  values used, 45 were located and two have no definition line to check. Only two definitions carry
+  rule language: the should-level guidance already recorded, and a corporate-action security
+  indicator that shares its letters with a settlement pending reason and changes nothing here.
+- [x] Record the negative result. External code set definitions carry business rules, while inline
+  code set definitions mostly just expand the name. The sweep therefore pays off in the cash segment,
+  and the settlement segment only needs a lookup when a new code value is introduced.
