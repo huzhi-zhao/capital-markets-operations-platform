@@ -11,7 +11,7 @@
 >
 > **执行状态**：**第一层与第二层已于 2026-09-13 实现**，见
 > [`tools/admission-check/`](../../../tools/admission-check/README.md)。验收第 1 至 7 条有对应测试，
-> 第 8 条（第三层）仍等 catalog。
+> 第 8 条（第三层）仍等 catalog。**表清单的静态部分（A6、A7）同日实现**，见下文"表清单"一节。
 
 ## Problem
 
@@ -111,6 +111,33 @@ Spark 3.x 上没有它，所有 Iceberg 存储过程都不存在，
 而那正是[共享主机启用计划](2026-09-12-shared-host-iceberg-enablement.md)里被窗口阻塞的一项。
 **第三层与那个窗口绑定，前两层不绑定。**
 
+### 表清单：顺带写出，CI 核一致，2026-09-13
+
+[技术选型评估](../requirements/technology-selection-evaluation.md) §2.6.1 定了表清单的形态，
+并把"更新方式"指给本文这一层：**建表路径上已有一道必过的检查，再挂一个钩子只会多一处可绕过的地方。**
+
+| 项 | 实现 |
+|---|---|
+| 位置 | `data/reference/iceberg/table-inventory.tsv`，与不可替代的参考数据同处 |
+| 列 | `name`、`location`、`last_known_metadata`、`writer`、`maintenance_period`，制表符分隔，未知记 `-` |
+| 生成 | `check.py --write-inventory`，按 `config/iceberg/tables/*.sql` 与双写表清单推出 |
+| `writer` | 在双写表清单上记 `dual`，否则 `spark` |
+| `last_known_metadata` | **静态层推不出**，由第三层回填；**重新生成时保留已有值** |
+
+| 编号 | 规则 |
+|---|---|
+| A6 | 清单存在，每行五列、表名不重复；**有建表定义而不在清单上、在清单上而没有建表定义、位置或写入方或排期与建表定义不符，一律失败** |
+| A7 | 每份建表定义**必须显式给出 `LOCATION`**，且语句内表名与文件名一致 |
+
+**A7 是本节的实质决定。** 不写 `LOCATION` 时表位置由 catalog 服务端分配，
+**不同 REST 实现的默认规则不同，有的还带随机后缀**，于是位置只存在于 catalog 后端里，
+**而清单存在的全部理由就是 catalog 后端没了的时候还能找到表**。
+代价是建表时要多写一行，且位置与 catalog 的 warehouse 设置之间多了一处可能不一致的地方，
+**后者归第三层 B 系列巡检**。
+
+**"最近一次已知 metadata 文件"这一列目前全是 `-`**，它是 §2.6.1 的实质列，
+但只有连上 catalog 才写得出来。**A6 因此不比对这一列**，否则第三层每回填一次，CI 就失败一次。
+
 ### 分区表的一条已知残缺，不做检查只做记录
 
 DuckDB 在分区表上**忽略 `write.target-file-size-bytes` 与
@@ -143,6 +170,8 @@ Spark 侧的 compaction 兜底，**这一点已经包含在第二层的维护排
 6. 不在清单上的表使用默认属性，CI 通过。
 7. 兄弟项目风格的 `hive_metastore` 配置放在作用域外时，CI 通过。
 8. B1 至 B3 三条在线规则有明确的实现计划与依赖声明，**实现本身可以等窗口**。
+9. **（2026-09-13 增）** 新增建表定义而不更新表清单，CI 失败；删除建表定义而不更新，CI 失败；
+   建表定义不带 `LOCATION`，CI 失败；已回填的 metadata 文件路径在重新生成后保留。
 
 ## Open questions
 

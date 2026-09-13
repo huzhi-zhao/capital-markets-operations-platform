@@ -2,9 +2,9 @@ name: admission-check
 
 on:
   push:
-    paths: ["config/**", "tools/admission-check/**", ".github/workflows/admission-check.yml"]
+    paths: ["config/**", "data/reference/iceberg/**", "tools/admission-check/**", ".github/workflows/admission-check.yml"]
   pull_request:
-    paths: ["config/**", "tools/admission-check/**", ".github/workflows/admission-check.yml"]
+    paths: ["config/**", "data/reference/iceberg/**", "tools/admission-check/**", ".github/workflows/admission-check.yml"]
 
 jobs:
   check:

@@ -239,9 +239,12 @@ handles keyed rewrites of historical partitions.
   current, and picking wrongly rolls silently back to an older snapshot. And the procedure carries an
   explicit warning that registering one metadata file in two catalogs can corrupt the table, so it is
   not idempotent.
-- [ ] Keep a table inventory outside the catalog backing store, at least names and locations. It is
+- [x] Keep a table inventory outside the catalog backing store, at least names and locations. It is
   small enough to sit with the reference data the recovery objectives already treat as irreplaceable,
-  and without it the rebuild path cannot start.
+  and without it the rebuild path cannot start. Done 2026-09-13: the admission checker writes it from
+  the table definitions and CI fails when the two drift. Definitions must now state their location,
+  since a server-assigned one would live only in the catalog the inventory is meant to survive. The
+  last-known metadata file column stays empty until the online layer can fill it.
 - [ ] Time a catalog rebuild drill and check whether the newest-metadata-file rule holds in practice.
   Until measured, catalog recovery stays an assumption.
 - [x] Verify DuckDB and Polars Iceberg write maturity. The question was posed slightly wrong: writing

@@ -277,6 +277,11 @@ metadata log，可以**向后**追溯历史版本；`write.metadata.previous-ver
 "无解"降为"有一个可能过时的答案"**。过时的答案仍然比没有答案好：
 它给出一个起点，从那里沿 metadata log 向后追溯是可行的，**而没有起点时连方向都没有**。
 
+**2026-09-13 已实现静态部分**：清单文件 `data/reference/iceberg/table-inventory.tsv`，
+由准入检查生成并在 CI 核一致（规则 A6、A7），见[写入路径准入检查](../design/2026-09-12-write-path-admission-checks.md)"表清单"一节。
+**为使"表位置"一列静态可得，建表定义被要求显式写 `LOCATION`。**
+metadata 文件列要等 catalog 存在后由第三层回填，目前全为 `-`。
+
 **它不能替代演练。** 清单只回答"有哪些表、从哪开始找"，
 **重建耗时与判定方法是否可靠仍然只能测**，那一项仍绑在部署窗口上。
 
