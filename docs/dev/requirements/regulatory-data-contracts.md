@@ -2368,9 +2368,12 @@ P-1 与 S-1 是同一笔交易的券侧与款侧，**日期必须一致**，这�
 - **`SttlmMtd=CLRG`（通过清算系统）而非 `INDA`/`INGA`/`COVE`。** 后三者描述的是代理行账户
   或补偿路径，CMOP 的加拿大场景是 Lynx 这样的清算系统，`CLRG` 是唯一对得上的。
   四个取值在 schema 内联，见 §4A.3。
-- **第 3 步用 `ACCC` 而不是 `ACSC`。** 两者只差一个字：`ACSC` 是借方账户结算完成，
+- **第 3 步用 `ACCC` 而不是 `ACSC`。** ~~两者只差一个字：`ACSC` 是借方账户结算完成~~
+  **这句取自组级码集的定义，而它注解的是笔级字段，依据错了**，见 §4B.15.4。
+  笔级 `ACSC` 的定义是无侧别的 "Settlement completed"。
   `ACCC` 是**贷方账户**结算完成。**只有后者证明钱到了对方**，而 BQ-1 的对账问的正是这件事。
-  `ACSC` 特意不用，登记在此。
+  **结论不变，另有一条更强的理由**：笔级 `ACSC` 的定义自带 warning，
+  说它不得当作财务信息，见 §4B.15.3。`ACSC` 特意不用，登记在此。
 - **`CtgyPurp` 按方向取 `DVPM` 或 `RVPM`。** 两个码的名字就是 DeliverAgainstPayment 与
   ReceiveAgainstPayment，**与证券段 `SctiesMvmntTp` 的 `DELI`/`RECE` 一一对应**。
   两边由同一个 `Side` 派生，**不各自采样**。
@@ -3369,7 +3372,7 @@ MDR Part 2 §3.1 `camt.053.001.14` 的 Usage 段：
 |---|---|---|---|---|
 | 1 | `pacs.009` | 付方代理行 → 收方代理行 | 与 P-1 第 1 步相同 | 已发起 |
 | 2 | `camt.052` | 账务服务方 → 账户持有方 | `Rpt/Ntry/Sts/Cd=`**`PDNG`**；`BookgDt` 填**预计**入账日；`ValDt` 填**预计**起息日；`TxDtls/Refs/EndToEndId` 回显 | 日内报告已发出，该笔未入账 |
-| 3 | `pacs.002` | 收方代理行 → 付方代理行 | `TxSts=ACSC` | 已结算 |
+| 3 | `pacs.002` | 收方代理行 → 付方代理行 | ~~`TxSts=ACSC`~~ **`TxSts=ACCC`** | 已结算。**已于同日改，见 §4B.15.3** |
 | 4 | `camt.053` | 账务服务方 → 账户持有方 | 同一 `EndToEndId` 出现在一条 `Sts/Cd=`**`BOOK`** 的 `Ntry` 上；`BookgDt` 填**实际**入账日 | 已入账，P-5 结束 |
 
 **第 2 步的 `BookgDt` 与第 4 步的 `BookgDt` 语义不同，这是本场景的全部难点。**
@@ -3448,8 +3451,10 @@ MDR §3.4.2.15.4 `RvslInd` 的 Usage：
 | `camt.054` | **不存在** | 0..1 | 0..* |
 
 **因此 P-5 的余额判据只能挂在第 4 步的 `camt.053` 上**，第 2 步的 `camt.052`
-可以一条余额都不给。**CMOP 仍然给**：日内报告带一条 `ITBD`，用来支撑
-"未入账金额 = 已入账余额与内部账之差"这条判据。
+可以一条余额都不给。**CMOP 仍然给**：日内报告带 `ITBD` 与 `XPCD` 各一条。
+**两条的差就是当日未入账金额**，见 §4B.15.5。
+~~只带 `ITBD`，用来支撑"未入账金额 = 已入账余额与内部账之差"。~~
+**已于同日改**：只带 `ITBD` 时那条判据必须依赖内部账，**只有两方**。
 
 #### P-5 的不变量
 
@@ -3684,6 +3689,130 @@ P-5 里 `BookgDt` 会变，因为在 `PDNG` 下它是预期入账日，在 `BOOK
    它的用途是提示，**而提示类分录在本项目里没有下游**。
 2. **不做起息日早于入账日。** 那是回溯起息，**在加拿大 T+1 下需要一整套
    补息计算才有意义**，而补息不在本阶段范围内。
+
+### 4B.15 按新规矩把用到的码值定义扫了一遍，命中五处
+
+**这一节是 §4B.14.3 那条规矩的第一次执行。** 做法：
+把三份需求文档里出现过的全部四字母码值取出来（**103 个**），
+在外部词表 `2Q2026_externalcodesets_v3` 的 XSD 分发里逐个查定义文字，
+**筛出定义里含 cannot／must／only／always／never 一类措辞的**。
+
+**命中 7 条，其中 5 条要改动既有内容，2 条只是措辞。**
+**命中率不高，但改动率高**：命中的 7 条里有 5 条推翻或加强了既有条目。
+**这说明这条规矩值得对全部标 CMOP 的判据跑一遍，而不是只在遇到问题时查。**
+
+#### 4B.15.1 `CLBD` 的定义写着 P4-1，而且比 P4-1 更严
+
+> Balance of the account at the end of the pre-agreed account reporting period.
+> It is the sum of the opening booked balance at the beginning of the period and
+> **all entries booked** to the account during the pre-agreed account reporting period.
+
+**P4-1 由 CMOP 升级为规范。** 更要紧的是最后四个字：
+**"all entries booked"，不是 all entries。**
+
+**所以 §4B.14.4 里那条限定（只对 `BOOK` 求和）不是给 P4-1 打的补丁，
+是 P4-1 一开始就该有的写法。** P4-1 原来的无条件版本**在读到 `FUTR` 之前就是错的**，
+只是当时数据里没有非 `BOOK` 的分录，**错误因此不可见**。
+
+**这件事的教训与否定式那条同构：** 一条判据长期通过，
+**可能是因为能证伪它的数据从没被生成过**。
+
+#### 4B.15.2 `OPBD` 与 `PRCD` 各自写了一条跨日不变量，本项目一条都没有
+
+> `OPBD`：Book balance of the account at the beginning of the account reporting period.
+> **It always equals the closing book balance from the previous report.**
+
+> `PRCD`：Balance of the account at the previously closed account reporting period.
+> **The opening booked balance for the new period has to be equal to this balance.**
+
+**两条独立地说同一件事：今日期初已入账余额 = 昨日期末已入账余额。**
+
+**本项目至今没有任何一条跨日判据。** §4B.12 到 §4B.14 的余额判据全部在单日之内，
+**而这条是资金段第一条跨报告期的等式**，登记为 P4-2。
+
+**它的价值不在于难**，等式本身很简单，**在于它是唯一一条能发现"整整一天的对账单丢了"
+的判据**。单日自洽的判据对一份缺失的对账单一律沉默：**没有那份报文，就没有人去判它。**
+**跨日等式把缺失变成不等式**，因为下一天的期初对不上上上天的期末。
+
+**`PRCD` 是可选的第三条腿。** 它允许在同一份报文里带上"上期期末"，
+**于是缺一天时，第三天的报文自己就能指出中间断了一天**，不必依赖历史库。
+**CMOP 决定生成 `PRCD`**，理由就是这一条。
+
+#### 4B.15.3 `ACSC` 的定义带两条限制，而本项目在 P-5 里正好踩了一条
+
+`ExternalPaymentTransactionStatus1Code` 的 `ACSC`：
+
+> Settlement completed. Usage: this can be used by a Market Infrastructure reporting to
+> Infrastructure Participant or an Account Servicer to Account Owner to report that the
+> transaction account entry has been completed.
+> **Warning: this status is provided for transaction status reasons, not for financial
+> information. It can only be used after bilateral agreement.**
+
+**两条限制：不得当作财务信息；只能在双边协议之后使用。**
+
+**§4B.12 的 P-5 第 3 步用的正是 `ACSC`，并在"之后状态"一栏写"已结算"。**
+**"已结算"就是财务信息**，这正是 warning 挡的那个用法。
+**改为 `ACCC`**，与 P-1 第 3 步一致（§4B.3）。
+
+**P-1 当初避开 `ACSC` 用的是另一个理由**（借方侧对贷方侧，§4B.3），
+**理由不同而结论相同**。**两个理由都要留着**：
+一个说它证明不了钱到了对方，一个说它根本不该被当作证明。
+
+**"只能在双边协议之后使用"这一句本项目无法判定。** 双边协议不在数据里。
+**处理办法与 `SCEX` 的 should 级选码指引相同：不生成，于是不需要判。**
+
+#### 4B.15.4 同一个 `ACSC`，在两个码集里定义不同，而本项目抄错了那一份
+
+| 码集 | `ACSC` 的定义 |
+|---|---|
+| `ExternalPaymentGroupStatus1Code` | **Settlement on the debtor's account** has been completed |
+| `ExternalPaymentTransactionStatus1Code` | **Settlement completed**（无账户侧限定，另加双边协议限制） |
+
+**§4B.3 写"`ACSC` 是借方账户结算完成"，取的是组级那一份定义，
+而它注解的是笔级字段。** 结论（改用 `ACCC`）碰巧不受影响，**依据是错的**。
+
+**这是 §2C.7 第五句最强的一个例子**：此前三处同字母不同物
+（`BOOK`、`UPAY`、`DSET`）都跨族或跨领域，**这一处在同一个报文族内、
+同一个业务概念上、只差码集名一个词**。
+**"写码集名"这条规矩到这里才真正证明了自己的必要性。**
+
+#### 4B.15.5 `ITBD` 与 `XPCD`：P-5 的三方对账可以少依赖一方
+
+| 码 | 定义要点 |
+|---|---|
+| `ITBD` | 日内计算的余额，**基于当期已入账（booked）的借贷项** |
+| `XPCD` | **由已入账分录与计算时点已知的待处理项组成**，用以预测日终余额 |
+
+**`ITBD` 只含已入账，`XPCD` 含已入账加待处理。**
+**于是 `XPCD` 减 `ITBD` 就是当日未入账金额**，两个数在同一份 `camt.052` 里。
+
+**P-5 原来的写法（§4B.12）是"未入账金额 = 内部账 - 已入账余额"**，
+**它必须依赖内部账才能算出未入账那一侧。**
+**改为同时生成 `XPCD`**，于是同一件事有两条独立算路：
+一条只用报文，一条用报文加内部账。**两条都算、结果必须相等**，
+**这才是真正的三方对账**；原来的写法只有两方。
+
+**`ITBD` 保留。** 它是 `XPCD` 的被减数，**去掉它 `XPCD` 就无法拆开。**
+
+#### 4B.15.6 两处只改措辞的
+
+- `ExternalCorporateActionEventType1Code` 的 `OTHR`：
+  "use **only** when no other event type applies"。**should 级，与 `SCEX` 同类。**
+  处理办法相同：**不生成 `OTHR`**，于是不需要判。
+- `ExternalEntryStatus1Code` 的 `INFO`：定义已在 §4B.14.2 记过，**此处不重复**。
+
+#### 4B.15.7 P-4 补一条不变量
+
+| 编号 | 不变量 | 适用条件 |
+|---|---|---|
+| P4-2 | 今日 `camt.053` 的 `OPBD` = 昨一营业日 `camt.053` 的 `CLBD` | **凡存在前一营业日对账单**。**规范**：`OPBD` 与 `PRCD` 的定义各说一遍 |
+| P4-3 | 若报文带 `PRCD`，其值必须等于 `OPBD` | 仅当 `PRCD` 出现。**规范**：`PRCD` 的定义原话 |
+| P4-4 | 一段连续营业日的 `camt.053` 不得缺日 | **CMOP**。**P4-2 只能发现缺日的后果，发现不了缺日本身** |
+
+**P4-4 与 P4-2 的分工要写清楚。** 缺了一天时，P4-2 在下一天报不等式，
+**但它报的是"余额对不上"，不是"少了一份报文"**。
+**只有 P4-4 能说出后一句**，而它靠的是营业日历，不是报文。
+**两条都要，理由与 §2C.6 里 C4-26 和 C3-3 并存的理由相同。**
 
 ## 4C.10 第十批：资金管理族四张报文的约束整表横向比对，并展开 `camt.060` 请求侧
 

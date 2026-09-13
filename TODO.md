@@ -1003,3 +1003,25 @@ handles keyed rewrites of historical partitions.
 - [ ] Re-check every house-rule check against the external code set definitions, per the rule just
   adopted. Two of the first ones looked at turned out to have specification backing, so the rate is
   not negligible.
+- [x] Run the new rule once across every four-letter code value the requirements docs mention, 103 in
+  all, pulling each definition from the external code sets and keeping those that carry rule
+  language. Seven matched and five of the seven changed existing content, so the hit rate is low
+  and the change rate is high.
+- [x] Upgrade the closing-balance equation to specification and correct it. The closing balance
+  definition sums entries booked, not all entries, so the unconditional form was a misreading from
+  the start and only looked correct because no non-booked entries had ever been generated.
+- [x] Add the first cross-day checks. The opening balance and previously-closed balance definitions
+  each state that today's opening equals yesterday's closing. This is the only balance check that
+  notices a whole statement going missing, because single-day checks are silent about a message that
+  does not exist. Pair it with a calendar-based missing-day check, since the equation reports a
+  balance break rather than a missing message.
+- [x] Replace the settlement-completed status in the pending-payment scenario with the
+  creditor-credited one. The transaction-level definition warns it must not be used as financial
+  information and only after bilateral agreement, and the scenario was using it to mean settled.
+- [x] Correct the gloss on that status code. The earlier text described it as settlement on the
+  debtor's account, which is the group-level code set's definition applied to a transaction-level
+  field. The conclusion stood; the reason was wrong. This is the strongest case yet for always naming
+  the code set, because both definitions live in the same message family on the same concept.
+- [x] Make the pending-payment reconciliation genuinely three-way by also generating the projected
+  balance. Projected minus interim booked equals the pending amount from the report alone, giving a
+  second route that does not touch the internal ledger.
