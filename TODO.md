@@ -6,6 +6,73 @@
 > [developer documentation](docs/dev/README.md); stage definitions and readiness evidence belong in
 > [Project Inception and Readiness](docs/dev/project-inception-and-readiness.md).
 
+<!-- handoff-trial:begin -->
+## Handoff Queue (trial from 2026-09-14)
+
+Tasks parked during a working session for the agent to run alone after the owner leaves. Admission
+and the handoff procedure are in [AGENTS.md](AGENTS.md). Only the owner admits an item. Remove an item
+once it is merged, dropped or rejected, after its outcome is filled in; the weekly review reads the
+outcome lines, not this list's history.
+
+Contract template, one block per item:
+
+```text
+- [ ] <task, one line>
+  inputs:     <frozen commits or files; if any has moved at handoff, the item is skipped as stale>
+  acceptance: <runnable or checkable criteria>
+  ambiguity:  do not guess; record the question, skip that part, continue
+  output:     branch plus draft PR, never merged
+  outcome:    pass | partial | failed | stale; review minutes; rework yes/no;
+              cause: misjudged | unclear contract | beyond ability | input changed
+```
+
+Kill criteria, checked after two to three weeks: owner review plus rework exceeds about 70 percent of
+doing the tasks in session; first-pass rate stays under 50 percent after two weeks of rule changes;
+fewer than two items per handoff; or deciding whether something qualifies costs more than doing it.
+
+Footprint. Everything the trial adds is listed here, so removing it is mechanical: delete both
+`handoff-trial` marked blocks, then undo every other line below. Register a new entry before adding it.
+
+- `AGENTS.md`: the marked block
+- `TODO.md`: this marked block
+- open trial branches and draft PRs: named `handoff/<slug>`, closed and deleted on removal
+
+- [ ] Snapshot the ISO 20022 code sets and the bank transaction code table as one versioned artifact
+  (owner-admitted 2026-09-14; the queue item for TODO "Snapshot the code sets and the bank transaction
+  combination table").
+  inputs:     owner downloads in ~/Downloads, pinned by sha256:
+              ExternalCodeSets_XLSX.zip bca78ecb6be196d1ed53bf492649c62c8acb996edca0812b5c6269669a4c4193
+              ExternalCodeSets_JSON.zip 8af0919378e91f719a8b949b35e23742f93d4ad80039f85b116ff630c35c0406
+              BTC_Codification_30Nov2025.xlsx f73d6d72a5becb9f042f98b939f7c8301d434610e48afc60f1b1ef01cbb7ac6e
+              both zips contain 2Q2026_externalcodesets_v3; validation spec section 2C and regulatory
+              data contracts section 4A.9 at the handoff commit
+  acceptance: a standard-library extraction script under tools/, following tools/sec-extract; a
+              pinned artifact under data/reference/iso20022/ with manifest.json carrying source file
+              names, sha256, version and extraction date; data/reference/README.md updated in the same
+              change; tests that reproduce the recorded figures exactly: 3347 codes, 3314 Registered,
+              33 Obsolete, JSON membership equal to XLSX Registered membership for every enumerated set
+              (140 sets), BTC table 1567 combinations of which 829 in PMNT and SECU; spreadsheet cells
+              read by column coordinate, never by order of appearance
+  ambiguity:  if redistribution terms for the raw files cannot be confirmed from material already in
+              the repo, commit only the script, manifest and derived counts, not the raw files, and
+              record the question; any figure that does not match is reported, never adjusted
+  output:     branch handoff/iso20022-code-set-snapshot plus draft PR, never merged
+  outcome:
+
+- [ ] Cross-check the prior-art list for cases CMOP's design has not considered (the queue item for TODO
+  "skim the prior-art list once").
+  inputs:     docs/dev/requirements/prior-art-and-reference-implementations.md and the requirement,
+              ADR and design docs at the handoff commit
+  acceptance: one findings note in the draft PR description only, no repository file; each finding
+              names the prior-art entry, the CMOP section that lacks the case, and whether the claim
+              rests on the list's own text or on a page actually fetched with its date; entries whose
+              source cannot be reached are listed as not evaluated; the reverse check from section 6
+              step 3 is included; no edit to any frozen document
+  ambiguity:  do not guess what an unreachable project does; mark it not evaluated and continue
+  output:     branch handoff/prior-art-cross-check plus draft PR, never merged
+  outcome:
+<!-- handoff-trial:end -->
+
 ## Completed Foundations
 
 - [x] Establish documentation audiences, indexes, and routing rules.
@@ -158,14 +225,20 @@ handles keyed rewrites of historical partitions.
   research prohibitions stay exactly as they were. What was ever forbidden is alpha, not modeling.
 - [x] Settle what may be predicted, since the facts are synthetic. Only operational targets:
   settlement failure and delay, the four-way difference classification, and exception priority. All
-  three already carry labels the generator injects by design. Predicting price on synthetic
+  three were said to carry labels the generator injects by design; corrected below, the third does not. Predicting price on synthetic
   instruments recovers the generator's own parameters, which is circular and lands inside the quant
   prohibition.
 - [x] Set the success measure for the AI stage. It is pipeline reproducibility and point-in-time
   correctness of the training data, never model accuracy: accuracy on synthetic data can be raised at
   will by changing generation parameters, so it is not evidence.
-- [ ] Choose which of the three prediction targets ship, and write each label's definition: how the
-  generator injects it, and how it reproduces under a fixed seed.
+- [x] Choose which of the three prediction targets ship. Settlement failure and delay, and the four-way
+  difference classification, ship as model targets. Exception priority does not: its label would be
+  the analysts' actual handling order, and the generator produces no analyst behaviour, so the only
+  way to get one is to reverse it out of amount and cut-off, which is deriving a label from downstream
+  results. It stays a rule-based ranking that takes the first target's risk score as an input.
+- [ ] Write the label definition for each of the two shipping targets: its as-of, its prediction
+  horizon, how the generator injects it, and how it reproduces under a fixed seed. The horizon is a
+  judgement about business value, so this needs the owner in session.
 - [x] Add the point-in-time assertion to the validation specification. Section 4.2: every feature row
   carries an explicit as-of, effectiveness time decides admission rather than write time (the two
   diverge exactly on late-data batches, which is most of them here), and the label's observation moment
@@ -188,12 +261,15 @@ handles keyed rewrites of historical partitions.
   purpose: the baseline should not hang on a number nobody has measured. The two that need
   measurement are the batch deadline and the restatement window, and both constrain the
   implementation rather than the objective, so neither can unfreeze the baseline.
-- [ ] Reconcile BO-4 with the now-frozen baseline. The baseline was frozen on the branch that did not
-  carry BO-4, so it names BO-1 primary, BO-3 supporting and BO-2 demoted, and says nothing about the
-  modeling and AI stage. Decide whether BO-4 enters the frozen baseline as a second supporting
-  objective or stays outside it as a delivery-scope commitment, and make the two documents say the
-  same thing either way. Until then business-objectives section 2.3 and the freeze record disagree
-  about how many supporting objectives exist.
+- [x] Reconcile BO-4 with the now-frozen baseline. BO-4 enters as a second supporting objective,
+  recorded 2026-09-14 as business-objectives section 5.2.6. It closes a gap rather than unfreezing
+  anything: nothing frozen moves, so BO-1, BO-3, the representative question, the key flow and all
+  seven success measures stand. The gap is that the delivery goal was always the whole pipeline through
+  modeling and AI, while the freeze argued objectives only as far as Gold, so the pipeline stopped
+  there with no objective carrying the rest. The rejected
+  row for ML as a supporting workload is narrowed rather than reversed: quant-research ML stays
+  rejected. The amendment also states when BO-4 leaves again: if its labels can only be derived from
+  downstream results instead of injected by the generator.
 
 ## Now: Phase 0B-1 Solution Evaluation
 
