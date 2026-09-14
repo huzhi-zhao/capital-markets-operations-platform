@@ -8,11 +8,15 @@
 | 任务 | 先读 |
 |---|---|
 | 往仓库里写文档 | [docs/README.md](docs/README.md)，再看 [docs/dev/README.md](docs/dev/README.md) 的路由顺序 |
-| 写个人笔记，或需要判断某段内容该写哪边 | [ToucanShelf 协作约定](docs/collaboration/toucanshelf.md) |
-| 动 `toucan-notes/` 里的任何文件 | 该目录自己的 `AGENTS.md` 与 `.memogit/skill/SKILL.md`，**动手前必读** |
+| 需要判断某段内容该写哪边 | [ToucanShelf 协作约定](docs/dev/collaboration.md) |
+| 用户明确要求写 `toucan-notes/` | 该目录自己的 `AGENTS.md` 与 `.memogit/skill/SKILL.md`，**动手前必读** |
 
 一句话版本：**`docs/` 放结论与约束，`toucan-notes/` 放素材与过程。**
 笔记不属于本仓库，被 gitignore，不会被发布；仓库文档永远不引用笔记。
+
+**`toucan-notes/` 以人读人写为主：代理可以自由读，只在用户明确指令时才写。**
+路由判断落到笔记一侧时，代理不主动写入，而是在对话里告诉用户这段内容适合进笔记的哪里，
+由用户决定是否写、谁来写。
 
 ## 通用执行约定
 
