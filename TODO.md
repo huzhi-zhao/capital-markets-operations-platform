@@ -289,6 +289,10 @@ handles keyed rewrites of historical partitions.
   cares about are in the shared set. The confirmation's effective settlement date is mandatory while
   the instructed one is optional, so both are now always written and the delay is measurable as their
   difference.
+- [ ] Implement the source-independence assertion the validation specification now requires in section
+  4.1: the counterparty side and the internal-ledger side may share no random stream and may not read
+  each other's output. It is the one constraint whose violation produces no error at all, so it has to
+  run in the generator and abort it, not wait for reconciliation to look green.
 - [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
   here: an instruction that names no security passes the schema, because the security identification
   branch is mandatory while all three of its children are optional.
@@ -303,7 +307,10 @@ handles keyed rewrites of historical partitions.
   element at all, an even weaker guarantee than the settlement leg's. And the end-to-end identifier
   is the only mandatory identifier in the payment identification block, which makes it the single
   anchor that ties the cash leg back to the securities leg.
-- [ ] Obtain the External Code Sets. The cash families declare their status, balance-type and bank
+- [ ] Obtain the External Code Sets. **Do this before the rest of the evidence queue**: it depends on
+  nothing else, and it is the only open item that can still force a scope change. The disposition is
+  already recorded either way, in the source inventory section 6.2, so the answer converts straight
+  into a decision instead of reopening one. The cash families declare their status, balance-type and bank
   transaction code types as plain four-character strings with no enumeration in the schema, unlike
   the securities family where the equivalents are inline. Twenty-three such types in the status
   report alone, thirty-two in the statement. Until the code sets are in hand the cash leg has a
