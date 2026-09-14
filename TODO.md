@@ -192,14 +192,20 @@ handles keyed rewrites of historical partitions.
   research prohibitions stay exactly as they were. What was ever forbidden is alpha, not modeling.
 - [x] Settle what may be predicted, since the facts are synthetic. Only operational targets:
   settlement failure and delay, the four-way difference classification, and exception priority. All
-  three already carry labels the generator injects by design. Predicting price on synthetic
+  three were said to carry labels the generator injects by design; corrected below, the third does not. Predicting price on synthetic
   instruments recovers the generator's own parameters, which is circular and lands inside the quant
   prohibition.
 - [x] Set the success measure for the AI stage. It is pipeline reproducibility and point-in-time
   correctness of the training data, never model accuracy: accuracy on synthetic data can be raised at
   will by changing generation parameters, so it is not evidence.
-- [ ] Choose which of the three prediction targets ship, and write each label's definition: how the
-  generator injects it, and how it reproduces under a fixed seed.
+- [x] Choose which of the three prediction targets ship. Settlement failure and delay, and the four-way
+  difference classification, ship as model targets. Exception priority does not: its label would be
+  the analysts' actual handling order, and the generator produces no analyst behaviour, so the only
+  way to get one is to reverse it out of amount and cut-off, which is deriving a label from downstream
+  results. It stays a rule-based ranking that takes the first target's risk score as an input.
+- [ ] Write the label definition for each of the two shipping targets: its as-of, its prediction
+  horizon, how the generator injects it, and how it reproduces under a fixed seed. The horizon is a
+  judgement about business value, so this needs the owner in session.
 - [x] Add the point-in-time assertion to the validation specification. Section 4.2: every feature row
   carries an explicit as-of, effectiveness time decides admission rather than write time (the two
   diverge exactly on late-data batches, which is most of them here), and the label's observation moment
@@ -222,12 +228,15 @@ handles keyed rewrites of historical partitions.
   purpose: the baseline should not hang on a number nobody has measured. The two that need
   measurement are the batch deadline and the restatement window, and both constrain the
   implementation rather than the objective, so neither can unfreeze the baseline.
-- [ ] Reconcile BO-4 with the now-frozen baseline. The baseline was frozen on the branch that did not
-  carry BO-4, so it names BO-1 primary, BO-3 supporting and BO-2 demoted, and says nothing about the
-  modeling and AI stage. Decide whether BO-4 enters the frozen baseline as a second supporting
-  objective or stays outside it as a delivery-scope commitment, and make the two documents say the
-  same thing either way. Until then business-objectives section 2.3 and the freeze record disagree
-  about how many supporting objectives exist.
+- [x] Reconcile BO-4 with the now-frozen baseline. BO-4 enters as a second supporting objective,
+  recorded 2026-09-14 as business-objectives section 5.2.6. It closes a gap rather than unfreezing
+  anything: nothing frozen moves, so BO-1, BO-3, the representative question, the key flow and all
+  seven success measures stand. The gap is that the delivery goal was always the whole pipeline through
+  modeling and AI, while the freeze argued objectives only as far as Gold, so the pipeline stopped
+  there with no objective carrying the rest. The rejected
+  row for ML as a supporting workload is narrowed rather than reversed: quant-research ML stays
+  rejected. The amendment also states when BO-4 leaves again: if its labels can only be derived from
+  downstream results instead of injected by the generator.
 
 ## Now: Phase 0B-1 Solution Evaluation
 
