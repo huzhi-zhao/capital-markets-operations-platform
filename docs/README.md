@@ -5,9 +5,8 @@
 | 目录 | 受众 | 语言 | 内容 |
 |---|---|---|---|
 | [guide/](guide/README.md) | 外部读者、使用者和运维者 | English | 平台是什么、如何运行、如何排障，以及当前有效的操作方法 |
-| [dev/](dev/README.md) | 开发者与架构评审者 | 中文为主，文件名使用 English kebab-case | 需求、架构、决策、变更设计、上线记录与事故复盘 |
+| [dev/](dev/README.md) | 开发者与架构评审者 | 中文为主，文件名使用 English kebab-case | 需求、架构、决策、变更设计、上线记录、事故复盘与协作约定 |
 | [images/](images/README.md) | 所有文档作者 | 与引用它的文档一致 | 架构图、数据流图和其他文档资源 |
-| [collaboration/](collaboration/README.md) | 代理与协作者 | 中文 | 与外部系统协作的约定：边界、通道与操作规矩 |
 
 仓库根目录的 [README.md](../README.md) 是项目入口；本页负责把读者路由到正确的
 文档体系。`guide/` 描述当前平台怎样使用，`dev/` 解释为什么这样设计，两者不混写。
@@ -32,7 +31,7 @@
 - **判断不清时先不写。**
 
 完整的边界表、内容路由规则和 memogit 操作规矩见
-[ToucanShelf 协作约定](collaboration/toucanshelf.md)。**本页不维护笔记的目录清单**，
+[ToucanShelf 协作约定](dev/collaboration.md)。**本页不维护笔记的目录清单**，
 那由笔记自己的 README 负责。
 
 ## 索引与引用规则

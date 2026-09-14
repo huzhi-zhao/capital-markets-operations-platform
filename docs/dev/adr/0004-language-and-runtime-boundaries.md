@@ -1,6 +1,6 @@
 # ADR 0004: Language and Runtime Boundaries
 
-> **Status**: Proposed · **Date**: 2026-09-07
+> **Status**: Proposed · **Date**: 2026-09-07 · **Amended**: 2026-09-12
 >
 > **Related architecture**: [Platform architecture](../platform-architecture.md)
 >
@@ -153,6 +153,91 @@ AI 库不进入语言边界的决定或组件清单。现代 Java 的主要证�
    属于实现标准或 design；只有会改变本文长期边界的部分才回写 ADR。
 5. 本 ADR 只有在上述映射与运行时证据足以指导第一条纵向链路时才能转为 `Accepted`。
 
+## Amendment 2026-09-12: 两个数据引擎的实测运行时证据
+
+**本修订只增加证据和一条风险，不改变第 2 节的任何原则。**
+2026-09-07 的证据快照写的是 Flink 与 PySpark 的通用要求；本次补的是本项目**实际要用的
+那两个引擎的具体版本**，出处见
+[在共享主机上启用 Iceberg](../design/2026-09-12-shared-host-iceberg-enablement.md)
+的"已核实的版本事实"。
+
+| 引擎 | Java 要求 | 出处 |
+|---|---|---|
+| Spark 3.5.1 | 支持 Java **8 / 11 / 17**，明确支持 ARM64 | Spark 3.5.1 Overview |
+| Trino 451 | 要求 Java **22，且只要 22**。Java 8、11、17、21 均不工作，Java 23 未测试 | Trino 451 Deploying |
+
+[ADR 0003 的 2026-09-09 修订](0003-hybrid-deployment-topology-and-component-placement.md)
+另已记录共享主机上的 Spark 实际跑在 **JDK 11** 上。
+
+### 这对第 2 节第 4 条意味着什么
+
+**第 4 条从"允许"变成"必需"。** 它原本写的是"不强求所有第三方数据组件运行在与自研 Java
+服务相同的 JDK"，是一条许可。两个引擎的支持区间不相交——上限 17 对下限 22——
+**所以现在不存在任何一个 JDK 能同时服务两端，分开运行不再是可选项。**
+
+**这不推翻该条，也不推翻第 1 条。** 第 1 条约束的是正式 Java 模块，即自研代码，
+JDK 21 与 25 仍是那一侧的候选。Trino 是第三方组件，不在第 1 条辖内。
+
+### 补一条 Negative and risks 里缺的代价
+
+**Trino 451 要求的 Java 22 不是 LTS。** 原文只写了"独立 JDK 运行时可能增加容器镜像和
+漏洞修复工作"，那是把独立运行时当成一件多花力气的事。实际情况更硬：
+**其中一个运行时可能根本没有 LTS 可选**，只能在非 LTS 上长期运行，
+或者被迫跟随该组件的版本节奏升级。
+
+两条可行的应对，**均未决定**：
+
+1. **接受非 LTS，把该组件的升级节奏纳入运维计划。** 前提是它跑在容器里、
+   不承载自研代码、故障面限于查询。
+2. **换一个 Java 要求更宽的查询引擎版本或产品。** 代价是重做选型，
+   且当前没有证据说明存在更优解。
+
+**这个选择不必现在做。** 它属于[技术选型评估](../requirements/technology-selection-evaluation.md)
+的候选重排序，而那一项本身还没做。此处只保证代价被记下来，
+**不让它在实现阶段以意外的形式出现**。
+
+### 对 Open questions 的影响
+
+原有的"JDK 21 与 25 在最终 Spring Boot、Spark/Flink 和容器组合中的兼容性结果"仍然开放，
+但**范围收窄了**：Spark 那一侧的上限已确认是 17，因此 21 与 25 的评估只对自研 Java 模块
+和 Spring Boot 有意义，**不能顺带假设 Spark 也能跟上**。
+
+## Amendment 2026-09-13: 组件到语言的映射，Proposed
+
+**本修订补第 3 节第 2 条要求的"候选组件到语言映射"。** 前提已成立：主 BO、代表性场景
+（S-1 至 S-9、A、C、P 系列）、source class 与 workload envelope 均已成文，
+计算分工已由 [ADR 0005](0005-compute-engine-division-of-labour.md) 定下三条约束。
+**本修订仍是 Proposed**，精确版本与模板最低能力按第 3 节第 4 条等 Phase 0B probe。
+
+### 映射
+
+| 组件 | 语言 | 理由 | 被否的替代 |
+|---|---|---|---|
+| 合成数据生成器 | **Python** | 第 1 节第 4 条的候选职责原文；分布调参与种子控制在 NumPy／Polars 生态最直接；产出是 Parquet 与报文文件，**不经过 Iceberg**（ADR 0005 本 ADR 不决定的事第三条） | Java：分布库薄，调参回路慢 |
+| 报文摄取与结构校验（ISO 20022 XML、FIX tag=value） | **Java** | **这是 Java 的业务关键职责候选**，满足第 1 节第 2 条且不造假需求：XSD 校验、按报文类型分路径取关联键（验证规范 §2A.4）、FIX 会话无关的解析，JAXB／StAX 与 QuickFIX/J 是金融机构的现行做法；**失败即拒收，属于 Bronze 准入门** | Python：`lxml` 可做 XSD，但 26 张报文、多个版本并存时的类型化绑定与性能不如 JVM 侧成熟 |
+| Bronze → Silver → Gold 转换 | **Spark SQL**，driver 用 **PySpark** | 第 1 节第 5、6 条；转换以 SQL 表达，driver 只做编排与参数，**没有需要 typed Dataset 的任务**：所有校验按表比较，不在行对象上写业务逻辑 | Java driver：只为 typed Dataset 付出构建与镜像成本，而本项目用不上 |
+| V1／V2／C 系列业务校验与对账 | **SQL**，结果表由 PySpark 作业写 | 验证规范 §5 要求门禁结果结构化可查询；五种检查形态（§1A.1）全部可用 SQL 表达 | 专用 DQ 框架：仍待评估，不阻塞映射 |
+| 写入路径准入检查第一、二层 | **Python** | 纯键值匹配与交叉引用，进 CI，不连服务（设计文 Constraints 第 4 条） | Shell：交叉引用与失败报告格式难维护 |
+| 异常解释表的对外读取接口 | **Java**（候选，未定） | [ADR 0007](0007-external-interactive-scope-reads-gold-only.md) 已限定只读 Gold；是否需要 API 仍取决于 Open questions 第 1 条 | — |
+| 编排 DAG | **Python** | Airflow 原生 | — |
+| 生成器与准入检查的测试 | **pytest** | 与被测语言一致 | — |
+
+### 由此解除与仍然阻塞的
+
+- **解除**：生成器原型与准入检查脚本可以开工，第 3 节第 1 条对这两者不再阻塞。
+  **二者都不是模板**，是具体组件，模板仍按第 3 节第 4 条等 probe。
+- **仍阻塞**：Java 摄取模块的 JDK（21 或 25）、构建工具与框架主版本。
+  **它不依赖 Spark 的 JDK 上限**：摄取模块写 Bronze 文件，不嵌在 Spark 进程里。
+- **Python 版本暂定 3.12**：生成器依赖的 Polars 与 PyArrow 均有该版本的正式 wheel；
+  锁定工具待定，候选 `uv`。
+
+### 对 Open questions 的影响
+
+- "Spark driver 使用 Python 还是 Java"：**本修订给出 PySpark 的 Proposed 答案**，
+  推翻条件是出现一个必须在行对象上表达业务规则的转换。
+- "主 BO 最终需要哪一种可独立部署的业务服务"：**摄取与结构校验是第一个候选**，
+  它有真实的拒收语义与审计要求，不是 health check。
+
 ## Consequences
 
 ### Positive
@@ -169,7 +254,8 @@ AI 库不进入语言边界的决定或组件清单。现代 Java 的主要证�
 - 多语言仓库增加依赖升级、CI、镜像、测试和本地环境维护成本。
 - Java 关键职责尚未确定；若 BO 不需要 API、事件入口或实时处理，需要找到不造假需求的
   实质角色，或重新审视作品集约束。
-- 独立 JDK 运行时可能增加容器镜像和漏洞修复工作。
+- 独立 JDK 运行时可能增加容器镜像和漏洞修复工作。**且不止于工作量**：见 2026-09-12 修订，
+  查询引擎那一侧可能根本没有 LTS 可选。
 - Python 脚本容易绕过工程门禁，需要与生产 Java 模块采用同等清晰的输入输出契约。
 - 过度强调 Java 可能把 CMOP 从数据工程项目变成微服务项目，必须由 ADR 0001 的项目边界
   持续约束。
@@ -179,7 +265,9 @@ AI 库不进入语言边界的决定或组件清单。现代 Java 的主要证�
 - 主 BO 最终需要哪一种可独立部署的业务服务或事件边界。
 - 是否需要持久 broker 和流处理；若不需要，Java 的关键路径是否以审计/对账 API 为主。
 - Spark driver 使用 Python 还是 Java，以及是否存在值得使用 typed Dataset 的任务。
-- JDK 21 与 25 在最终 Spring Boot、Spark/Flink 和容器组合中的兼容性结果。
+- JDK 21 与 25 在最终 Spring Boot 和容器组合中的兼容性结果。**Spark 那一侧已收口**：
+  3.5.1 的上限是 17，见 2026-09-12 修订。
+- 查询引擎停在非 LTS 上是否可接受，还是要为此重做该组件的选型。见 2026-09-12 修订。
 - OpenJDK distribution、构建工具和依赖锁定策略。
 - Python 环境、包管理和生产脚本门禁。
 - 模块间数据契约采用 Avro、Protobuf、JSON Schema、OpenAPI 还是组合方案。

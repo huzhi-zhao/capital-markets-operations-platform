@@ -1,0 +1,4 @@
+# CMOP Iceberg 表清单，与 catalog 后端分离保存。技术选型评估 §2.6.1。
+# 由 tools/admission-check/check.py --write-inventory 按 config/iceberg/tables/ 生成；CI 检查一致性（A6）。
+# last_known_metadata 由在线层回填，重新生成时保留；未知记为 -。
+#name	location	last_known_metadata	writer	maintenance_period

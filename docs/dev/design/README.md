@@ -33,4 +33,8 @@ Open questions，并在顶部链接相关 requirement 与 ADR。
 
 ## 当前索引
 
-目前没有 design doc。
+| Design | 状态 | 内容 |
+|---|---|---|
+| [2026-09-12 在共享主机上启用 Iceberg](2026-09-12-shared-host-iceberg-enablement.md) | Draft，未执行 | Spark 运行时、独立 Trino catalog、运行版本取证与 SSH 寻址的分阶段上线计划 |
+| [2026-09-12 写入路径准入检查](2026-09-12-write-path-admission-checks.md) | Draft，未实现 | 禁 filesystem/Hadoop catalog 与双写表的 merge-on-read 属性，做成 CI 与巡检的硬失败 |
+| [2026-09-12 批量支付报文的 Bronze 落地](2026-09-12-bronze-landing-for-batch-payment-messages.md) | Draft，未实现 | 五张表按重复结构分层、技术主键保留重投、按摄取批次分区 |
