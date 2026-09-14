@@ -1,0 +1,70 @@
+{
+  "extracted_on": "2026-09-14",
+  "extractor": "tools/iso20022-codesets/extract.py",
+  "sources": {
+    "xlsx_zip": {
+      "file": "ExternalCodeSets_XLSX.zip",
+      "sha256": "bca78ecb6be196d1ed53bf492649c62c8acb996edca0812b5c6269669a4c4193"
+    },
+    "json_zip": {
+      "file": "ExternalCodeSets_JSON.zip",
+      "sha256": "8af0919378e91f719a8b949b35e23742f93d4ad80039f85b116ff630c35c0406"
+    },
+    "btc_xlsx": {
+      "file": "BTC_Codification_30Nov2025.xlsx",
+      "sha256": "f73d6d72a5becb9f042f98b939f7c8301d434610e48afc60f1b1ef01cbb7ac6e"
+    }
+  },
+  "external_code_sets": {
+    "xlsx_member": "2Q2026_externalcodesets_v3.xlsx",
+    "json_member": "2Q2026_externalcodesets_v3.json",
+    "publication_date_in_workbook": "28 Aug 2026 - 2Q2026",
+    "codes_total": 3347,
+    "code_sets_in_xlsx": 141,
+    "codes_by_status": {
+      "Obsolete": 33,
+      "Registered": 3314
+    },
+    "obsolete_by_code_set": {
+      "ExternalCashClearingSystem1Code": 1,
+      "ExternalClearingSystemIdentification1Code": 4,
+      "ExternalLocalInstrument1Code": 25,
+      "ExternalUndertakingDocumentType2Code": 3
+    },
+    "json_enumerated_code_sets": 140,
+    "json_codes_total": 3314,
+    "json_sets_differing_from_xlsx_registered": []
+  },
+  "bank_transaction_codes": {
+    "combinations_total": 1567,
+    "distinct_combinations": 1564,
+    "combinations_by_status": {
+      "Corrected": 35,
+      "New": 1528,
+      "Updated": 4
+    },
+    "combinations_by_domain": {
+      "ACMT": 54,
+      "CAMT": 59,
+      "CMDT": 78,
+      "DERV": 135,
+      "FORX": 91,
+      "LDAS": 136,
+      "PMET": 78,
+      "PMNT": 433,
+      "SECU": 396,
+      "TRAD": 106,
+      "XTND": 1
+    },
+    "cmop_domains": [
+      "PMNT",
+      "SECU"
+    ],
+    "cmop_domain_combinations": 829,
+    "cmop_combinations_present": {
+      "PMNT/ICDT/FICT": true,
+      "PMNT/RCDT/FICT": true,
+      "SECU/SETT/TRAD": true
+    }
+  }
+}

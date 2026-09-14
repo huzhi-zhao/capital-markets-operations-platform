@@ -6,6 +6,7 @@
 | 子目录 | 内容 | 来源 | 抽取工具 |
 |---|---|---|---|
 | `sec/` | 公司行为事件：拆股与合股、分红、退市、代码全集、更名 | 美国证监会结构化接口 | [tools/sec-extract](../../tools/sec-extract/README.md) |
+| `iso20022/` | 仅 manifest：External Code Sets 与银行交易码组合表的计数和源文件哈希，**原始文件不提交**，条款未确认 | ISO 20022 注册机构 | [tools/iso20022-codesets](../../tools/iso20022-codesets/README.md) |
 | `iceberg/` | Iceberg 表清单：表名、位置、最近已知 metadata 文件，**catalog 后端丢失时的重建起点** | 本项目建表定义 | [tools/admission-check](../../tools/admission-check/README.md) |
 
 ## 规矩
