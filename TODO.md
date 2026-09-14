@@ -6,6 +6,40 @@
 > [developer documentation](docs/dev/README.md); stage definitions and readiness evidence belong in
 > [Project Inception and Readiness](docs/dev/project-inception-and-readiness.md).
 
+<!-- handoff-trial:begin -->
+## Handoff Queue (trial from 2026-09-14)
+
+Tasks parked during a working session for the agent to run alone after the owner leaves. Admission
+and the handoff procedure are in [AGENTS.md](AGENTS.md). Only the owner admits an item. Remove an item
+once it is merged, dropped or rejected, after its outcome is filled in; the weekly review reads the
+outcome lines, not this list's history.
+
+Contract template, one block per item:
+
+```text
+- [ ] <task, one line>
+  inputs:     <frozen commits or files; if any has moved at handoff, the item is skipped as stale>
+  acceptance: <runnable or checkable criteria>
+  ambiguity:  do not guess; record the question, skip that part, continue
+  output:     branch plus draft PR, never merged
+  outcome:    pass | partial | failed | stale; review minutes; rework yes/no;
+              cause: misjudged | unclear contract | beyond ability | input changed
+```
+
+Kill criteria, checked after two to three weeks: owner review plus rework exceeds about 70 percent of
+doing the tasks in session; first-pass rate stays under 50 percent after two weeks of rule changes;
+fewer than two items per handoff; or deciding whether something qualifies costs more than doing it.
+
+Footprint. Everything the trial adds is listed here, so removing it is mechanical: delete both
+`handoff-trial` marked blocks, then undo every other line below. Register a new entry before adding it.
+
+- `AGENTS.md`: the marked block
+- `TODO.md`: this marked block
+- open trial branches and draft PRs: named `handoff/<slug>`, closed and deleted on removal
+
+No items yet.
+<!-- handoff-trial:end -->
+
 ## Completed Foundations
 
 - [x] Establish documentation audiences, indexes, and routing rules.
