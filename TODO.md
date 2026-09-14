@@ -124,9 +124,12 @@ handles keyed rewrites of historical partitions.
 - [x] Read the specification's own example flows and rejection scenarios for allocation, Volume 5
   pages 33 to 38. This reversed A-1's step count: every one of the six flows lists the interim
   received acknowledgement as its own row, so A-1 goes from two steps to three.
-- [ ] Add a confirmation-layer assertion to the validation spec: at least one confirmation per allocated
-  account, exactly one within C-1's narrow conditions. The applicability condition has to ship with it,
-  or it starts producing false alarms as soon as C-2 lands.
+- [x] Add a confirmation-layer assertion to the validation spec: at least one confirmation per allocated
+  account, exactly one within C-1's narrow conditions. Written as section 2.5, a coverage assertion
+  rather than a fifth reconciliation pair, since what breaks without it is the amount chain into
+  settlement. Coverage holds unconditionally; uniqueness ships with its expiry registered, because the
+  moment C-2 allows partial or corrective confirmations a second confirmation on one account becomes
+  legal and the assertion turns into a false-alarm source.
 - [x] Settle the five L-1 distribution parameters. Adopted, with the scalars marked openly as arbitrary:
   what is justified is the constraints and the shape of each distribution, not the specific numbers,
   which are placeholders to be revisited once Phase 1 measures row width. Order size and fill count
@@ -162,9 +165,14 @@ handles keyed rewrites of historical partitions.
   will by changing generation parameters, so it is not evidence.
 - [ ] Choose which of the three prediction targets ship, and write each label's definition: how the
   generator injects it, and how it reproduces under a fixed seed.
-- [ ] Add the point-in-time assertion to the validation specification: no feature may carry
-  information from after the prediction moment, and label leakage must fail the gate rather than
-  surface as a suspiciously good score.
+- [x] Add the point-in-time assertion to the validation specification. Section 4.2: every feature row
+  carries an explicit as-of, effectiveness time decides admission rather than write time (the two
+  diverge exactly on late-data batches, which is most of them here), and the label's observation moment
+  must sit strictly after the as-of with the gap declared as the prediction horizon. The interaction
+  with restatement is the part that actually breaks: rebuilding features after a restatement must read
+  the version as of that moment, never the latest, or the restatement leaks backwards and shows up only
+  as a better score. Failure is fail, not a warning, and the assertion itself gets a known leaking
+  feature injected to prove it fires.
 - [ ] Decide where the feature tables, training and batch inference live, and on which node. Deferred
   to Phase 1 measurement on purpose: it is a performance question, not a design one, and the BO holds
   either way.
@@ -296,8 +304,15 @@ handles keyed rewrites of historical partitions.
 - [ ] Write a business validation layer for the settlement leg. Schema validity proves almost nothing
   here: an instruction that names no security passes the schema, because the security identification
   branch is mandatory while all three of its children are optional.
-- [ ] Decide where the account servicer and account owner roles live in the generation spec. S-1
-  introduces both and the two-level client and account structure has neither.
+- [x] Decide where the account servicer and account owner roles live in the generation spec. They form
+  an orthogonal custody dimension, not a third level under client and account: the account owner is the
+  firm itself, a constant, and the account servicer is a small-cardinality dimension already present as
+  a counterparty. The servicer hangs off the account rather than the trade, because R3 groups by
+  servicer and hanging it on the trade would split one account's positions across servicers. Accounts of
+  one client may sit at different servicers, which is what makes R3 grouping and the resulting basis
+  differences real; simplifying is one switch, not a rewrite. Safekeeping account identification is
+  unchanged, so no frozen S-1 value moves. Custody migration stays out of scope and is registered next
+  to the account-merge problem it resembles.
 
 - [x] Verify the ISO 20022 cash families from their schemas. Twelve messages across the two cash
   message sets, identifiers, roots and cardinality all taken from the registration authority's own
