@@ -57,6 +57,8 @@ CMOP 在相当长一段时间内会以 BO、选型和架构讨论为主。ADR �
 | [0005](0005-compute-engine-division-of-labour.md) | 谁跑回填、compaction 与历史重述，谁跑日增量改写，以及维护责任归谁 | Proposed | 2026-09-12 |
 | [0006](0006-fix-single-version-baseline.md) | CMOP 以哪一个 FIX 版本为准，是否允许混用，以及何时才可以引入第二个版本 | Proposed | 2026-09-12 |
 | [0007](0007-external-interactive-scope-reads-gold-only.md) | 对外交互路径能读到哪一层，差异的解释链在什么时候算 | Proposed | 2026-09-12 |
+| [0008](0008-agent-execution-authority-and-staged-grants.md) | 没有测试环境时，代理可以在真机上执行哪几类动作，以什么身份执行，何时收回 | Proposed | 2026-09-14 |
+| [0009](0009-probes-as-declared-steps-under-tools.md) | 探测的定义放在哪、以什么形态执行，哪些进仓库、哪些不进 | Proposed | 2026-09-14 |
 
 0005 是第一篇由选型证据直接催生的 ADR，**它只固定不依赖性能测量的那部分结论**；
 常驻还是按需、交互查询用什么，都留在
