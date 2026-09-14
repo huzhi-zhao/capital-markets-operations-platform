@@ -37,7 +37,40 @@ Footprint. Everything the trial adds is listed here, so removing it is mechanica
 - `TODO.md`: this marked block
 - open trial branches and draft PRs: named `handoff/<slug>`, closed and deleted on removal
 
-No items yet.
+- [ ] Snapshot the ISO 20022 code sets and the bank transaction code table as one versioned artifact
+  (owner-admitted 2026-09-14; the queue item for TODO "Snapshot the code sets and the bank transaction
+  combination table").
+  inputs:     owner downloads in ~/Downloads, pinned by sha256:
+              ExternalCodeSets_XLSX.zip bca78ecb6be196d1ed53bf492649c62c8acb996edca0812b5c6269669a4c4193
+              ExternalCodeSets_JSON.zip 8af0919378e91f719a8b949b35e23742f93d4ad80039f85b116ff630c35c0406
+              BTC_Codification_30Nov2025.xlsx f73d6d72a5becb9f042f98b939f7c8301d434610e48afc60f1b1ef01cbb7ac6e
+              both zips contain 2Q2026_externalcodesets_v3; validation spec section 2C and regulatory
+              data contracts section 4A.9 at the handoff commit
+  acceptance: a standard-library extraction script under tools/, following tools/sec-extract; a
+              pinned artifact under data/reference/iso20022/ with manifest.json carrying source file
+              names, sha256, version and extraction date; data/reference/README.md updated in the same
+              change; tests that reproduce the recorded figures exactly: 3347 codes, 3314 Registered,
+              33 Obsolete, JSON membership equal to XLSX Registered membership for every enumerated set
+              (140 sets), BTC table 1567 combinations of which 829 in PMNT and SECU; spreadsheet cells
+              read by column coordinate, never by order of appearance
+  ambiguity:  if redistribution terms for the raw files cannot be confirmed from material already in
+              the repo, commit only the script, manifest and derived counts, not the raw files, and
+              record the question; any figure that does not match is reported, never adjusted
+  output:     branch handoff/iso20022-code-set-snapshot plus draft PR, never merged
+  outcome:
+
+- [ ] Cross-check the prior-art list for cases CMOP's design has not considered (the queue item for TODO
+  "skim the prior-art list once").
+  inputs:     docs/dev/requirements/prior-art-and-reference-implementations.md and the requirement,
+              ADR and design docs at the handoff commit
+  acceptance: one findings note in the draft PR description only, no repository file; each finding
+              names the prior-art entry, the CMOP section that lacks the case, and whether the claim
+              rests on the list's own text or on a page actually fetched with its date; entries whose
+              source cannot be reached are listed as not evaluated; the reverse check from section 6
+              step 3 is included; no edit to any frozen document
+  ambiguity:  do not guess what an unreachable project does; mark it not evaluated and continue
+  output:     branch handoff/prior-art-cross-check plus draft PR, never merged
+  outcome:
 <!-- handoff-trial:end -->
 
 ## Completed Foundations
