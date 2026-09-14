@@ -142,6 +142,35 @@ handles keyed rewrites of historical partitions.
   batch, which is the hardest case to reconcile.
 - [ ] Choose the anchor window width and the share of name changes that anchor rather than falling back
   to uniform sampling. These set the difficulty of the test, not its correctness.
+- [x] Record that the deliverable is the whole pipeline, not the Gold tables: ingestion and backfill,
+  cleaning and quality, layered storage, features, training, batch inference, then visualization and
+  natural-language interaction. Nothing carried that stage before, and the project's own rule is that a
+  technology component cannot stand in for a BO, so a model with no one asking for it would be an
+  ornament. Added BO-4 as a second supporting BO to carry it, alongside BO-3. The primary ranking is
+  unchanged.
+- [x] Fix the boundary this exposed. ADR 0001 capped ML at a supporting Silver workload and the BO
+  document still listed it as an open question, both of which contradict the delivery goal. Modeling,
+  prediction and AI applications are now in scope; the alpha, timing, automated-trading and quant-
+  research prohibitions stay exactly as they were. What was ever forbidden is alpha, not modeling.
+- [x] Settle what may be predicted, since the facts are synthetic. Only operational targets:
+  settlement failure and delay, the four-way difference classification, and exception priority. All
+  three already carry labels the generator injects by design. Predicting price on synthetic
+  instruments recovers the generator's own parameters, which is circular and lands inside the quant
+  prohibition.
+- [x] Set the success measure for the AI stage. It is pipeline reproducibility and point-in-time
+  correctness of the training data, never model accuracy: accuracy on synthetic data can be raised at
+  will by changing generation parameters, so it is not evidence.
+- [ ] Choose which of the three prediction targets ship, and write each label's definition: how the
+  generator injects it, and how it reproduces under a fixed seed.
+- [ ] Add the point-in-time assertion to the validation specification: no feature may carry
+  information from after the prediction moment, and label leakage must fail the gate rather than
+  surface as a suspiciously good score.
+- [ ] Decide where the feature tables, training and batch inference live, and on which node. Deferred
+  to Phase 1 measurement on purpose: it is a performance question, not a design one, and the BO holds
+  either way.
+- [ ] Measure feature-table size and build wall clock, and judge whether the AI stage fits inside the
+  nightly batch window.
+
 - [ ] Freeze the BO baseline. Blocked only on the FIX and ISO 20022 field evidence; the hypothesis itself
   is confirmed and needs no revision.
 - [ ] Finalize the BO baseline: name the primary and supporting BOs, record rejected alternatives, and
