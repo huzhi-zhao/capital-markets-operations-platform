@@ -241,6 +241,8 @@ handles keyed rewrites of historical partitions.
   evidence-backed choice rather than the default one.
 - [ ] Produce the evaluation matrix and risk list, and open Proposed ADRs for the high and medium
   reversal-cost decisions only.
+- [ ] Before that review, skim the prior-art list once and check it for cases CMOP's design has not
+  considered. Findings become backlog items, not direct edits to a frozen conclusion.
 ## Next: Phase 0B-2 and 0B-3
 
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
