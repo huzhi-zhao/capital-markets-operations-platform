@@ -2,6 +2,9 @@
 
 > **Status**: Proposed · **Date**: 2026-09-02
 >
+> **2026-09-14 修订**: 第 5 条边界改写。建模、预测与 AI 应用纳入 in scope，alpha、择时与
+> 自动交易的禁令保留。ADR 仍在 `Proposed`。
+>
 > **Related requirements**: [Project overview](../requirements/project-overview.md),
 > [Business objectives](../requirements/business-objectives.md)
 
@@ -46,8 +49,11 @@ Ghostfolio-AI 扩展之间反复摇摆，数据粒度与验收标准也无法收
    真实检验，而不是追求最大字节数。
 4. 私有事实使用可复现的参数化生成器合成；证券、公司行为、行情、SEC XBRL、汇率和
    利率等优先采用真实公开数据。
-5. 项目不包含 alpha、自动交易或 AI 量化研究；ML 最多作为 Silver 宽扫描与特征工程的
-   支持性工作负载。
+5. 项目不包含 alpha、择时、自动交易或 AI 量化研究。建模、预测与 AI 应用本身属于 in scope
+   并构成交付目标的一段，但预测对象限定为运营过程——结算失败与延迟、差异原因归类、异常
+   优先级——不得是价格、收益或方向；成功标准是管道可复现与训练数据的时点正确性，不是模型
+   精度。落在哪一层由 Phase 1 的实测决定，不在本 ADR 固定。见
+   [业务目标](../requirements/business-objectives.md) §2.3。
 6. 农业方向不保留为并行方案。
 
 本决定在 `Proposed` 阶段仍可随着主 BO 收敛而修改。
@@ -66,6 +72,8 @@ Ghostfolio-AI 扩展之间反复摇摆，数据粒度与验收标准也无法收
 - 高保真生成器需要在编码前投入较长时间制定分布、不变量和异常注入规则。
 - 真实交易生产数据不可用于校准，统计合理性必须通过公开资料和显式假设说明。
 - 系统容易被技术卖点带偏，因此 BO 必须先于 Gold schema 和展示层冻结。
+- AI 段有被拖成调参竞赛的风险，也有被降格为演示挂件的风险。两者都由同一条约束挡住：
+  它必须服务 BO-4 的运营问题，并以管道可复现而非精度作为验收。
 
 ## Open questions
 

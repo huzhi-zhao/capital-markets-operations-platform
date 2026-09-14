@@ -180,6 +180,39 @@ handles keyed rewrites of historical partitions.
   batch, which is the hardest case to reconcile.
 - [x] Choose the anchor window width and the share of name changes that anchor rather than falling back
   to uniform sampling. These set the difficulty of the test, not its correctness.
+- [x] Record that the deliverable is the whole pipeline, not the Gold tables: ingestion and backfill,
+  cleaning and quality, layered storage, features, training, batch inference, then visualization and
+  natural-language interaction. Nothing carried that stage before, and the project's own rule is that a
+  technology component cannot stand in for a BO, so a model with no one asking for it would be an
+  ornament. Added BO-4 as a second supporting BO to carry it, alongside BO-3. The primary ranking is
+  unchanged.
+- [x] Fix the boundary this exposed. ADR 0001 capped ML at a supporting Silver workload and the BO
+  document still listed it as an open question, both of which contradict the delivery goal. Modeling,
+  prediction and AI applications are now in scope; the alpha, timing, automated-trading and quant-
+  research prohibitions stay exactly as they were. What was ever forbidden is alpha, not modeling.
+- [x] Settle what may be predicted, since the facts are synthetic. Only operational targets:
+  settlement failure and delay, the four-way difference classification, and exception priority. All
+  three already carry labels the generator injects by design. Predicting price on synthetic
+  instruments recovers the generator's own parameters, which is circular and lands inside the quant
+  prohibition.
+- [x] Set the success measure for the AI stage. It is pipeline reproducibility and point-in-time
+  correctness of the training data, never model accuracy: accuracy on synthetic data can be raised at
+  will by changing generation parameters, so it is not evidence.
+- [ ] Choose which of the three prediction targets ship, and write each label's definition: how the
+  generator injects it, and how it reproduces under a fixed seed.
+- [x] Add the point-in-time assertion to the validation specification. Section 4.2: every feature row
+  carries an explicit as-of, effectiveness time decides admission rather than write time (the two
+  diverge exactly on late-data batches, which is most of them here), and the label's observation moment
+  must sit strictly after the as-of with the gap declared as the prediction horizon. The interaction
+  with restatement is the part that actually breaks: rebuilding features after a restatement must read
+  the version as of that moment, never the latest, or the restatement leaks backwards and shows up only
+  as a better score. Failure is fail, not a warning, and the assertion itself gets a known leaking
+  feature injected to prove it fires.
+- [ ] Decide where the feature tables, training and batch inference live, and on which node. Deferred
+  to Phase 1 measurement on purpose: it is a performance question, not a design one, and the BO holds
+  either way.
+- [ ] Measure feature-table size and build wall clock, and judge whether the AI stage fits inside the
+  nightly batch window.
 - [x] Freeze the BO baseline. The one blocking criterion was the chain evidence, and all six segments
   now have a frozen minimal lifecycle sourced to a page or a schema element. Reconciliation and
   difference attribution stay primary, restatement stays supporting, regulatory reporting stays
@@ -189,6 +222,12 @@ handles keyed rewrites of historical partitions.
   purpose: the baseline should not hang on a number nobody has measured. The two that need
   measurement are the batch deadline and the restatement window, and both constrain the
   implementation rather than the objective, so neither can unfreeze the baseline.
+- [ ] Reconcile BO-4 with the now-frozen baseline. The baseline was frozen on the branch that did not
+  carry BO-4, so it names BO-1 primary, BO-3 supporting and BO-2 demoted, and says nothing about the
+  modeling and AI stage. Decide whether BO-4 enters the frozen baseline as a second supporting
+  objective or stays outside it as a delivery-scope commitment, and make the two documents say the
+  same thing either way. Until then business-objectives section 2.3 and the freeze record disagree
+  about how many supporting objectives exist.
 
 ## Now: Phase 0B-1 Solution Evaluation
 
@@ -313,6 +352,8 @@ handles keyed rewrites of historical partitions.
   exception to the Gold budget rule and is now relied on in four places. Both records add what a
   decision section does not carry: the options that lost, the price being paid, and the conditions
   under which the decision should be revisited.
+- [ ] Before that review, skim the prior-art list once and check it for cases CMOP's design has not
+  considered. Findings become backlog items, not direct edits to a frozen conclusion.
 ## Next: Phase 0B-2 and 0B-3
 
 - [ ] Run only risk-linked, time-boxed, disposable probes that cannot be resolved reliably from public
@@ -398,6 +439,10 @@ handles keyed rewrites of historical partitions.
   cares about are in the shared set. The confirmation's effective settlement date is mandatory while
   the instructed one is optional, so both are now always written and the delay is measurable as their
   difference.
+- [ ] Implement the source-independence assertion the validation specification now requires in section
+  4.1: the counterparty side and the internal-ledger side may share no random stream and may not read
+  each other's output. It is the one constraint whose violation produces no error at all, so it has to
+  run in the generator and abort it, not wait for reconciliation to look green.
 - [x] Write a business validation layer for the settlement leg. Written into the validation and
   reconciliation spec as a new section, three tiers split by how much a check needs to see: one
   message, one transaction identifier's worth of messages, then the scenario contract. Every check
