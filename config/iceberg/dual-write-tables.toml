@@ -1,0 +1,7 @@
+# 会被 Spark 以外的引擎（DuckDB、PyIceberg）写入的 Iceberg 表清单。
+# 清单内每张表的建表定义必须显式设三个 mode 为 merge-on-read，且必须带维护排期。
+# 2026-09-13：尚无表被判定为双写，清单为空。计算分工见 ADR 0005。
+#
+# [[table]]
+# name = "silver.example"
+# maintenance_period = "P1D"
