@@ -377,6 +377,12 @@ handles keyed rewrites of historical partitions.
   one vertical slice rather than the target volume, and produce the two-sided metric table plus the
   list of decisions the platform makes on this project's behalf. Do not open the trial capacity before
   a slice exists to port: it runs 60 days, once, non-renewable.
+- [ ] Build the reduced core dataset that comparison runs on, and run it locally too. Sample by chain
+  closure, never by row: pick instruments, accounts and trading days first, then take every event those
+  keys touch, or the explanation chain breaks and nothing downstream can be verified. Carry a retention
+  list showing how many times each frozen scenario survives the cut, since reverse splits, late
+  confirmations, account merges and failed-then-late settlement are rare enough that proportional
+  sampling drops them, and a scenario that appears zero times was not tested.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
   runtime, memory, and storage results.
 
