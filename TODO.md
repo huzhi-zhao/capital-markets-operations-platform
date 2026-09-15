@@ -383,6 +383,12 @@ handles keyed rewrites of historical partitions.
   list showing how many times each frozen scenario survives the cut, since reverse splits, late
   confirmations, account merges and failed-then-late settlement are rare enough that proportional
   sampling drops them, and a scenario that appears zero times was not tested.
+- [ ] Cover as much of the certification's component surface as the comparison can carry, split into
+  the two tiers the roadmap defines. Tier A is whatever this project needs anyway and goes into the
+  comparison and the outward account; tier B exists only for coverage and stays disposable, out of the
+  architecture, and openly labelled as study work rather than a project capability. The streaming
+  components are the one tier-B candidate with a legitimate home, since the demo and replay window is
+  already a stated requirement.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
   runtime, memory, and storage results.
 
