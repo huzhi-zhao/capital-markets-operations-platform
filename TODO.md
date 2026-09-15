@@ -373,6 +373,10 @@ handles keyed rewrites of historical partitions.
   two because clients rarely have enough live accounts; that is left open in the README.
 - [ ] Implement the minimum Bronze to Silver to Gold vertical slice.
 - [ ] Validate one late confirmation and one correction or cancellation end to end.
+- [ ] Run the managed-platform comparison in Phase 3, per the roadmap section that now defines it. Port
+  one vertical slice rather than the target volume, and produce the two-sided metric table plus the
+  list of decisions the platform makes on this project's behalf. Do not open the trial capacity before
+  a slice exists to port: it runs 60 days, once, non-renewable.
 - [ ] Replace planning assumptions with measured bytes-per-row, compression, file-count, shuffle,
   runtime, memory, and storage results.
 
